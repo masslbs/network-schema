@@ -1,0 +1,26 @@
+syntax = "proto3";
+package tutorial;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/protocolbuffers/protobuf/examples/go/tutorialpb";
+
+message Robot {
+  string name = 1;
+  int32 id = 2;
+
+  message Feature {
+    string name = 1;
+    string description = 2;
+  }
+
+  repeated Feature features = 3;
+}
+
+message Task {
+  string title = 1;
+  string description = 2;
+  google.protobuf.Timestamp due_date = 3;
+  google.protobuf.Any done_by = 4;
+}

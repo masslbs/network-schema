@@ -76,6 +76,7 @@
         protobuf
         protolint
         mass-python
+        go
       ];
     in {
       devShell = pkgs.mkShell {
