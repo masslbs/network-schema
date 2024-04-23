@@ -4,6 +4,11 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V2 (2024-??-??) DRAFT
+
+- Changes all Tag related messages to follow the Update pattern we are using in Manifest and Item.
+- Separates out transprot from store events.
+
 # V1 (2024-04-24) EthDuba '24 relase, point-of-sales
 
 - _Users_ that are registered with the _Store_ (see `StoreReg` smart contract) can POST to `https://my.relay/v1/enroll_keycard`.

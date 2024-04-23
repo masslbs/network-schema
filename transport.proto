@@ -1,0 +1,162 @@
+// SPDX-FileCopyrightText: 2023 - 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+// This file defines the protocol between relays and clients.
+// It is orthogonal to the store registry and other smart contracts.
+//
+// Messages must be prefixed with their acompanying encoding number
+// as a single byte. encoding.txt defines the number for each message.
+//
+// Furthermore, we expect only one message per write/binary frame.
+// This means no buffering of multiple messages into a single write.
+// The protocol offers repeated fields where approriate for higher throughput.
+// A suggested transport is WebSocket over HTTPS but the protocol is
+// agnostic, as long as it can handle binary data and keeps the framing intact.
+//
+// For upgrades there exists a VERSION file in the root of the repository.
+// The VERSION is a single unsigned integer, incremented for each change.
+// The client and relay must agree on the VERSION before starting the protocol.
+// In the case of WebSocket, the VERSION can be compared via the URL.
+// The relay must close the connection if the VERSION isn't supported.
+//
+//
+// As of this version, the protocol is grouped into 2 categories:
+// Events, which define the content of a Store,
+// and Request/Response methods to exchange information.
+
+syntax = "proto3";
+
+package market.mass;
+
+import "google/protobuf/any.proto";
+
+// ================
+// request/response
+// ================
+
+// Initiates the challenge/response protocol.
+message AuthenticateRequest {
+  // See PingRequest for details
+  bytes request_id = 1;
+
+  bytes public_key = 2; // of their keyCard
+}
+
+// Returns an error if the public key is not an enrolled KeyCard.
+// or a challenge to be signed by the KeyCard.
+message AuthenticateResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  bytes challenge = 3;
+}
+
+// Completes authentication by supplying the signature over the challenge.
+message ChallengeSolvedRequest {
+  bytes request_id = 1;
+  bytes signature = 2;
+}
+
+// No error means the user is authenticated.
+message ChallengeSolvedResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// Initiate check out of a cart
+message CommitCartRequest {
+  bytes request_id = 1;
+  bytes cart_id = 2;
+  bytes erc20_addr = 3; // emtpy/unset means vanilla ETH
+}
+
+// Returns an error if the cart is already finalized.
+// No error blocks further changes to a cart and starts the payment process.
+message CommitCartResponse {
+  bytes request_id = 1;
+  Error error = 2;
+
+  bytes cart_finalized_id = 3;
+}
+
+// Get an URL to upload a blob to.
+// This exists for future-proofing the protocol
+// and reduce stress on the websocket connection.
+message GetBlobUploadURLRequest {
+  bytes request_id = 1;
+}
+
+// Returns a single-use URL to upload a blob to.
+// The HTTP response will contain the blob's IPFS path.
+message GetBlobUploadURLResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  string url = 3;
+}
+
+// ====================
+// Event syncronization
+// ====================
+
+// Used by the Client to write a single event to the store.
+message EventWriteRequest {
+  bytes request_id = 1;
+  google.protobuf.Any event = 2;
+}
+
+// Might return an error if the event or its signature is invalid.
+// If no error is returned,
+// the new_store_hash is the hash of the store with the new event applied.
+// The event_sequence_no is the index of the event in the stores log.
+message EventWriteResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  bytes new_store_hash = 3;
+  uint64 event_sequence_no = 4;
+}
+
+// Used by the relay to push events to the client.
+// Will not sent more events until the client has acknowledged the last batch.
+message EventPushRequest {
+  bytes request_id = 1;
+  repeated google.protobuf.Any events = 2;
+}
+
+message EventPushResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// Sent by the relay to signal the number of unpushed events.
+message SyncStatusRequest {
+  bytes request_id = 1;
+  uint64 unpushed_events = 2;
+}
+
+message SyncStatusResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// Sent by the relay to check for the clients liveness.
+// The client needs to respond with a PingResponse.
+// The relay will close the connection if the client doesn't respond 3 times.
+message PingRequest{
+  // 16 bytes, chosen by the sender but should be random.
+  // Used to match the response to the request.
+  bytes request_id = 1;
+}
+
+message PingResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// utility types
+// =============
+
+message Error {
+  // TODO: make a list of error codes, maybe enum
+  string code = 1;
+  string message = 2;
+}

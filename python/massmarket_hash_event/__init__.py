@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-__all__ = ['hash_event', 'Hasher', 'schema_pb2']
+__all__ = ['hash_event', 'Hasher', 'store_events_pb2']
 
 import json
 import binascii
@@ -10,7 +10,7 @@ from importlib.resources import files
 
 from eth_account.messages import encode_structured_data
 
-from massmarket_hash_event import schema_pb2
+from massmarket_hash_event import store_events_pb2
 
 event_typedData_spec = json.loads(files("massmarket_hash_event").joinpath("typedData.json").read_text())
 
@@ -23,35 +23,35 @@ class Hasher:
         if len(data) != 20:
             raise Exception(f"Invalid contract address: {storeRegAddress}")
         self.storeRegAddress = storeRegAddress
-    def hash_event(self, evt: schema_pb2.Event):
+    def hash_event(self, evt: store_events_pb2.Event):
         return hash_event(evt, self.chain_id, self.storeRegAddress)
 
-def hash_event(evt: schema_pb2.Event, chain_id, storeRegAddress):
+def hash_event(evt: store_events_pb2.Event, chain_id, storeRegAddress):
     event_type = getattr(evt, evt.WhichOneof('union'))
     event_name = event_type.DESCRIPTOR.name
     event_td_spec = event_typedData_spec[event_name].copy()
     # remove fields from event_td_spec that are not set in event_td_data
-    if event_name == "UpdateManifest":
+    if event_name == "UpdateStoreManifest":
         field = event_type.field
-        if field == schema_pb2.UpdateManifest.MANIFEST_FIELD_DOMAIN:
+        if field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_DOMAIN:
             event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
             event_td_spec.remove({"name": "erc20_addr", "type": "address"})
-        elif field == schema_pb2.UpdateManifest.MANIFEST_FIELD_PUBLISHED_TAG:
+        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_PUBLISHED_TAG:
             event_td_spec.remove({"name": "string", "type": "string"})
             event_td_spec.remove({"name": "erc20_addr", "type": "address"})
-        elif field == schema_pb2.UpdateManifest.MANIFEST_FIELD_ADD_ERC20:
+        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_ADD_ERC20:
             event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
             event_td_spec.remove({"name": "string", "type": "string"})
-        elif field == schema_pb2.UpdateManifest.MANIFEST_FIELD_REMOVE_ERC20:
+        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_REMOVE_ERC20:
             event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
             event_td_spec.remove({"name": "string", "type": "string"})
         else:
             raise Exception(f"Unknown field: {field}")
     elif event_name == "UpdateItem":
         field = event_type.field
-        if field == schema_pb2.UpdateItem.ITEM_FIELD_PRICE:
+        if field == store_events_pb2.UpdateItem.ITEM_FIELD_PRICE:
             event_td_spec.remove({"name": "metadata", "type": "bytes"})
-        elif field == schema_pb2.UpdateItem.ITEM_FIELD_METADATA:
+        elif field == store_events_pb2.UpdateItem.ITEM_FIELD_METADATA:
             event_td_spec.remove({"name": "price", "type": "string"})
         else:
             raise Exception(f"Unknown field: {field}")
@@ -91,7 +91,7 @@ def hash_event(evt: schema_pb2.Event, chain_id, storeRegAddress):
     }
     return encode_structured_data(typed_data)
 
-def event_to_typedData_dict(evt: schema_pb2.Event, spec_for_event):
+def event_to_typedData_dict(evt: store_events_pb2.Event, spec_for_event):
     which = evt.WhichOneof("union")
     if which is None:
         raise Exception("No event type set")

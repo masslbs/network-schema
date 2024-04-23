@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import schema_pb2
+import store_events_pb2
 
 # helpers
 
@@ -119,7 +119,7 @@ def typed_data_definition(message):
     return fields
 
 # get all the union field in the Event message
-evt = schema_pb2.Event()
+evt = store_events_pb2.Event()
 union = evt.DESCRIPTOR.oneofs[0]
 
 from google.protobuf import message_factory

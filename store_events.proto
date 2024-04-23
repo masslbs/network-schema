@@ -1,29 +1,3 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
-//
-// SPDX-License-Identifier: MIT
-
-// This file defines the protocol between relays and clients.
-// It is orthogonal to the store registry and other smart contracts.
-//
-// Messages must be prefixed with their acompanying encoding number
-// as a single byte. encoding.txt defines the number for each message.
-//
-// Furthermore, we expect only one message per write/binary frame.
-// This means no buffering of multiple messages into a single write.
-// The protocol offers repeated fields where approriate for higher throughput.
-// A suggested transport is WebSocket over HTTPS but the protocol is
-// agnostic, as long as it can handle binary data and keeps the framing intact.
-//
-// For upgrades there exists a VERSION file in the root of the repository.
-// The VERSION is a single unsigned integer, incremented for each change.
-// The client and relay must agree on the VERSION before starting the protocol.
-// In the case of WebSocket, the VERSION can be compared via the URL.
-// The relay must close the connection if the VERSION isn't supported.
-//
-//
-// As of this version, the protocol is grouped into 2 categories:
-// Events, which define the content of a Store,
-// and Request/Response methods to exchange information.
 syntax = "proto3";
 
 package market.mass;
@@ -34,7 +8,7 @@ package market.mass;
 
 // First genisis message of a store.
 // Has to be the first message that is written and can only be written once.
-// Use UpdateManifest to make changes.
+// Use UpdateStoreManifest to make changes.
 message StoreManifest {
   // The event_id is a unique identifier for an event.
   // Currently it's 32 bytes of random data.
@@ -54,12 +28,12 @@ message StoreManifest {
   // the system tag used to list active items
   bytes published_tag_id = 4;
 
-  // erc20s are updated via UpdateManifest
+  // erc20s are updated via UpdateStoreManifest
 }
 
 // Used to update the store manifest.
 // The Field enum determines the field to be updated and the value to be used.
-message UpdateManifest {
+message UpdateStoreManifest {
   // See StoreManifest for details
   bytes event_id = 1;
 
@@ -130,39 +104,26 @@ message CreateTag {
   string name = 2;
 }
 
-// Adds an item to a tag.
-// TODO: might change this to the Update* pattern.
-message AddToTag {
+message UpdateTag {
   // See StoreManifest for details
   bytes event_id = 1;
   bytes tag_id = 2;
-  bytes item_id = 3;
-}
 
-// Removes an item from a tag.
-// TODO: might change this to the Update* pattern.
-message RemoveFromTag {
-  // See StoreManifest for details
-  bytes event_id = 1;
-  bytes tag_id = 2;
-  bytes item_id = 3;
-}
+  TagAction action = 3;
 
-// Renames a tag.
-// TODO: might change this to the Update* pattern.
-message RenameTag {
-  // See StoreManifest for details
-  bytes event_id = 1;
-  bytes tag_id = 2;
-  string name = 3;
-}
+  enum TagAction {
+    ACTION_UNSPECIFIED = 0;
+    ACTION_ADD_ITEM = 1;
+    ACTION_REMOVE_ITEM = 2;
+    ACTION_RENAME = 3;
+    ACTION_DELETE_TAG = 4;
+  };
 
-// Deletes a tag.
-// TODO: might change this to the Update* pattern.
-message DeleteTag {
-  // See StoreManifest for details
-  bytes event_id = 1;
-  bytes tag_id = 2;
+  oneof value {
+    bytes item_id = 4;
+    string new_name = 5;
+    bool delete = 6;
+  }
 }
 
 // private store information
@@ -257,16 +218,13 @@ message Event {
 
   oneof union {
     StoreManifest store_manifest = 2;
-    UpdateManifest update_manifest = 3;
+    UpdateStoreManifest update_store_manifest = 3;
 
     CreateItem create_item = 4;
     UpdateItem update_item = 5;
 
     CreateTag create_tag = 6;
-    AddToTag add_to_tag = 7;
-    RemoveFromTag remove_from_tag = 8;
-    RenameTag rename_tag = 9;
-    DeleteTag delete_tag = 10;
+    UpdateTag update_tag = 17;
 
     CreateCart create_cart = 11;
     ChangeCart change_cart = 12;
@@ -277,136 +235,4 @@ message Event {
 
     NewKeyCard new_key_card = 14;
   }
-}
-
-// ================
-// request/response
-// ================
-
-// Initiates the challenge/response protocol.
-message AuthenticateRequest {
-  // See PingRequest for details
-  bytes request_id = 1;
-
-  bytes public_key = 2; // of their keyCard
-}
-
-// Returns an error if the public key is not an enrolled KeyCard.
-// or a challenge to be signed by the KeyCard.
-message AuthenticateResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  bytes challenge = 3;
-}
-
-// Completes authentication by supplying the signature over the challenge.
-message ChallengeSolvedRequest {
-  bytes request_id = 1;
-  bytes signature = 2;
-}
-
-// No error means the user is authenticated.
-message ChallengeSolvedResponse {
-  bytes request_id = 1;
-  Error error = 2;
-}
-
-// Initiate check out of a cart
-message CommitCartRequest {
-  bytes request_id = 1;
-  bytes cart_id = 2;
-  bytes erc20_addr = 3; // emtpy/unset means vanilla ETH
-}
-
-// Returns an error if the cart is already finalized.
-// No error blocks further changes to a cart and starts the payment process.
-// TODO: we might change the payload in this to an Event for longevity.
-message CommitCartResponse {
-  bytes request_id = 1;
-  Error error = 2;
-
-  bytes cart_finalized_id = 3;
-}
-
-// Get an URL to upload a blob to.
-// This exists for future-proofing the protocol
-// and reduce stress on the websocket connection.
-message GetBlobUploadURLRequest {
-  bytes request_id = 1;
-}
-
-// Returns a single-use URL to upload a blob to.
-// The HTTP response will contain the blob's IPFS path.
-message GetBlobUploadURLResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  string url = 3;
-}
-
-// ====================
-// Event syncronization
-// ====================
-
-// Used by the Client to write a single event to the store.
-message EventWriteRequest {
-  bytes request_id = 1;
-  Event event = 2;
-}
-
-// Might return an error if the event or its signature is invalid.
-// If no error is returned,
-// the new_store_hash is the hash of the store with the new event applied.
-// The event_sequence_no is the index of the event in the stores log.
-message EventWriteResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  bytes new_store_hash = 3;
-  uint64 event_sequence_no = 4;
-}
-
-// Sent by the relay to signal the number of unpushed events.
-message SyncStatusRequest {
-  bytes request_id = 1;
-  uint64 unpushed_events = 2;
-}
-
-message SyncStatusResponse {
-  bytes request_id = 1;
-  Error error = 2;
-}
-
-// Used by the relay to push events to the client.
-// Will not sent more events until the client has acknowledged the last batch.
-message EventPushRequest {
-  bytes request_id = 1;
-  repeated Event events = 2;
-}
-
-message EventPushResponse {
-  bytes request_id = 1;
-  Error error = 2;
-}
-
-
-// Sent by the relay to check for the clients liveness.
-// The client needs to respond with a PingResponse.
-// The relay will close the connection if the client doesn't respond 3 times.
-message PingRequest{
-  // 16 bytes, chosen by the sender but should be random.
-  // Used to match the response to the request.
-  bytes request_id = 1;
-}
-
-message PingResponse {
-  bytes request_id = 1;
-  Error error = 2;
-}
-
-// utility types
-// =============
-
-message Error {
-  // TODO: make a list of error codes, maybe enum
-  string code = 1;
-  string message = 2;
 }
