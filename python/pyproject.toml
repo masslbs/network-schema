@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2024 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "massmarket_hash_event"
+version = "0.0.11"
+authors = [
+    {name = "Henry Bubert", email = "henry@mass.market"},
+]
+description = "Helper functions to hash events for signature creation and verification on Mass Market."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Security :: Cryptography",
+    "Programming Language :: Python :: 3",
+    'Framework :: Pytest',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+]
+dependencies = [
+    "web3"
+]
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://mass.market"
+Repository = "https://github.com/masslbs/network-schema.git"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ['tests']
+pythonpath = "."
+filterwarnings = 'error'
+xfail_strict = true
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["massmarket_hash_event"]
+namespaces = false
+
+[tool.setuptools.package-data]
+massmarket_hash_event = ["typedData.json"]

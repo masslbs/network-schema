@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
+name: test
+on: [push]
+jobs:
+  schema-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+      - name: REUSE Compliance Check
+        uses: fsfe/reuse-action@v2
+      - name: Protobuf lint
+        run: nix develop -c protolint lint schema.proto
+      - name: Check constants
+        run: nix develop -c python3 ./check.py
+      - name: Run pip package tests
+        run: nix develop -c bash -c "cd python && pytest"

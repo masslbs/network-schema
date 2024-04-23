@@ -1,0 +1,6 @@
+limitMaxInRequests        1024
+limitMaxInBatchSize       64
+limitMaxOutRequests       1024
+limitMaxOutBatchSize      64
+limitMaxDescriptionLength 128
+limitMaxBlobSize          1048576

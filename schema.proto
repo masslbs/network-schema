@@ -1,0 +1,412 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+// This file defines the protocol between relays and clients.
+// It is orthogonal to the store registry and other smart contracts.
+//
+// Messages must be prefixed with their acompanying encoding number
+// as a single byte. encoding.txt defines the number for each message.
+//
+// Furthermore, we expect only one message per write/binary frame.
+// This means no buffering of multiple messages into a single write.
+// The protocol offers repeated fields where approriate for higher throughput.
+// A suggested transport is WebSocket over HTTPS but the protocol is
+// agnostic, as long as it can handle binary data and keeps the framing intact.
+//
+// For upgrades there exists a VERSION file in the root of the repository.
+// The VERSION is a single unsigned integer, incremented for each change.
+// The client and relay must agree on the VERSION before starting the protocol.
+// In the case of WebSocket, the VERSION can be compared via the URL.
+// The relay must close the connection if the VERSION isn't supported.
+//
+//
+// As of this version, the protocol is grouped into 2 categories:
+// Events, which define the content of a Store,
+// and Request/Response methods to exchange information.
+syntax = "proto3";
+
+package market.mass;
+
+// ======
+// Events
+// ======
+
+// First genisis message of a store.
+// Has to be the first message that is written and can only be written once.
+// Use UpdateManifest to make changes.
+message StoreManifest {
+  // The event_id is a unique identifier for an event.
+  // Currently it's 32 bytes of random data.
+  // It also functions as a nonce for The events signature.
+  // The global identifier of an Item should also include the store_token_id.
+  // hash(store_token_id:signature) might suffice then with a smaller nonce.
+  bytes event_id = 1;
+
+  // The NFT Token ID used in StoreReg.registerStore().
+  // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
+  bytes store_token_id = 2;
+
+  // Website URL of the store
+  // TODO: might change this to metdata inside the NFT URL.
+  string domain = 3;
+
+  // the system tag used to list active items
+  bytes published_tag_id = 4;
+
+  // erc20s are updated via UpdateManifest
+}
+
+// Used to update the store manifest.
+// The Field enum determines the field to be updated and the value to be used.
+message UpdateManifest {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // Defines the field to be updated and determines the value to be used.
+  ManifestField field = 2;
+
+  // for now we assume the owner can't be changed
+  enum ManifestField {
+    // needed as a side-effect of what protobuf calls "open enums"
+    MANIFEST_FIELD_UNSPECIFIED = 0;
+    MANIFEST_FIELD_DOMAIN = 1; // uses value:3 (type string)
+    MANIFEST_FIELD_PUBLISHED_TAG = 2; // uses value:4 (type event_id)
+    MANIFEST_FIELD_ADD_ERC20 = 3; // add uses value:5 (addrress)
+    MANIFEST_FIELD_REMOVE_ERC20 = 4; // uses value:5 (address)
+  }
+
+  oneof value {
+    string string = 3;
+    bytes tag_id = 4; // See event_id for details
+    bytes erc20_addr = 5; // 20 bytes
+  }
+}
+
+// Creates an item in the store.
+message CreateItem {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // decimal number as a string.
+  // numbers need to be always formatted to 2 decimal places.
+  // the demcimal place must use a dot ('.') as the separator.
+  string price = 2;
+
+  // should be valid JSON
+  // TODO: make a json schmea with minimal/required fields
+  bytes metadata = 3;
+}
+
+// UpdateItem changes the price or metadata of an item.
+// Follows the same pattern as UpdateManifest.
+message UpdateItem {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  bytes item_id = 2; // the event_id of the CreateItem event
+
+  ItemField field = 3;
+
+  oneof value {
+    string price = 4; // decimal number. See CreateItem for formatting.
+    bytes metadata = 5;
+  }
+
+  enum ItemField {
+    ITEM_FIELD_UNSPECIFIED = 0;
+    ITEM_FIELD_PRICE = 1;
+    ITEM_FIELD_METADATA = 2;
+  }
+}
+
+// Creates a tag in the store.
+// These can be used to group items into categories.
+// There are also a couple of system-level tags, like published.
+// Thse are used to filter items in the store.
+message CreateTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  string name = 2;
+}
+
+// Adds an item to a tag.
+// TODO: might change this to the Update* pattern.
+message AddToTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes tag_id = 2;
+  bytes item_id = 3;
+}
+
+// Removes an item from a tag.
+// TODO: might change this to the Update* pattern.
+message RemoveFromTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes tag_id = 2;
+  bytes item_id = 3;
+}
+
+// Renames a tag.
+// TODO: might change this to the Update* pattern.
+message RenameTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes tag_id = 2;
+  string name = 3;
+}
+
+// Deletes a tag.
+// TODO: might change this to the Update* pattern.
+message DeleteTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes tag_id = 2;
+}
+
+// private store information
+// =========================
+
+// ChangeStock is used to update the stock of on or more items.
+// Created by the relay after a cart has been paied for.
+message ChangeStock {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // length needs to match the length of the diff field
+  repeated bytes item_ids = 2;
+  repeated sint32 diffs = 3;
+
+  // (optional) only set by the relay.
+  // signals payment completion after a CommitCartRequest
+  bytes cart_id = 4;
+  bytes tx_hash = 5;
+}
+
+// created by the relay when a user enrolls a key card
+message NewKeyCard {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes user_wallet_addr = 2;
+  bytes card_public_key = 3;
+}
+
+// CreateCart is used to create a new cart.
+message CreateCart {
+  // See StoreManifest for details
+  bytes event_id = 1;
+}
+
+// ChangeCart is used to add or remove items from a cart.
+message ChangeCart {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes cart_id = 2;
+  bytes item_id = 3;
+  sint32 quantity = 4;
+}
+
+// Created by the relay after a CommitCartRequest.
+// It signals that a cart is about to be payed and can not be changed anymore.
+message CartFinalized {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes cart_id = 2;
+
+  // the address the user needs to send the funds to
+  bytes purchase_addr = 3;
+
+  // (optional) copied from CommitCartRequest
+  bytes erc20_addr = 8;
+
+  string sub_total = 4;
+  string sales_tax = 5;
+  string total = 6; // = subtotal + sales_tax
+
+  // The exact amount to transfer to the purchase_address.
+  // bigint as string.
+  string total_in_crypto = 7;
+}
+
+// Either created by a relay for a carts that haven't been payed in time.
+// Or by a clerk, for eg. when the customer steps back from the purchase.
+// This frees up the items locked up in the finalized cart.
+message CartAbandoned {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes cart_id = 2;
+}
+
+// Event is the transport wrapper for a single Event.
+//
+// For signatures we use https://eips.ethereum.org/EIPS/eip-712.
+// The structured data definition are specified in `typedData.json`.
+// The KeyCard keypair is used to sign or verify the data.
+// The Set of all valid keys is all NewKeyCard events
+// plus the Relays assigned on the StoreReg smart contract.
+//
+// Special care must be taken for Events with optional and union fields.
+// Specifically these are `UpdateManifest`, `UpdateItem` and `ChangeStock`.
+// Some implementations of `eth_signTypedData` are fine with `null` fields,
+// while others aren't.
+// Therefore, the structured data specification
+// needs to be pruned from fields that are not set.
+message Event {
+  bytes signature = 1;
+
+  oneof union {
+    StoreManifest store_manifest = 2;
+    UpdateManifest update_manifest = 3;
+
+    CreateItem create_item = 4;
+    UpdateItem update_item = 5;
+
+    CreateTag create_tag = 6;
+    AddToTag add_to_tag = 7;
+    RemoveFromTag remove_from_tag = 8;
+    RenameTag rename_tag = 9;
+    DeleteTag delete_tag = 10;
+
+    CreateCart create_cart = 11;
+    ChangeCart change_cart = 12;
+    CartFinalized cart_finalized = 15;
+    CartAbandoned cart_abandoned = 16;
+
+    ChangeStock change_stock = 13;
+
+    NewKeyCard new_key_card = 14;
+  }
+}
+
+// ================
+// request/response
+// ================
+
+// Initiates the challenge/response protocol.
+message AuthenticateRequest {
+  // See PingRequest for details
+  bytes request_id = 1;
+
+  bytes public_key = 2; // of their keyCard
+}
+
+// Returns an error if the public key is not an enrolled KeyCard.
+// or a challenge to be signed by the KeyCard.
+message AuthenticateResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  bytes challenge = 3;
+}
+
+// Completes authentication by supplying the signature over the challenge.
+message ChallengeSolvedRequest {
+  bytes request_id = 1;
+  bytes signature = 2;
+}
+
+// No error means the user is authenticated.
+message ChallengeSolvedResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// Initiate check out of a cart
+message CommitCartRequest {
+  bytes request_id = 1;
+  bytes cart_id = 2;
+  bytes erc20_addr = 3; // emtpy/unset means vanilla ETH
+}
+
+// Returns an error if the cart is already finalized.
+// No error blocks further changes to a cart and starts the payment process.
+// TODO: we might change the payload in this to an Event for longevity.
+message CommitCartResponse {
+  bytes request_id = 1;
+  Error error = 2;
+
+  bytes cart_finalized_id = 3;
+}
+
+// Get an URL to upload a blob to.
+// This exists for future-proofing the protocol
+// and reduce stress on the websocket connection.
+message GetBlobUploadURLRequest {
+  bytes request_id = 1;
+}
+
+// Returns a single-use URL to upload a blob to.
+// The HTTP response will contain the blob's IPFS path.
+message GetBlobUploadURLResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  string url = 3;
+}
+
+// ====================
+// Event syncronization
+// ====================
+
+// Used by the Client to write a single event to the store.
+message EventWriteRequest {
+  bytes request_id = 1;
+  Event event = 2;
+}
+
+// Might return an error if the event or its signature is invalid.
+// If no error is returned,
+// the new_store_hash is the hash of the store with the new event applied.
+// The event_sequence_no is the index of the event in the stores log.
+message EventWriteResponse {
+  bytes request_id = 1;
+  Error error = 2;
+  bytes new_store_hash = 3;
+  uint64 event_sequence_no = 4;
+}
+
+// Sent by the relay to signal the number of unpushed events.
+message SyncStatusRequest {
+  bytes request_id = 1;
+  uint64 unpushed_events = 2;
+}
+
+message SyncStatusResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// Used by the relay to push events to the client.
+// Will not sent more events until the client has acknowledged the last batch.
+message EventPushRequest {
+  bytes request_id = 1;
+  repeated Event events = 2;
+}
+
+message EventPushResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+
+// Sent by the relay to check for the clients liveness.
+// The client needs to respond with a PingResponse.
+// The relay will close the connection if the client doesn't respond 3 times.
+message PingRequest{
+  // 16 bytes, chosen by the sender but should be random.
+  // Used to match the response to the request.
+  bytes request_id = 1;
+}
+
+message PingResponse {
+  bytes request_id = 1;
+  Error error = 2;
+}
+
+// utility types
+// =============
+
+message Error {
+  // TODO: make a list of error codes, maybe enum
+  string code = 1;
+  string message = 2;
+}

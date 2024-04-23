@@ -1,0 +1,16 @@
+pingRequest 1
+pingResponse 2
+authenticateRequest 3
+authenticateResponse 4
+challengeSolvedRequest 5
+challengeSolvedResponse 6
+getBlobUploadURLRequest 9
+getBlobUploadURLResponse 10
+eventWriteRequest 13
+eventWriteResponse 14
+syncStatusRequest 15
+syncStatusResponse 16
+eventPushRequest 17
+eventPushResponse 18
+commitCartRequest 19
+commitCartResponse 20
