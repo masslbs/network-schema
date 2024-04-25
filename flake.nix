@@ -76,7 +76,11 @@
         protobuf
         protolint
         mass-python
+        # protobuf.Any PoC
         go
+        typescript
+        nodejs_latest
+        nodePackages.pnpm
       ];
     in {
       devShell = pkgs.mkShell {
