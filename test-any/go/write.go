@@ -11,9 +11,9 @@ import (
 func write(fname string) {
 
 	p := Person{
-		Name:  "John Doe",
-		Id:    1,
-		Email: "john@d.oe",
+		Name: "John Doe",
+		Id:   1,
+		Age:  37,
 	}
 
 	wrappedP, err := anypb.New(&p)
@@ -44,13 +44,18 @@ func write(fname string) {
 		DoneBy:  wrappedR,
 	}
 
-	f, err := os.Create(fname)
+	f, err := os.Create("task1.bin")
 	check(err)
 
 	t1d, err := proto.Marshal(&t1)
 	check(err)
 
 	_, err = f.Write(t1d)
+	check(err)
+
+	f.Close()
+
+	f, err = os.Create("task2.bin")
 	check(err)
 
 	t2d, err := proto.Marshal(&t2)

@@ -1,10 +1,17 @@
 syntax = "proto3";
-package tutorial;
+package testany;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/any.proto";
 
-option go_package = "github.com/protocolbuffers/protobuf/examples/go/tutorialpb";
+// option go_package = "github.com/protocolbuffers/protobuf/examples/go/tutorialpb";
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+
+  int32 age = 3;
+}
 
 message Robot {
   string name = 1;
