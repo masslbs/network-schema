@@ -169,7 +169,7 @@ class ChangeCart(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., cart_id: _Optional[bytes] = ..., item_id: _Optional[bytes] = ..., quantity: _Optional[int] = ...) -> None: ...
 
 class CartFinalized(_message.Message):
-    __slots__ = ["event_id", "cart_id", "purchase_addr", "erc20_addr", "sub_total", "sales_tax", "total", "total_in_crypto"]
+    __slots__ = ["event_id", "cart_id", "purchase_addr", "erc20_addr", "sub_total", "sales_tax", "total", "total_in_crypto", "payment_id", "payment_ttl"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     CART_ID_FIELD_NUMBER: _ClassVar[int]
     PURCHASE_ADDR_FIELD_NUMBER: _ClassVar[int]
@@ -178,6 +178,8 @@ class CartFinalized(_message.Message):
     SALES_TAX_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
     TOTAL_IN_CRYPTO_FIELD_NUMBER: _ClassVar[int]
+    PAYMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    PAYMENT_TTL_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     cart_id: bytes
     purchase_addr: bytes
@@ -186,7 +188,9 @@ class CartFinalized(_message.Message):
     sales_tax: str
     total: str
     total_in_crypto: str
-    def __init__(self, event_id: _Optional[bytes] = ..., cart_id: _Optional[bytes] = ..., purchase_addr: _Optional[bytes] = ..., erc20_addr: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., total_in_crypto: _Optional[str] = ...) -> None: ...
+    payment_id: bytes
+    payment_ttl: str
+    def __init__(self, event_id: _Optional[bytes] = ..., cart_id: _Optional[bytes] = ..., purchase_addr: _Optional[bytes] = ..., erc20_addr: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., total_in_crypto: _Optional[str] = ..., payment_id: _Optional[bytes] = ..., payment_ttl: _Optional[str] = ...) -> None: ...
 
 class CartAbandoned(_message.Message):
     __slots__ = ["event_id", "cart_id"]
@@ -267,14 +271,16 @@ class ChallengeSolvedResponse(_message.Message):
     def __init__(self, request_id: _Optional[bytes] = ..., error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
 
 class CommitCartRequest(_message.Message):
-    __slots__ = ["request_id", "cart_id", "erc20_addr"]
+    __slots__ = ["request_id", "cart_id", "erc20_addr", "escrow_addr"]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     CART_ID_FIELD_NUMBER: _ClassVar[int]
     ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
+    ESCROW_ADDR_FIELD_NUMBER: _ClassVar[int]
     request_id: bytes
     cart_id: bytes
     erc20_addr: bytes
-    def __init__(self, request_id: _Optional[bytes] = ..., cart_id: _Optional[bytes] = ..., erc20_addr: _Optional[bytes] = ...) -> None: ...
+    escrow_addr: bytes
+    def __init__(self, request_id: _Optional[bytes] = ..., cart_id: _Optional[bytes] = ..., erc20_addr: _Optional[bytes] = ..., escrow_addr: _Optional[bytes] = ...) -> None: ...
 
 class CommitCartResponse(_message.Message):
     __slots__ = ["request_id", "error", "cart_finalized_id"]
