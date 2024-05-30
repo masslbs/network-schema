@@ -227,6 +227,10 @@ message CartFinalized {
   // The exact amount to transfer to the purchase_address.
   // bigint as string.
   string total_in_crypto = 7;
+
+  // (added in v1.1)
+  bytes payment_id = 9;
+  string payment_ttl = 10;
 }
 
 // Either created by a relay for a carts that haven't been payed in time.
@@ -316,6 +320,10 @@ message CommitCartRequest {
   bytes request_id = 1;
   bytes cart_id = 2;
   bytes erc20_addr = 3; // emtpy/unset means vanilla ETH
+  // (added in v1.1)
+  // if the payment should be routed to a different contract after payment
+  // needs to implement IPaymentEndpoint
+  bytes escrow_addr = 4;
 }
 
 // Returns an error if the cart is already finalized.

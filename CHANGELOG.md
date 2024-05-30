@@ -4,6 +4,17 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V1.1 (2024-06-04) Payments V2 integration
+
+- Our new payments smart contracts allows the client to choose if they want to use counter-factual addresses to pay or not
+- To test this out clients need to re-construct a `PaymentRequest`
+  - Therefore we are adding `payment_ttl` and  to the `CartFinalized` event
+  - The `shopSignature` is not checked yet. Use 64 bytes zeros
+  - `payment_id` can be compared with the relay by calling `getPaymentId` on the contract
+- We use the owner of the store NFT for the `payeeAddress` by default
+  - The Clerk can chose a different escrow contract during `CommitCartRequest` if necessary
+  - How this is done will change in protocol version 2
+
 # V1 (2024-04-24) EthDuba '24 relase, point-of-sales
 
 - _Users_ that are registered with the _Store_ (see `StoreReg` smart contract) can POST to `https://my.relay/v1/enroll_keycard`.

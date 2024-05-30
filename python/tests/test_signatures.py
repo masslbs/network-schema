@@ -63,7 +63,7 @@ def test_hash_empty_event():
       "0xe033b1f86a7ebe1eacdbfb332c6fe7ea0294d1eebff55b5910a248d3d2baff2b"),
 
     (schema_pb2.Event(cart_finalized=schema_pb2.CartFinalized(purchase_addr=random.randbytes(20))),
-      "0xb890ad659de9ae16576c7a6b0267ccdca64e7f771cf8853f6f33b411118ed559"),
+      "0x5120013c8bc1118d2ec6234dfa513a393353fccf07c0c742a294dac3b8e2105d"),
 
     (schema_pb2.Event(cart_abandoned=schema_pb2.CartAbandoned()),
       "0xaeb33fbed4304027350b36c723fba123e9c954422617595ec29e7c86730aa986"),
