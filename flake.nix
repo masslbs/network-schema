@@ -5,7 +5,7 @@
 {
   description = "Mass Market Contracts";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
     utils.url = "github:numtide/flake-utils";
   };
 
@@ -38,7 +38,7 @@
         inherit packageOverrides;
         self = pkgs.python3;
       };
-      
+
       protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
         pname = "protobuf-to-dict";
         version = "0.3.0";
@@ -61,6 +61,7 @@
           protobuf
           protobuf_to_dict
           web3
+          safe-pysha3
           # packaging massmarket_hash_event
           pytest
           setuptools
@@ -73,8 +74,10 @@
 
       buildInputs = with pkgs; [
         reuse
+        nodePackages.prettier
         protobuf
         protolint
+        pyright
         mass-python
       ];
     in {
@@ -83,7 +86,7 @@
 
         shellHook = ''
           export PYTHON=${mass-python}/bin/python
-          export PS1="[network-schema] $PS1"
+          export PYTHONPATH=$PYTHONPATH:$PWD/python
         '';
       };
     });

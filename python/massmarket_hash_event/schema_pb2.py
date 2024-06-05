@@ -1,1 +1,0 @@
-../../schema_pb2.py
