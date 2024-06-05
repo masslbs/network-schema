@@ -4,6 +4,13 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V2 (2024-??-??) DRAFT
+
+- Deprecates V1.
+- Changes all Tag related messages to follow the Update pattern we are using in Manifest and Item.
+- Seperate out event types from the transport.
+- Introduce a semantic layering of transport > auth > store
+
 # V1.1 (2024-06-04) Payments V2 integration
 
 - Our new payments smart contracts allows the client to choose if they want to use counter-factual addresses to pay or not

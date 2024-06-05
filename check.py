@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
-
+import os
 
 lineFormatRe = re.compile(r'^(\w+)\s+(\d+)$')
 
@@ -54,15 +54,20 @@ assert check_typecodes_unique()
 def read_all_reqresp_messages():
     pattern = re.compile(r"message\s+(.*?(Request|Response))[\s{]")
     messages = {}
-    with open("./schema.proto") as f:
-        lines = f.readlines()
-        for line in lines:
-            # print(f"line: {line}")
-            match = pattern.match(line)
-            if match:
-                # print(f"match: {match.group(1)}")
-                name = match.group(1)
-                messages[name.lower()] = True
+    def checkFile(fname):
+        with open(fname) as f:
+            lines = f.readlines()
+            for line in lines:
+                # print(f"line: {line}")
+                match = pattern.match(line)
+                if match:
+                    # print(f"match: {match.group(1)}")
+                    name = match.group(1)
+                    messages[name.lower()] = True
+    # find all .proto files in the current directory
+    for file in os.listdir("."):
+        if file.endswith(".proto"):
+            checkFile(file)
     return messages
 
 # find each message name in encoding.txt

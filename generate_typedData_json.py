@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import schema_pb2
+
+from massmarket_hash_event import store_events_pb2
 
 # helpers
 
@@ -50,7 +51,7 @@ name_to_number = {
 number_to_name = {v: k for k, v in name_to_number.items()}
 
 # https://eips.ethereum.org/EIPS/eip-712#definition-of-typed-structured-data-%F0%9D%95%8A
-# Definition: The atomic types are bytes1 to bytes32, uint8 to uint256, int8 to int256, bool and address. 
+# Definition: The atomic types are bytes1 to bytes32, uint8 to uint256, int8 to int256, bool and address.
 # These correspond to their definition in Solidity. Note that there are no aliases uint and int.
 # Note that contract addresses are always plain address. Fixed point numbers are not supported by the standard.
 # Future versions of this standard may add new atomic types.
@@ -84,13 +85,14 @@ def typed_data_definition(message):
     print(f"\nmessage: {message.DESCRIPTOR.name}")
     for field in message.DESCRIPTOR.fields:
         if field.message_type:  # field has a message type, it's a nested message.
-            raise Exception(f"Fix generic nested messages {field.name}")
-            # value = getattr(message, field.name)
-            # if field.label == field.LABEL_REPEATED:  # repeated field contains multiple instances of the message.
-            #     for item in value:
-            #         fields.extend(typed_data_definition(item))
-            # else:  # only a single nested message.
-            #     fields.extend(typed_data_definition(value))
+            #raise Exception(f"Fix generic nested messages {field.name}")
+             value = getattr(message, field.name)
+             if field.label == field.LABEL_REPEATED:  # repeated field contains multiple instances of the message
+                 raise Exception(f"repeated fields on {field.name} not supported")
+                 #for item in value:
+                 #    fields.extend(typed_data_definition(item))
+             else:  # only a single nested message.
+                 fields.append({"name": field.name, "message": typed_data_definition(value)})
 
         else:  # field is not a message (i.e., simple type field like int32, string, etc).
             tipe = number_to_name[field.type]
@@ -105,6 +107,8 @@ def typed_data_definition(message):
                 td = "bytes32[]"
             elif field.name.endswith("_key"):
                 td = "bytes" # TODO: compressed public key
+            elif field.name.endswith("_signature"):
+                td = "bytes"
 
             # hard overwrites
             if field.name == "metadata":
@@ -119,7 +123,7 @@ def typed_data_definition(message):
     return fields
 
 # get all the union field in the Event message
-evt = schema_pb2.Event()
+evt = store_events_pb2.StoreEvent()
 union = evt.DESCRIPTOR.oneofs[0]
 
 from google.protobuf import message_factory

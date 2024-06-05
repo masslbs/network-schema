@@ -1,0 +1,27 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+message Error {
+  ErrorCodes code = 1;
+  string message = 2;
+}
+
+enum ErrorCodes {
+  unknown = 0;
+  notFound = 1;
+  invalid = 2;
+  notAuthenticated = 3;
+  alreadyAuthenticated = 4;
+  alreadyConnected = 5;
+  tooManyConcurrentRequests = 6;
+  unlinkedKeyCard = 7;
+  minumumVersionNotReached = 8;
+  outOfStock = 9;
+
+  simulated = 9000;
+}

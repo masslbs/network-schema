@@ -1,0 +1,249 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+// ======
+// Events
+// ======
+
+// First genisis message of a store.
+// Has to be the first message that is written and can only be written once.
+// Use UpdateStoreManifest to make changes.
+message StoreManifest {
+  // The event_id is a unique identifier for an event.
+  // Currently it's 32 bytes of random data.
+  // It also functions as a nonce for The events signature.
+  // The global identifier of an Item should also include the store_token_id.
+  // hash(store_token_id:signature) might suffice then with a smaller nonce.
+  bytes event_id = 1;
+
+  // The NFT Token ID used in StoreReg.registerStore().
+  // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
+  bytes store_token_id = 2;
+
+  // Website URL of the store
+  // TODO: might change this to metdata inside the NFT URL.
+  string domain = 3;
+
+  // the system tag used to list active items
+  bytes published_tag_id = 4;
+
+  // erc20s are updated via UpdateStoreManifest
+}
+
+// Used to update the store manifest.
+// The Field enum determines the field to be updated and the value to be used.
+message UpdateStoreManifest {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // Defines the field to be updated and determines the value to be used.
+  ManifestField field = 2;
+
+  // for now we assume the owner can't be changed
+  enum ManifestField {
+    // needed as a side-effect of what protobuf calls "open enums"
+    MANIFEST_FIELD_UNSPECIFIED = 0;
+    MANIFEST_FIELD_DOMAIN = 1; // uses value:3 (type string)
+    MANIFEST_FIELD_PUBLISHED_TAG = 2; // uses value:4 (type event_id)
+    MANIFEST_FIELD_ADD_ERC20 = 3; // add uses value:5 (addrress)
+    MANIFEST_FIELD_REMOVE_ERC20 = 4; // uses value:5 (address)
+  }
+
+  oneof value {
+    string string = 3;
+    bytes tag_id = 4; // See event_id for details
+    bytes erc20_addr = 5; // 20 bytes
+  }
+}
+
+// Creates an item in the store.
+message CreateItem {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // decimal number as a string.
+  // numbers need to be always formatted to 2 decimal places.
+  // the demcimal place must use a dot ('.') as the separator.
+  string price = 2;
+
+  // should be valid JSON
+  // TODO: make a json schmea with minimal/required fields
+  bytes metadata = 3;
+}
+
+// UpdateItem changes the price or metadata of an item.
+// Follows the same pattern as UpdateManifest.
+message UpdateItem {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  bytes item_id = 2; // the event_id of the CreateItem event
+
+  ItemField field = 3;
+
+  oneof value {
+    string price = 4; // decimal number. See CreateItem for formatting.
+    bytes metadata = 5;
+  }
+
+  enum ItemField {
+    ITEM_FIELD_UNSPECIFIED = 0;
+    ITEM_FIELD_PRICE = 1;
+    ITEM_FIELD_METADATA = 2;
+  }
+}
+
+// Creates a tag in the store.
+// These can be used to group items into categories.
+// There are also a couple of system-level tags, like published.
+// Thse are used to filter items in the store.
+message CreateTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  string name = 2;
+}
+
+message UpdateTag {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes tag_id = 2;
+
+  TagAction action = 3;
+
+  enum TagAction {
+    TAG_ACTION_UNSPECIFIED = 0;
+    TAG_ACTION_ADD_ITEM = 1;
+    TAG_ACTION_REMOVE_ITEM = 2;
+    TAG_ACTION_RENAME = 3;
+    TAG_ACTION_DELETE_TAG = 4;
+  };
+
+  oneof value {
+    bytes item_id = 4;
+    string new_name = 5;
+    bool delete = 6;
+  }
+}
+
+// private store information
+// =========================
+
+// ChangeStock is used to update the stock of on or more items.
+// Created by the relay after an order has been paied for.
+message ChangeStock {
+  // See StoreManifest for details
+  bytes event_id = 1;
+
+  // length needs to match the length of the diff field
+  repeated bytes item_ids = 2;
+  repeated sint32 diffs = 3;
+
+  // (optional) only set by the relay.
+  // signals payment completion after a CommitOrderRequest
+  bytes order_id = 4;
+  bytes tx_hash = 5;
+}
+
+// created by the relay when a user enrolls a key card
+message NewKeyCard {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes user_wallet_addr = 2;
+  bytes card_public_key = 3;
+  bool is_guest = 4;
+}
+
+// CreateOrder is used to create a new order.
+message CreateOrder {
+  // See StoreManifest for details
+  bytes event_id = 1;
+}
+
+message UpdateOrder {
+  // See StoreManifest for details
+  bytes event_id = 1;
+  bytes order_id = 2;
+
+  oneof action {
+    ChangeItems change_items = 3;
+    ItemsFinalized items_finalized = 4;
+    OrderCanceled order_canceled = 5;
+  };
+
+  // ChangeItems is used to add or remove items from an order.
+  // Only valid before the items were finalized.
+  message ChangeItems {
+    bytes item_id = 1;
+    sint32 quantity = 2;
+  };
+
+  // Created by the relay after a CommitOrderRequest.
+  // It signals that an order is about to be payed,
+  // and can not be changed anymore.
+  message ItemsFinalized {
+    bytes payment_id = 1; // for verification. Compare against getPaymentId(PaymentReq)
+
+    string sub_total = 2;
+    string sales_tax = 3;
+    string total = 4; // = subtotal + sales_tax
+
+    // PaymentRequest fields that are not obvious to the caller
+    string ttl = 5;
+    bytes order_hash = 6;
+    bytes currency_addr = 7;
+    string total_in_crypto = 8; // "amount" (bigint as string)
+    bytes payee_addr = 9;
+    bool is_payment_endpoint = 10;
+    bytes shop_signature = 11;
+    // end of PaymentRequest data
+  };
+
+  // Either created by a relay for an order that haven't been payed in time.
+  // Or by a clerk, for eg. when the customer steps back from the purchase.
+  // This frees up the items locked up in the finalized order.
+  message OrderCanceled {
+    uint64 timestamp = 1;
+  };
+}
+
+// StoreEvent is the transport wrapper for a single event in a store.
+//
+// For signatures we use https://eips.ethereum.org/EIPS/eip-712.
+// The structured data definition are specified in `typedData.json`.
+// The KeyCard keypair is used to sign or verify the data.
+// The Set of all valid keys is all NewKeyCard events
+// plus the Relays assigned on the StoreReg smart contract.
+//
+// Special care must be taken for Events with optional and union fields.
+// Specifically these are `UpdateManifest`, `UpdateItem` and `ChangeStock`.
+// Some implementations of `eth_signTypedData` are fine with `null` fields,
+// while others aren't.
+// Therefore, the structured data specification
+// needs to be pruned from fields that are not set.
+message StoreEvent {
+  // use ecrecover() to extract the keycard that created the event
+  bytes signature = 1;
+
+  oneof union {
+    StoreManifest store_manifest = 2;
+    UpdateStoreManifest update_store_manifest = 3;
+
+    CreateItem create_item = 4;
+    UpdateItem update_item = 5;
+
+    CreateTag create_tag = 6;
+    UpdateTag update_tag = 7;
+
+    CreateOrder create_order = 8;
+    UpdateOrder update_order = 9;
+
+    ChangeStock change_stock = 12;
+
+    NewKeyCard new_key_card = 13;
+  }
+}
