@@ -17,7 +17,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x65rror.proto\x12\x0bmarket.mass\"?\n\x05\x45rror\x12%\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x17.market.mass.ErrorCodes\x12\x0f\n\x07message\x18\x02 \x01(\t*\xec\x01\n\nErrorCodes\x12\x0b\n\x07unknown\x10\x00\x12\x0c\n\x08notFound\x10\x01\x12\x0b\n\x07invalid\x10\x02\x12\x14\n\x10notAuthenticated\x10\x03\x12\x18\n\x14\x61lreadyAuthenticated\x10\x04\x12\x14\n\x10\x61lreadyConnected\x10\x05\x12\x1d\n\x19tooManyConcurrentRequests\x10\x06\x12\x13\n\x0funlinkedKeyCard\x10\x07\x12\x1c\n\x18minumumVersionNotReached\x10\x08\x12\x0e\n\noutOfStock\x10\t\x12\x0e\n\tsimulated\x10\xa8\x46\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x65rror.proto\x12\x0bmarket.mass\"?\n\x05\x45rror\x12%\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x17.market.mass.ErrorCodes\x12\x0f\n\x07message\x18\x02 \x01(\t*\x80\x03\n\nErrorCodes\x12\x1b\n\x17\x45RROR_CODES_UNSPECIFIED\x10\x00\x12\x19\n\x15\x45RROR_CODES_NOT_FOUND\x10\x01\x12\x17\n\x13\x45RROR_CODES_INVALID\x10\x02\x12!\n\x1d\x45RROR_CODES_NOT_AUTHENTICATED\x10\x03\x12%\n!ERROR_CODES_ALREADY_AUTHENTICATED\x10\x04\x12!\n\x1d\x45RROR_CODES_ALREADY_CONNECTED\x10\x05\x12,\n(ERROR_CODES_TOO_MANY_CONCURRENT_REQUESTS\x10\x06\x12 \n\x1c\x45RROR_CODES_UNLINKED_KEYCARD\x10\x07\x12+\n\'ERROR_CODES_MINUMUM_VERSION_NOT_REACHED\x10\x08\x12\x1c\n\x18\x45RROR_CODES_OUT_OF_STOCK\x10\t\x12\x19\n\x15\x45RROR_CODES_SIMULATED\x10\nb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -25,7 +25,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'error_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _globals['_ERRORCODES']._serialized_start=94
-  _globals['_ERRORCODES']._serialized_end=330
+  _globals['_ERRORCODES']._serialized_end=478
   _globals['_ERROR']._serialized_start=28
   _globals['_ERROR']._serialized_end=91
 # @@protoc_insertion_point(module_scope)

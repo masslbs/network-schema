@@ -11,28 +11,28 @@ DESCRIPTOR: _descriptor.FileDescriptor
 
 class ErrorCodes(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = []
-    unknown: _ClassVar[ErrorCodes]
-    notFound: _ClassVar[ErrorCodes]
-    invalid: _ClassVar[ErrorCodes]
-    notAuthenticated: _ClassVar[ErrorCodes]
-    alreadyAuthenticated: _ClassVar[ErrorCodes]
-    alreadyConnected: _ClassVar[ErrorCodes]
-    tooManyConcurrentRequests: _ClassVar[ErrorCodes]
-    unlinkedKeyCard: _ClassVar[ErrorCodes]
-    minumumVersionNotReached: _ClassVar[ErrorCodes]
-    outOfStock: _ClassVar[ErrorCodes]
-    simulated: _ClassVar[ErrorCodes]
-unknown: ErrorCodes
-notFound: ErrorCodes
-invalid: ErrorCodes
-notAuthenticated: ErrorCodes
-alreadyAuthenticated: ErrorCodes
-alreadyConnected: ErrorCodes
-tooManyConcurrentRequests: ErrorCodes
-unlinkedKeyCard: ErrorCodes
-minumumVersionNotReached: ErrorCodes
-outOfStock: ErrorCodes
-simulated: ErrorCodes
+    ERROR_CODES_UNSPECIFIED: _ClassVar[ErrorCodes]
+    ERROR_CODES_NOT_FOUND: _ClassVar[ErrorCodes]
+    ERROR_CODES_INVALID: _ClassVar[ErrorCodes]
+    ERROR_CODES_NOT_AUTHENTICATED: _ClassVar[ErrorCodes]
+    ERROR_CODES_ALREADY_AUTHENTICATED: _ClassVar[ErrorCodes]
+    ERROR_CODES_ALREADY_CONNECTED: _ClassVar[ErrorCodes]
+    ERROR_CODES_TOO_MANY_CONCURRENT_REQUESTS: _ClassVar[ErrorCodes]
+    ERROR_CODES_UNLINKED_KEYCARD: _ClassVar[ErrorCodes]
+    ERROR_CODES_MINUMUM_VERSION_NOT_REACHED: _ClassVar[ErrorCodes]
+    ERROR_CODES_OUT_OF_STOCK: _ClassVar[ErrorCodes]
+    ERROR_CODES_SIMULATED: _ClassVar[ErrorCodes]
+ERROR_CODES_UNSPECIFIED: ErrorCodes
+ERROR_CODES_NOT_FOUND: ErrorCodes
+ERROR_CODES_INVALID: ErrorCodes
+ERROR_CODES_NOT_AUTHENTICATED: ErrorCodes
+ERROR_CODES_ALREADY_AUTHENTICATED: ErrorCodes
+ERROR_CODES_ALREADY_CONNECTED: ErrorCodes
+ERROR_CODES_TOO_MANY_CONCURRENT_REQUESTS: ErrorCodes
+ERROR_CODES_UNLINKED_KEYCARD: ErrorCodes
+ERROR_CODES_MINUMUM_VERSION_NOT_REACHED: ErrorCodes
+ERROR_CODES_OUT_OF_STOCK: ErrorCodes
+ERROR_CODES_SIMULATED: ErrorCodes
 
 class Error(_message.Message):
     __slots__ = ["code", "message"]

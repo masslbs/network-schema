@@ -12,16 +12,15 @@ message Error {
 }
 
 enum ErrorCodes {
-  unknown = 0;
-  notFound = 1;
-  invalid = 2;
-  notAuthenticated = 3;
-  alreadyAuthenticated = 4;
-  alreadyConnected = 5;
-  tooManyConcurrentRequests = 6;
-  unlinkedKeyCard = 7;
-  minumumVersionNotReached = 8;
-  outOfStock = 9;
-
-  simulated = 9000;
+  ERROR_CODES_UNSPECIFIED = 0;
+  ERROR_CODES_NOT_FOUND = 1;
+  ERROR_CODES_INVALID = 2;
+  ERROR_CODES_NOT_AUTHENTICATED = 3;
+  ERROR_CODES_ALREADY_AUTHENTICATED = 4;
+  ERROR_CODES_ALREADY_CONNECTED = 5;
+  ERROR_CODES_TOO_MANY_CONCURRENT_REQUESTS = 6;
+  ERROR_CODES_UNLINKED_KEYCARD = 7;
+  ERROR_CODES_MINUMUM_VERSION_NOT_REACHED = 8;
+  ERROR_CODES_OUT_OF_STOCK = 9;
+  ERROR_CODES_SIMULATED = 10; // use to signal randmom/simulated errors
 }
