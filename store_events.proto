@@ -150,7 +150,8 @@ message UpdateOrder {
   // It signals that an order is about to be payed,
   // and can not be changed anymore.
   message ItemsFinalized {
-    bytes payment_id = 1; // for verification. Compare against getPaymentId(PaymentReq)
+    // for verification. Compare against getPaymentId(PaymentReq)
+    bytes payment_id = 1;
 
     string sub_total = 2;
     string sales_tax = 3;
