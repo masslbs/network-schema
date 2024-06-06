@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from google.protobuf.internal import containers as _containers
-from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
@@ -23,30 +22,18 @@ class StoreManifest(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., store_token_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ...) -> None: ...
 
 class UpdateStoreManifest(_message.Message):
-    __slots__ = ["event_id", "field", "string", "tag_id", "erc20_addr"]
-    class ManifestField(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-        __slots__ = []
-        MANIFEST_FIELD_UNSPECIFIED: _ClassVar[UpdateStoreManifest.ManifestField]
-        MANIFEST_FIELD_DOMAIN: _ClassVar[UpdateStoreManifest.ManifestField]
-        MANIFEST_FIELD_PUBLISHED_TAG: _ClassVar[UpdateStoreManifest.ManifestField]
-        MANIFEST_FIELD_ADD_ERC20: _ClassVar[UpdateStoreManifest.ManifestField]
-        MANIFEST_FIELD_REMOVE_ERC20: _ClassVar[UpdateStoreManifest.ManifestField]
-    MANIFEST_FIELD_UNSPECIFIED: UpdateStoreManifest.ManifestField
-    MANIFEST_FIELD_DOMAIN: UpdateStoreManifest.ManifestField
-    MANIFEST_FIELD_PUBLISHED_TAG: UpdateStoreManifest.ManifestField
-    MANIFEST_FIELD_ADD_ERC20: UpdateStoreManifest.ManifestField
-    MANIFEST_FIELD_REMOVE_ERC20: UpdateStoreManifest.ManifestField
+    __slots__ = ["event_id", "domain", "published_tag_id", "add_erc20_addr", "remove_erc20_addr"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
-    FIELD_FIELD_NUMBER: _ClassVar[int]
-    STRING_FIELD_NUMBER: _ClassVar[int]
-    TAG_ID_FIELD_NUMBER: _ClassVar[int]
-    ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
+    DOMAIN_FIELD_NUMBER: _ClassVar[int]
+    PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
+    ADD_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
-    field: UpdateStoreManifest.ManifestField
-    string: str
-    tag_id: bytes
-    erc20_addr: bytes
-    def __init__(self, event_id: _Optional[bytes] = ..., field: _Optional[_Union[UpdateStoreManifest.ManifestField, str]] = ..., string: _Optional[str] = ..., tag_id: _Optional[bytes] = ..., erc20_addr: _Optional[bytes] = ...) -> None: ...
+    domain: str
+    published_tag_id: bytes
+    add_erc20_addr: bytes
+    remove_erc20_addr: bytes
+    def __init__(self, event_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_erc20_addr: _Optional[bytes] = ..., remove_erc20_addr: _Optional[bytes] = ...) -> None: ...
 
 class CreateItem(_message.Message):
     __slots__ = ["event_id", "price", "metadata"]
@@ -59,26 +46,16 @@ class CreateItem(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., price: _Optional[str] = ..., metadata: _Optional[bytes] = ...) -> None: ...
 
 class UpdateItem(_message.Message):
-    __slots__ = ["event_id", "item_id", "field", "price", "metadata"]
-    class ItemField(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-        __slots__ = []
-        ITEM_FIELD_UNSPECIFIED: _ClassVar[UpdateItem.ItemField]
-        ITEM_FIELD_PRICE: _ClassVar[UpdateItem.ItemField]
-        ITEM_FIELD_METADATA: _ClassVar[UpdateItem.ItemField]
-    ITEM_FIELD_UNSPECIFIED: UpdateItem.ItemField
-    ITEM_FIELD_PRICE: UpdateItem.ItemField
-    ITEM_FIELD_METADATA: UpdateItem.ItemField
+    __slots__ = ["event_id", "item_id", "price", "metadata"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     ITEM_ID_FIELD_NUMBER: _ClassVar[int]
-    FIELD_FIELD_NUMBER: _ClassVar[int]
     PRICE_FIELD_NUMBER: _ClassVar[int]
     METADATA_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     item_id: bytes
-    field: UpdateItem.ItemField
     price: str
     metadata: bytes
-    def __init__(self, event_id: _Optional[bytes] = ..., item_id: _Optional[bytes] = ..., field: _Optional[_Union[UpdateItem.ItemField, str]] = ..., price: _Optional[str] = ..., metadata: _Optional[bytes] = ...) -> None: ...
+    def __init__(self, event_id: _Optional[bytes] = ..., item_id: _Optional[bytes] = ..., price: _Optional[str] = ..., metadata: _Optional[bytes] = ...) -> None: ...
 
 class CreateTag(_message.Message):
     __slots__ = ["event_id", "name"]
@@ -89,32 +66,20 @@ class CreateTag(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., name: _Optional[str] = ...) -> None: ...
 
 class UpdateTag(_message.Message):
-    __slots__ = ["event_id", "tag_id", "action", "item_id", "new_name", "delete"]
-    class TagAction(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-        __slots__ = []
-        TAG_ACTION_UNSPECIFIED: _ClassVar[UpdateTag.TagAction]
-        TAG_ACTION_ADD_ITEM: _ClassVar[UpdateTag.TagAction]
-        TAG_ACTION_REMOVE_ITEM: _ClassVar[UpdateTag.TagAction]
-        TAG_ACTION_RENAME: _ClassVar[UpdateTag.TagAction]
-        TAG_ACTION_DELETE_TAG: _ClassVar[UpdateTag.TagAction]
-    TAG_ACTION_UNSPECIFIED: UpdateTag.TagAction
-    TAG_ACTION_ADD_ITEM: UpdateTag.TagAction
-    TAG_ACTION_REMOVE_ITEM: UpdateTag.TagAction
-    TAG_ACTION_RENAME: UpdateTag.TagAction
-    TAG_ACTION_DELETE_TAG: UpdateTag.TagAction
+    __slots__ = ["event_id", "tag_id", "add_item_id", "remove_item_id", "delete", "rename"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     TAG_ID_FIELD_NUMBER: _ClassVar[int]
-    ACTION_FIELD_NUMBER: _ClassVar[int]
-    ITEM_ID_FIELD_NUMBER: _ClassVar[int]
-    NEW_NAME_FIELD_NUMBER: _ClassVar[int]
+    ADD_ITEM_ID_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ITEM_ID_FIELD_NUMBER: _ClassVar[int]
     DELETE_FIELD_NUMBER: _ClassVar[int]
+    RENAME_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     tag_id: bytes
-    action: UpdateTag.TagAction
-    item_id: bytes
-    new_name: str
+    add_item_id: bytes
+    remove_item_id: bytes
     delete: bool
-    def __init__(self, event_id: _Optional[bytes] = ..., tag_id: _Optional[bytes] = ..., action: _Optional[_Union[UpdateTag.TagAction, str]] = ..., item_id: _Optional[bytes] = ..., new_name: _Optional[str] = ..., delete: bool = ...) -> None: ...
+    rename: str
+    def __init__(self, event_id: _Optional[bytes] = ..., tag_id: _Optional[bytes] = ..., add_item_id: _Optional[bytes] = ..., remove_item_id: _Optional[bytes] = ..., delete: bool = ..., rename: _Optional[str] = ...) -> None: ...
 
 class ChangeStock(_message.Message):
     __slots__ = ["event_id", "item_ids", "diffs", "order_id", "tx_hash"]
