@@ -60,8 +60,7 @@ events.append(newKc2)
 
 update2 = store_events_pb2.UpdateStoreManifest()
 update2.event_id = random.randbytes(32)
-update2.field = store_events_pb2.UpdateStoreManifest.ManifestField.MANIFEST_FIELD_DOMAIN
-update2.string = "https://store.mass.market"
+update2.domain = "https://store.mass.market"
 events.append(update2)
 
 newTag1 = store_events_pb2.CreateTag()
@@ -71,8 +70,7 @@ events.append(newTag1)
 
 update3 = store_events_pb2.UpdateStoreManifest()
 update3.event_id = random.randbytes(32)
-update3.field = store_events_pb2.UpdateStoreManifest.ManifestField.MANIFEST_FIELD_PUBLISHED_TAG
-update3.tag_id = newTag1.event_id
+update3.published_tag_id = newTag1.event_id
 events.append(update3)
 
 # Add ERC20s
@@ -81,20 +79,17 @@ erc20_two = random.randbytes(20)
 
 addErc20One = store_events_pb2.UpdateStoreManifest()
 addErc20One.event_id = random.randbytes(32)
-addErc20One.field = store_events_pb2.UpdateStoreManifest.ManifestField.MANIFEST_FIELD_ADD_ERC20
-addErc20One.erc20_addr = erc20_one
+addErc20One.add_erc20_addr = erc20_one
 events.append(addErc20One)
 
 addErc20Two = store_events_pb2.UpdateStoreManifest()
 addErc20Two.event_id = random.randbytes(32)
-addErc20Two.field = store_events_pb2.UpdateStoreManifest.ManifestField.MANIFEST_FIELD_ADD_ERC20
-addErc20Two.erc20_addr = erc20_two
+addErc20Two.add_erc20_addr = erc20_two
 events.append(addErc20Two)
 
 rmTokenOne = store_events_pb2.UpdateStoreManifest()
 rmTokenOne.event_id = random.randbytes(32)
-rmTokenOne.field = store_events_pb2.UpdateStoreManifest.ManifestField.MANIFEST_FIELD_REMOVE_ERC20
-rmTokenOne.erc20_addr = erc20_one
+rmTokenOne.remove_erc20_addr = erc20_one
 events.append(rmTokenOne)
 
 # listing managment
@@ -107,14 +102,12 @@ events.append(newItem)
 publishItem = store_events_pb2.UpdateTag()
 publishItem.event_id = random.randbytes(32)
 publishItem.tag_id = newTag1.event_id
-publishItem.action = store_events_pb2.UpdateTag.TAG_ACTION_ADD_ITEM
-publishItem.item_id = newItem.event_id
+publishItem.add_item_id = newItem.event_id
 events.append(publishItem)
 
 changePrice = store_events_pb2.UpdateItem()
 changePrice.event_id = random.randbytes(32)
 changePrice.item_id = newItem.event_id
-changePrice.field = store_events_pb2.UpdateItem.ItemField.ITEM_FIELD_PRICE
 changePrice.price = "23.00"
 events.append(changePrice)
 
@@ -127,15 +120,13 @@ events.append(notPublishedItem)
 publishItem2 = store_events_pb2.UpdateTag()
 publishItem2.event_id = random.randbytes(32)
 publishItem2.tag_id = newTag1.event_id
-publishItem2.action = store_events_pb2.UpdateTag.TAG_ACTION_ADD_ITEM
-publishItem2.item_id = notPublishedItem.event_id
+publishItem2.add_item_id = notPublishedItem.event_id
 events.append(publishItem2)
 
 unpublishItem = store_events_pb2.UpdateTag()
 unpublishItem.event_id = random.randbytes(32)
 unpublishItem.tag_id = newTag1.event_id
-unpublishItem.action = store_events_pb2.UpdateTag.TAG_ACTION_REMOVE_ITEM
-unpublishItem.item_id = notPublishedItem.event_id
+unpublishItem.remove_item_id = notPublishedItem.event_id
 events.append(unpublishItem)
 
 changeStock = store_events_pb2.ChangeStock(item_ids = [newItem.event_id, notPublishedItem.event_id], diffs = [100, 123] )
@@ -316,7 +307,7 @@ output = {
   "reduced": {
     "manifest": {
       "store_token_id": hex(manifest.store_token_id),
-      "domain": update2.string,
+      "domain": update2.domain,
       "published_tag": {
         hex(newTag1.event_id): {
           "text": newTag1.name
@@ -347,7 +338,7 @@ output = {
       }
     },
     # an array of items published
-    "published_items": [hex(publishItem.item_id)],
+    "published_items": [hex(publishItem.add_item_id)],
 
     "open_orders": {
       hex(order1.event_id): {

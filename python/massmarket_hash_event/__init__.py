@@ -33,6 +33,7 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
     event_type = getattr(evt, evt.WhichOneof('union'))
     event_name = event_type.DESCRIPTOR.name
     event_td_spec = event_typedData_spec[event_name].copy()
+    #print(f"hash_event({event_name})")
 
     types = {
         "EIP712Domain": [
@@ -43,47 +44,50 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
         ],
     }
 
+    # TODO: this should be generalized / annotate which fields are optional
+    # {name, type} information should be taken from typedData.json
+
+
     # step 1: remove fields from event_td_spec that are not set in event_td_data
     if event_name == "UpdateStoreManifest":
-        field = event_type.field
-        if field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_DOMAIN:
-            event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
-            event_td_spec.remove({"name": "erc20_addr", "type": "address"})
-        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_PUBLISHED_TAG:
-            event_td_spec.remove({"name": "string", "type": "string"})
-            event_td_spec.remove({"name": "erc20_addr", "type": "address"})
-        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_ADD_ERC20:
-            event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
-            event_td_spec.remove({"name": "string", "type": "string"})
-        elif field == store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_REMOVE_ERC20:
-            event_td_spec.remove({"name": "tag_id", "type": "bytes32"})
-            event_td_spec.remove({"name": "string", "type": "string"})
-        else:
-            raise Exception(f"Unknown field: {field}")
+        event_td_spec = event_td_spec[:1] # only event_id
+
+        if event_type.HasField("domain"):
+            event_td_spec.append({"name": "domain", "type": "string"})
+
+        if event_type.HasField("published_tag_id"):
+            event_td_spec.append({"name": "published_tag_id", "type": "bytes32"})
+
+        if event_type.HasField("add_erc20_addr"):
+            event_td_spec.append({"name": "add_erc20_addr", "type": "address"})
+
+        if event_type.HasField("remove_erc20_addr"):
+            event_td_spec.append({"name": "remove_erc20_addr", "type": "address"})
+
+        #assert len(event_td_spec) > 1
+
     elif event_name == "UpdateItem":
-        field = event_type.field
-        if field == store_events_pb2.UpdateItem.ITEM_FIELD_PRICE:
-            event_td_spec.remove({"name": "metadata", "type": "bytes"})
-        elif field == store_events_pb2.UpdateItem.ITEM_FIELD_METADATA:
-            event_td_spec.remove({"name": "price", "type": "string"})
-        else:
-            raise Exception(f"Unknown field: {field}")
+        event_td_spec = event_td_spec[:2] # event_id and item_id
+
+        if event_type.HasField("price"):
+            event_td_spec.append({"name": "price", "type": "string"})
+
+        if event_type.HasField("metadata"):
+            event_td_spec.append({"name": "metadata", "type": "bytes"})
+
     elif event_name == "UpdateTag":
-        action = event_type.action
-        if action == store_events_pb2.UpdateTag.TAG_ACTION_ADD_ITEM:
-            event_td_spec.remove({"name": "new_name", "type": "string"})
-            event_td_spec.remove({"name": "delete", "type": "bool"})
-        elif action == store_events_pb2.UpdateTag.TAG_ACTION_REMOVE_ITEM:
-            event_td_spec.remove({"name": "new_name", "type": "string"})
-            event_td_spec.remove({"name": "delete", "type": "bool"})
-        elif action == store_events_pb2.UpdateTag.TAG_ACTION_RENAME:
-            event_td_spec.remove({"name": "item_id", "type": "bytes32"})
-            event_td_spec.remove({"name": "delete", "type": "bool"})
-        elif action == store_events_pb2.UpdateTag.TAG_ACTION_DELETE_TAG:
-            event_td_spec.remove({"name": "item_id", "type": "bytes32"})
-            event_td_spec.remove({"name": "new_name", "type": "string"})
-        else:
-            raise Exception(f"Unknown action on UpdateTag: {action}")
+        event_td_spec = event_td_spec[:2] # event_id and tag_id
+
+        if event_type.HasField("rename"):
+            event_td_spec.append({"name": "rename", "type": "string"})
+        if event_type.HasField("delete"):
+            event_td_spec.append({"name": "delete", "type": "bool"})
+        if event_type.HasField("add_item_id"):
+            event_td_spec.append({"name": "add_item_id", "type": "bytes32"})
+        if event_type.HasField("remove_item_id"):
+            event_td_spec.append({"name": "remove_item_id", "type": "bytes32"})
+
+
     elif event_name == "UpdateOrder":
         # UpdateOrder follows a nested message pattern and thus needs slightly differnt handling
         # we are not just pruning the unused values but add the used type to typed_data
@@ -150,7 +154,7 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
         },
         "message": event_td_data
     }
-    pprint(typed_data)
+    #pprint(typed_data)
     return encode_structured_data(typed_data)
 
 def event_to_typedData_dict(evt: store_events_pb2.StoreEvent, spec_for_event):

@@ -32,20 +32,20 @@ def test_hash_empty_event():
     (store_events_pb2.StoreEvent(store_manifest=store_events_pb2.StoreManifest()),
      "0x3d4abe03c92aa50e2b2d59420ea24842e2455690ef1f715e245afe5da9618040"),
 
-    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(field=store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_DOMAIN)),
-      "0x8747c6939554d2f6d4de0be055465d24eeea4be946e2a78dd226c3b9c52747ae"),
+    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest()),
+      "0xf14b1ced4f07519d89e82d4d56bddf367cbf071a47e507fde2061858bace9142"),
 
     (store_events_pb2.StoreEvent(create_item=store_events_pb2.CreateItem()),
       "0x8225d75532d725939e5025e027de840bb5c9c3d2a13a94d17ce495bdd0cdc594"),
 
-    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem(field=store_events_pb2.UpdateItem.ITEM_FIELD_PRICE)),
-      "0x92a19570a7e9bc04c58c984ad7203c5bfd94149cf44eda537fe6a0aefbc9da92"),
+    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem()),
+      "0xdd672db57e0c5a8c4f3b8a0990cb6fdd1a7e9120b6ced01aa85646b78897389b"),
 
     (store_events_pb2.StoreEvent(create_tag=store_events_pb2.CreateTag()),
       "0xa517d7d534cba5e6ebaf002fe765653cbd7beb9cf035641f9c9d1f0b5d3bed74"),
 
-    (store_events_pb2.StoreEvent(update_tag=store_events_pb2.UpdateTag(action=store_events_pb2.UpdateTag.TAG_ACTION_ADD_ITEM)),
-      "0xa8b3551e44d5020bc5dd518f15a9876bc3aa3e6cffad959654664fd7d6b798d3"),
+    (store_events_pb2.StoreEvent(update_tag=store_events_pb2.UpdateTag()),
+      "0x28a94a4382cecf49a5cfd602187567f2719e75a9120cea36c9b14f1d47f7e4cd"),
 
     (store_events_pb2.StoreEvent(create_order=store_events_pb2.CreateOrder()),
       "0x94b3409f62d4be96bbcc399b8eb153e331607e569f1993eadb24f715c86cd2e3"),
@@ -94,20 +94,20 @@ def test_optional_fields():
   assert len(test_event_id) == 32
   test_addr = bytes(bytearray(20))
   events = [
-    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(field=store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_DOMAIN, string="cryptix.pizza")),
-     "0x52d85f147956d3ce5a2377aa5f5c0f85aeada9aa9123ae91d52f5f3a7e7f5435"),
+    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(domain="cryptix.pizza")),
+     "0xe9ad42640da17d9a7e7a3ac81c861196cfbc80223537f4b099e983b85a6cf30f"),
 
-    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(field=store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_PUBLISHED_TAG, tag_id=test_event_id)),
-     "0x18d7dc652fa959e9cc67356421f7af70b9565f2e76290a494427e5740f8b7a8b"),
+    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(published_tag_id=test_event_id)),
+     "0x8e61569e9253d3c2361def961997e1f74f845c3d30f8b5cd27fd2f82902f8340"),
 
-    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(field=store_events_pb2.UpdateStoreManifest.MANIFEST_FIELD_ADD_ERC20, erc20_addr=test_addr)),
-     "0x51ea874edda006c21e7f4642269d63a85129758521e8a9b0a325b25a0a542d19"),
+    (store_events_pb2.StoreEvent(update_store_manifest=store_events_pb2.UpdateStoreManifest(add_erc20_addr=test_addr)),
+     "0x1743f110452b093c2e975fece1cc75378aaddf667c69343014f42a421f307396"),
 
-    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem(field=store_events_pb2.UpdateItem.ITEM_FIELD_PRICE, item_id=test_event_id, price="123.00")),
-      "0xcdf10775185454310cf3965afab693e3de0ecb11af57f4cf3013f0341d9b47b4"),
+    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem(item_id=test_event_id, price="123.00")),
+      "0xd15c3125c09e8ce65d4bce08434d065a339ea3d4b2f9e9a410926c16f5d3fa84"),
 
-    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem(field=store_events_pb2.UpdateItem.ITEM_FIELD_METADATA, item_id=test_event_id, metadata=b'{ "name": "test" }')),
-      "0x88b1733cb885c6bf06bc6d3c12b5a7c08dc66b952759d84a10a1f4c1d7ae3130"),
+    (store_events_pb2.StoreEvent(update_item=store_events_pb2.UpdateItem(item_id=test_event_id, metadata=b'{ "name": "test" }')),
+      "0x16fe5abbbe35d9e269970db6a844f9df697b809a36fc9c36d245685a887ad592"),
 
     (store_events_pb2.StoreEvent(change_stock=store_events_pb2.ChangeStock(item_ids=[test_event_id], diffs=[1])),
       "0xe6c9896786eaa08950cb49cca8ed1ed5fb3c128979ea7bf0d0187e478fcd88d1"),
