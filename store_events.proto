@@ -42,9 +42,9 @@ message UpdateStoreManifest {
   bytes event_id = 1;
 
   optional string domain = 2;
-  optional bytes published_tag_id = 3; 
-  optional bytes add_erc20 = 4;
-  optional bytes remove_erc20 = 5;
+  optional bytes published_tag_id = 3;
+  optional bytes add_erc20_addr = 4;
+  optional bytes remove_erc20_addr = 5;
 }
 
 // Creates an item in the store.
@@ -70,7 +70,7 @@ message UpdateItem {
   bytes item_id = 2; // the event_id of the CreateItem event
 
   optional string price = 3;
-  optional bytes metadata = 4;  
+  optional bytes metadata = 4;
 }
 
 // Creates a tag in the store.
@@ -88,9 +88,10 @@ message UpdateTag {
   bytes event_id = 1;
   bytes tag_id = 2;
 
-  optional bytes add_to_item = 3;
-  optional bytes remove_from_item = 4;
+  optional bytes add_item_id = 3;
+  optional bytes remove_item_id = 4;
   optional bool delete = 5;
+  optional string rename = 6;
 }
 
 // private store information
