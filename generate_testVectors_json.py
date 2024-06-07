@@ -162,18 +162,17 @@ events.append(atc2)
 # created by the relay.
 # client would send a CommitOrderRequest to finalize the order.
 commit_order = store_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order.ttl = "23"
-commit_order.payee_addr = unhex(kc1.address)
+commit_order.ttl = "1"
+commit_order.is_payment_endpoint = True
+commit_order.payee_addr = random.randbytes(20)
 commit_order.payment_id = random.randbytes(32)
 commit_order.currency_addr = random.randbytes(20)
 commit_order.order_hash = random.randbytes(32)
-commit_order.is_payment_endpoint = True
 commit_order.shop_signature = random.randbytes(64)
 commit_order.sub_total = "1764.00" # 42*42
 commit_order.sales_tax = "88.20"   # 5%
 commit_order.total = "1852.20"
 commit_order.total_in_crypto = "1852.20"
-
 update_order = store_events_pb2.UpdateOrder(items_finalized=commit_order)
 update_order.event_id = random.randbytes(32)
 update_order.order_id = order2.event_id
@@ -200,7 +199,7 @@ atc3.order_id = order3.event_id
 events.append(atc3)
 
 commit_order3 = store_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order3.ttl = "1"
+commit_order3.ttl = "2"
 commit_order3.payee_addr = unhex(kc1.address)
 commit_order3.payment_id = random.randbytes(32)
 commit_order3.order_hash = random.randbytes(32)
@@ -236,7 +235,7 @@ atc4.order_id = order4.event_id
 events.append(atc4)
 
 commit_order4 = store_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order4.ttl = "1"
+commit_order4.ttl = "3"
 commit_order4.payee_addr = unhex(kc1.address)
 commit_order4.is_payment_endpoint = False
 commit_order4.payment_id = random.randbytes(32)

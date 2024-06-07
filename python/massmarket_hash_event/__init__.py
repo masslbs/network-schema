@@ -128,11 +128,10 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
         action_fields = action_msg.ListFields()
         for field in action_fields:
             name = field[0].name
-            val = getattr(action_msg, name)
-            action_obj[name] = val
+            action_obj[name] = getattr(action_msg, name)
 
         # Bools that are false are not set on a pb message
-        if "is_payment_endpoint" not in action_fields:
+        if "is_payment_endpoint" not in action_obj:
             action_obj["is_payment_endpoint"] = False
 
         # remove currency_addr if empty
