@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 __all__ = ['hash_event', 'Hasher',
-           'transport_pb2', 'authentication_pb2', 'store_requests_pb2', 'error_pb2',
-           'store_events_pb2']
+           'transport_pb2', 'authentication_pb2', 'shop_requests_pb2', 'error_pb2',
+           'shop_events_pb2']
 
 import json
 import binascii
@@ -13,23 +13,23 @@ from importlib.resources import files
 
 from eth_account.messages import encode_structured_data
 
-from massmarket_hash_event import store_events_pb2
+from massmarket_hash_event import shop_events_pb2
 
 event_typedData_spec = json.loads(files("massmarket_hash_event").joinpath("typedData.json").read_text())
 
 class Hasher:
-    def __init__(self, chain_id: int, storeRegAddress: str):
+    def __init__(self, chain_id: int, shopRegAddress: str):
         self.chain_id = chain_id
-        if not storeRegAddress.startswith("0x"):
-            raise Exception(f"Invalid contract address: {storeRegAddress}")
-        data = binascii.unhexlify(storeRegAddress[2:])
+        if not shopRegAddress.startswith("0x"):
+            raise Exception(f"Invalid contract address: {shopRegAddress}")
+        data = binascii.unhexlify(shopRegAddress[2:])
         if len(data) != 20:
-            raise Exception(f"Invalid contract address: {storeRegAddress}")
-        self.storeRegAddress = storeRegAddress
-    def hash_event(self, evt: store_events_pb2.StoreEvent):
-        return hash_event(evt, self.chain_id, self.storeRegAddress)
+            raise Exception(f"Invalid contract address: {shopRegAddress}")
+        self.shopRegAddress = shopRegAddress
+    def hash_event(self, evt: shop_events_pb2.ShopEvent):
+        return hash_event(evt, self.chain_id, self.shopRegAddress)
 
-def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
+def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
     event_type = getattr(evt, evt.WhichOneof('union'))
     event_name = event_type.DESCRIPTOR.name
     event_td_spec = event_typedData_spec[event_name].copy()
@@ -49,7 +49,7 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
 
 
     # step 1: remove fields from event_td_spec that are not set in event_td_data
-    if event_name == "UpdateStoreManifest":
+    if event_name == "UpdateShopManifest":
         event_td_spec = event_td_spec[:1] # only event_id
 
         if event_type.HasField("domain"):
@@ -149,14 +149,14 @@ def hash_event(evt: store_events_pb2.StoreEvent, chain_id, storeRegAddress):
             "name": "MassMarket",
             "version": "1",
             "chainId": chain_id,
-            "verifyingContract": storeRegAddress,
+            "verifyingContract": shopRegAddress,
         },
         "message": event_td_data
     }
     #pprint(typed_data)
     return encode_structured_data(typed_data)
 
-def event_to_typedData_dict(evt: store_events_pb2.StoreEvent, spec_for_event):
+def event_to_typedData_dict(evt: shop_events_pb2.ShopEvent, spec_for_event):
     which = evt.WhichOneof("union")
     if which is None:
         raise Exception("No event type set")

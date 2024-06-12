@@ -4,7 +4,7 @@
 
 import json
 
-from massmarket_hash_event import store_events_pb2
+from massmarket_hash_event import shop_events_pb2
 
 # helpers
 
@@ -123,7 +123,7 @@ def typed_data_definition(message):
     return fields
 
 # get all the union field in the Event message
-evt = store_events_pb2.StoreEvent()
+evt = shop_events_pb2.ShopEvent()
 union = evt.DESCRIPTOR.oneofs[0]
 
 from google.protobuf import message_factory

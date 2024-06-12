@@ -10,35 +10,35 @@ package market.mass;
 // Events
 // ======
 
-// First genisis message of a store.
+// First genisis message of a shop.
 // Has to be the first message that is written and can only be written once.
-// Use UpdateStoreManifest to make changes.
-message StoreManifest {
+// Use UpdateShopManifest to make changes.
+message ShopManifest {
   // The event_id is a unique identifier for an event.
   // Currently it's 32 bytes of random data.
   // It also functions as a nonce for The events signature.
-  // The global identifier of an Item should also include the store_token_id.
-  // hash(store_token_id:signature) might suffice then with a smaller nonce.
+  // The global identifier of an Item should also include the shop_token_id.
+  // hash(shop_token_id:signature) might suffice then with a smaller nonce.
   bytes event_id = 1;
 
-  // The NFT Token ID used in StoreReg.registerStore().
+  // The NFT Token ID used in ShopReg.registerShop().
   // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
-  bytes store_token_id = 2;
+  bytes shop_token_id = 2;
 
-  // Website URL of the store
+  // Website URL of the shop
   // TODO: might change this to metdata inside the NFT URL.
   string domain = 3;
 
   // the system tag used to list active items
   bytes published_tag_id = 4;
 
-  // erc20s are updated via UpdateStoreManifest
+  // erc20s are updated via UpdateShopManifest
 }
 
-// Used to update the store manifest.
+// Used to update the shop manifest.
 // The Field enum determines the field to be updated and the value to be used.
-message UpdateStoreManifest {
-  // See StoreManifest for details
+message UpdateShopManifest {
+  // See ShopManifest for details
   bytes event_id = 1;
 
   optional string domain = 2;
@@ -47,9 +47,9 @@ message UpdateStoreManifest {
   optional bytes remove_erc20_addr = 5;
 }
 
-// Creates an item in the store.
+// Creates an item in the shop.
 message CreateItem {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
 
   // decimal number as a string.
@@ -65,7 +65,7 @@ message CreateItem {
 // UpdateItem changes the price or metadata of an item.
 // Follows the same pattern as UpdateManifest.
 message UpdateItem {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
   bytes item_id = 2; // the event_id of the CreateItem event
 
@@ -73,18 +73,18 @@ message UpdateItem {
   optional bytes metadata = 4;
 }
 
-// Creates a tag in the store.
+// Creates a tag in the shop.
 // These can be used to group items into categories.
 // There are also a couple of system-level tags, like published.
-// Thse are used to filter items in the store.
+// Thse are used to filter items in the shop.
 message CreateTag {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
   string name = 2;
 }
 
 message UpdateTag {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
   bytes tag_id = 2;
 
@@ -94,13 +94,13 @@ message UpdateTag {
   optional string rename = 6;
 }
 
-// private store information
+// private shop information
 // =========================
 
 // ChangeStock is used to update the stock of on or more items.
 // Created by the relay after an order has been paied for.
 message ChangeStock {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
 
   // length needs to match the length of the diff field
@@ -115,7 +115,7 @@ message ChangeStock {
 
 // created by the relay when a user enrolls a key card
 message NewKeyCard {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
   bytes user_wallet_addr = 2;
   bytes card_public_key = 3;
@@ -124,12 +124,12 @@ message NewKeyCard {
 
 // CreateOrder is used to create a new order.
 message CreateOrder {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
 }
 
 message UpdateOrder {
-  // See StoreManifest for details
+  // See ShopManifest for details
   bytes event_id = 1;
   bytes order_id = 2;
 
@@ -176,13 +176,13 @@ message UpdateOrder {
   };
 }
 
-// StoreEvent is the transport wrapper for a single event in a store.
+// ShopEvent is the transport wrapper for a single event in a shop.
 //
 // For signatures we use https://eips.ethereum.org/EIPS/eip-712.
 // The structured data definition are specified in `typedData.json`.
 // The KeyCard keypair is used to sign or verify the data.
 // The Set of all valid keys is all NewKeyCard events
-// plus the Relays assigned on the StoreReg smart contract.
+// plus the Relays assigned on the ShopReg smart contract.
 //
 // Special care must be taken for Events with optional and union fields.
 // Specifically these are `UpdateManifest`, `UpdateItem` and `ChangeStock`.
@@ -190,13 +190,13 @@ message UpdateOrder {
 // while others aren't.
 // Therefore, the structured data specification
 // needs to be pruned from fields that are not set.
-message StoreEvent {
+message ShopEvent {
   // use ecrecover() to extract the keycard that created the event
   bytes signature = 1;
 
   oneof union {
-    StoreManifest store_manifest = 2;
-    UpdateStoreManifest update_store_manifest = 3;
+    ShopManifest shop_manifest = 2;
+    UpdateShopManifest update_shop_manifest = 3;
 
     CreateItem create_item = 4;
     UpdateItem update_item = 5;

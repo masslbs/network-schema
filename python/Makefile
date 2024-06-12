@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 OUT=massmarket_hash_event/
-PROTO_FILES = transport.proto authentication.proto store_requests.proto store_events.proto error.proto
+PROTO_FILES = transport.proto authentication.proto shop_requests.proto shop_events.proto error.proto
 PROTO_PY_FILES = $(PROTO_FILES:.proto=_pb2.py)
 PROTO_PYI_FILES = $(PROTO_FILES:.proto=_pb2.pyi)
 PROTO_PY_OUT = $(addprefix ${OUT}, $(PROTO_PY_FILES))

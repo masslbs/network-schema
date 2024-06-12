@@ -20,16 +20,16 @@ class EventWriteRequest(_message.Message):
     def __init__(self, request_id: _Optional[bytes] = ..., event: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...) -> None: ...
 
 class EventWriteResponse(_message.Message):
-    __slots__ = ["request_id", "error", "new_store_hash", "event_sequence_no"]
+    __slots__ = ["request_id", "error", "new_shop_hash", "event_sequence_no"]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    NEW_STORE_HASH_FIELD_NUMBER: _ClassVar[int]
+    NEW_SHOP_HASH_FIELD_NUMBER: _ClassVar[int]
     EVENT_SEQUENCE_NO_FIELD_NUMBER: _ClassVar[int]
     request_id: bytes
     error: _error_pb2.Error
-    new_store_hash: bytes
+    new_shop_hash: bytes
     event_sequence_no: int
-    def __init__(self, request_id: _Optional[bytes] = ..., error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ..., new_store_hash: _Optional[bytes] = ..., event_sequence_no: _Optional[int] = ...) -> None: ...
+    def __init__(self, request_id: _Optional[bytes] = ..., error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ..., new_shop_hash: _Optional[bytes] = ..., event_sequence_no: _Optional[int] = ...) -> None: ...
 
 class EventPushRequest(_message.Message):
     __slots__ = ["request_id", "events"]

@@ -4,7 +4,7 @@
 
 // This file defines the transport protocol between relays and clients.
 // It's main purpose is transfer of events of the higher application levels.
-// It is orthogonal to the store registry and other smart contracts.
+// It is orthogonal to the shop registry and other smart contracts.
 //
 // Messages must be prefixed with their acompanying encoding number
 // as a single byte. encoding.txt defines the number for each message.
@@ -27,8 +27,8 @@
 // As of this version, the protocol is grouped into 4 areas:
 // 1) the transport (this file)
 // 2) authentication for establishing access rights
-// 3) store specific requets
-// 4) store events
+// 3) shop specific requets
+// 4) shop events
 //
 syntax = "proto3";
 
@@ -42,7 +42,7 @@ import "error.proto";
 // Event syncronization
 // ====================
 
-// Used by the Client to write a single event to the store.
+// Used by the Client to write a single event to the shop.
 message EventWriteRequest {
   bytes request_id = 1;
   google.protobuf.Any event = 2;
@@ -50,12 +50,12 @@ message EventWriteRequest {
 
 // Might return an error if the event or its signature is invalid.
 // If no error is returned,
-// the new_store_hash is the hash of the store with the new event applied.
-// The event_sequence_no is the index of the event in the stores log.
+// the new_shop_hash is the hash of the shop with the new event applied.
+// The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
   bytes request_id = 1;
   Error error = 2;
-  bytes new_store_hash = 3;
+  bytes new_shop_hash = 3;
   uint64 event_sequence_no = 4;
 }
 

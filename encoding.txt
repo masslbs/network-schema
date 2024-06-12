@@ -12,7 +12,7 @@ authenticateRequest 20
 authenticateResponse 21
 challengeSolvedRequest 22
 challengeSolvedResponse 23
-# store
+# shop
 getBlobUploadURLRequest 30
 getBlobUploadURLResponse 31
 commitItemsToOrderRequest 32
