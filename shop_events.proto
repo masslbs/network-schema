@@ -33,6 +33,11 @@ message ShopManifest {
   bytes published_tag_id = 4;
 
   // erc20s are updated via UpdateShopManifest
+
+  // shop metadata
+  string name = 5;
+  string description = 6;
+  string profile_picture_url = 7;
 }
 
 // Used to update the shop manifest.
@@ -45,6 +50,9 @@ message UpdateShopManifest {
   optional bytes published_tag_id = 3;
   optional bytes add_erc20_addr = 4;
   optional bytes remove_erc20_addr = 5;
+  optional string name = 6;
+  optional string description = 7;
+  optional string profile_picture_url = 8;
 }
 
 // Creates an item in the shop.

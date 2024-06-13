@@ -64,7 +64,14 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
         if event_type.HasField("remove_erc20_addr"):
             event_td_spec.append({"name": "remove_erc20_addr", "type": "address"})
 
-        #assert len(event_td_spec) > 1
+        if event_type.HasField("name"):
+            event_td_spec.append({"name": "name", "type": "string"})
+
+        if event_type.HasField("description"):
+            event_td_spec.append({"name": "description", "type": "string"})
+
+        if event_type.HasField("profile_picture_url"):
+            event_td_spec.append({"name": "profile_picture_url", "type": "string"})
 
     elif event_name == "UpdateItem":
         event_td_spec = event_td_spec[:2] # event_id and item_id

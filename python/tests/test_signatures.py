@@ -30,7 +30,7 @@ def test_hash_empty_event():
   pk = Account.from_key("0x1234567890123456789012345678901234567890123456789012345678901234")
   events = [
     (shop_events_pb2.ShopEvent(shop_manifest=shop_events_pb2.ShopManifest()),
-     "0x2659803f9b08cf8bd11936f537784cb62932b37cdb16f7b44a712ecfdcf4f359"),
+     "0x7ee4efb60d8e75f85279bf77a624d9e4a06c229967b364994aade0a62f07aa0a"),
 
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest()),
       "0x85bbef285ac2f6bd688923693d88a9a753bda5261d4b71b9142903166e8fc588"),

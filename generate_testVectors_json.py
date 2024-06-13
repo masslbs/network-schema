@@ -73,6 +73,17 @@ update3.event_id = random.randbytes(32)
 update3.published_tag_id = newTag1.event_id
 events.append(update3)
 
+updateMeta1 = shop_events_pb2.UpdateShopManifest()
+updateMeta1.event_id = random.randbytes(32)
+updateMeta1.name = "little shop of horrors"
+updateMeta1.description = "Seymour and Audrey are going digital!"
+events.append(updateMeta1)
+
+updateMeta2 = shop_events_pb2.UpdateShopManifest()
+updateMeta2.event_id = random.randbytes(32)
+updateMeta2.profile_picture_url = "https://s3.amazonaws.com/nightjarprod/content/uploads/sites/34/2019/04/28111813/bxRm8F7rnCsVDyrNh3K9yIFFBKL.jpg"
+events.append(updateMeta2)
+
 # Add ERC20s
 erc20_one = random.randbytes(20)
 erc20_two = random.randbytes(20)
@@ -306,6 +317,9 @@ output = {
   "reduced": {
     "manifest": {
       "shop_token_id": hex(manifest.shop_token_id),
+      "name": updateMeta1.name,
+      "description": updateMeta1.description,
+      "profile_picture_url": updateMeta2.profile_picture_url,
       "domain": update2.domain,
       "published_tag": {
         hex(newTag1.event_id): {

@@ -10,30 +10,42 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ShopManifest(_message.Message):
-    __slots__ = ["event_id", "shop_token_id", "domain", "published_tag_id"]
+    __slots__ = ["event_id", "shop_token_id", "domain", "published_tag_id", "name", "description", "profile_picture_url"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     SHOP_TOKEN_ID_FIELD_NUMBER: _ClassVar[int]
     DOMAIN_FIELD_NUMBER: _ClassVar[int]
     PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
+    PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     shop_token_id: bytes
     domain: str
     published_tag_id: bytes
-    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ...) -> None: ...
+    name: str
+    description: str
+    profile_picture_url: str
+    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
 
 class UpdateShopManifest(_message.Message):
-    __slots__ = ["event_id", "domain", "published_tag_id", "add_erc20_addr", "remove_erc20_addr"]
+    __slots__ = ["event_id", "domain", "published_tag_id", "add_erc20_addr", "remove_erc20_addr", "name", "description", "profile_picture_url"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     DOMAIN_FIELD_NUMBER: _ClassVar[int]
     PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
     ADD_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
     REMOVE_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
+    PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     domain: str
     published_tag_id: bytes
     add_erc20_addr: bytes
     remove_erc20_addr: bytes
-    def __init__(self, event_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_erc20_addr: _Optional[bytes] = ..., remove_erc20_addr: _Optional[bytes] = ...) -> None: ...
+    name: str
+    description: str
+    profile_picture_url: str
+    def __init__(self, event_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_erc20_addr: _Optional[bytes] = ..., remove_erc20_addr: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
 
 class CreateItem(_message.Message):
     __slots__ = ["event_id", "price", "metadata"]
