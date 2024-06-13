@@ -10,42 +10,62 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ShopManifest(_message.Message):
-    __slots__ = ["event_id", "shop_token_id", "domain", "published_tag_id", "name", "description", "profile_picture_url"]
+    __slots__ = ["event_id", "shop_token_id", "published_tag_id", "name", "description", "profile_picture_url", "domain"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     SHOP_TOKEN_ID_FIELD_NUMBER: _ClassVar[int]
-    DOMAIN_FIELD_NUMBER: _ClassVar[int]
     PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
+    DOMAIN_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     shop_token_id: bytes
-    domain: str
     published_tag_id: bytes
     name: str
     description: str
     profile_picture_url: str
-    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
+    domain: str
+    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ...) -> None: ...
 
 class UpdateShopManifest(_message.Message):
-    __slots__ = ["event_id", "domain", "published_tag_id", "add_erc20_addr", "remove_erc20_addr", "name", "description", "profile_picture_url"]
+    __slots__ = ["event_id", "name", "description", "profile_picture_url", "domain", "published_tag_id", "update_payee", "add_accepted_currency", "remove_accepted_currency", "set_base_currency"]
+    class Payee(_message.Message):
+        __slots__ = ["chain", "addr", "call_as_contract"]
+        CHAIN_FIELD_NUMBER: _ClassVar[int]
+        ADDR_FIELD_NUMBER: _ClassVar[int]
+        CALL_AS_CONTRACT_FIELD_NUMBER: _ClassVar[int]
+        chain: int
+        addr: bytes
+        call_as_contract: bool
+        def __init__(self, chain: _Optional[int] = ..., addr: _Optional[bytes] = ..., call_as_contract: bool = ...) -> None: ...
+    class ShopCurrency(_message.Message):
+        __slots__ = ["chain", "addr"]
+        CHAIN_FIELD_NUMBER: _ClassVar[int]
+        ADDR_FIELD_NUMBER: _ClassVar[int]
+        chain: int
+        addr: bytes
+        def __init__(self, chain: _Optional[int] = ..., addr: _Optional[bytes] = ...) -> None: ...
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
-    DOMAIN_FIELD_NUMBER: _ClassVar[int]
-    PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
-    ADD_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
+    DOMAIN_FIELD_NUMBER: _ClassVar[int]
+    PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PAYEE_FIELD_NUMBER: _ClassVar[int]
+    ADD_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    SET_BASE_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
-    domain: str
-    published_tag_id: bytes
-    add_erc20_addr: bytes
-    remove_erc20_addr: bytes
     name: str
     description: str
     profile_picture_url: str
-    def __init__(self, event_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_erc20_addr: _Optional[bytes] = ..., remove_erc20_addr: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
+    domain: str
+    published_tag_id: bytes
+    update_payee: UpdateShopManifest.Payee
+    add_accepted_currency: UpdateShopManifest.ShopCurrency
+    remove_accepted_currency: UpdateShopManifest.ShopCurrency
+    set_base_currency: UpdateShopManifest.ShopCurrency
+    def __init__(self, event_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., update_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., add_accepted_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ..., remove_accepted_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ..., set_base_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ...) -> None: ...
 
 class CreateItem(_message.Message):
     __slots__ = ["event_id", "price", "metadata"]

@@ -84,23 +84,28 @@ updateMeta2.event_id = random.randbytes(32)
 updateMeta2.profile_picture_url = "https://s3.amazonaws.com/nightjarprod/content/uploads/sites/34/2019/04/28111813/bxRm8F7rnCsVDyrNh3K9yIFFBKL.jpg"
 events.append(updateMeta2)
 
-# Add ERC20s
+# Add Currencies
+zero_addr = bytes(20)
+vanilla_eth = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=1, addr=zero_addr)
+addEth = shop_events_pb2.UpdateShopManifest(add_accepted_currency=vanilla_eth)
+addEth.event_id = random.randbytes(32)
+events.append(addEth)
+
 erc20_one = random.randbytes(20)
 erc20_two = random.randbytes(20)
 
-addErc20One = shop_events_pb2.UpdateShopManifest()
+c_one = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=1, addr=erc20_one)
+addErc20One = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_one)
 addErc20One.event_id = random.randbytes(32)
-addErc20One.add_erc20_addr = erc20_one
 events.append(addErc20One)
 
-addErc20Two = shop_events_pb2.UpdateShopManifest()
+c_two = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=23, addr=erc20_two)
+addErc20Two = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_two)
 addErc20Two.event_id = random.randbytes(32)
-addErc20Two.add_erc20_addr = erc20_two
 events.append(addErc20Two)
 
-rmTokenOne = shop_events_pb2.UpdateShopManifest()
+rmTokenOne = shop_events_pb2.UpdateShopManifest(remove_accepted_currency=c_one)
 rmTokenOne.event_id = random.randbytes(32)
-rmTokenOne.remove_erc20_addr = erc20_one
 events.append(rmTokenOne)
 
 # listing managment
@@ -326,10 +331,11 @@ output = {
           "text": newTag1.name
         }
       },
-      "enabled_erc20s": {
-          hex(erc20_one): False,
-          hex(erc20_two): True,
-      },
+      "accepted_currencies": [
+          {"chain": 1, "addr": hex(zero_addr)},
+          {"chain": 23, "addr": hex(erc20_two)},
+      ],
+      "base_currency": {"chain": 1, "addr": hex(zero_addr)},
     },
     "keycards": {
       hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),
