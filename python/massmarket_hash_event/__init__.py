@@ -46,6 +46,18 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
 
     # TODO: this should be generalized / annotate which fields are optional
     # {name, type} information should be taken from typedData.json
+    types["shop_currency"] = [
+        { "name": "chain", "type": "uint64" },
+        { "name": "addr", "type": "address" }
+    ]
+
+    types["payee"] = [
+        { "name": "chain", "type": "uint64" },
+        { "name": "addr", "type": "address" },
+        { "name": "use_payment_contract", "type": "bool" }
+    ]
+
+    manifest_update_nested_fields = ["add_accepted_currency", "remove_accepted_currency", "set_base_currency", "update_payee"]
 
 
     # step 1: remove fields from event_td_spec that are not set in event_td_data
@@ -58,12 +70,6 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
         if event_type.HasField("published_tag_id"):
             event_td_spec.append({"name": "published_tag_id", "type": "bytes32"})
 
-        if event_type.HasField("add_erc20_addr"):
-            event_td_spec.append({"name": "add_erc20_addr", "type": "address"})
-
-        if event_type.HasField("remove_erc20_addr"):
-            event_td_spec.append({"name": "remove_erc20_addr", "type": "address"})
-
         if event_type.HasField("name"):
             event_td_spec.append({"name": "name", "type": "string"})
 
@@ -72,6 +78,13 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
 
         if event_type.HasField("profile_picture_url"):
             event_td_spec.append({"name": "profile_picture_url", "type": "string"})
+
+        if event_type.HasField("add_accepted_currency"):
+            event_td_spec.append({"name": "add_accepted_currency", "type": "shop_currency"})
+
+        if event_type.HasField("remove_accepted_currency"):
+            event_td_spec.append({"name": "remove_accepted_currency", "type": "shop_currency"})
+
 
     elif event_name == "UpdateItem":
         event_td_spec = event_td_spec[:2] # event_id and item_id
@@ -132,8 +145,7 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
         action_msg = getattr(event_type, action)
         action_obj = {}
 
-        action_fields = action_msg.ListFields()
-        for field in action_fields:
+        for field in action_msg.ListFields():
             name = field[0].name
             action_obj[name] = getattr(action_msg, name)
 
@@ -147,6 +159,22 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
 
         # replace nested protobuf thing
         event_td_data[action] = action_obj
+    elif event_name == "UpdateShopManifest":
+      set_fields = [event_type.HasField(f) for f in manifest_update_nested_fields]
+      for (idx, hasField) in enumerate(set_fields):
+          if not hasField:
+              continue
+          this_field = manifest_update_nested_fields[idx]
+          sub_msg = getattr(event_type, this_field)
+          obj = {}
+
+          for f in sub_msg.ListFields():
+              name = f[0].name
+              obj[name] = getattr(sub_msg, name)
+
+          # replace nested protobuf thing
+          event_td_data[this_field] = obj
+
 
     types[event_name] = event_td_spec
     typed_data = {
@@ -160,7 +188,7 @@ def hash_event(evt: shop_events_pb2.ShopEvent, chain_id, shopRegAddress):
         },
         "message": event_td_data
     }
-    #pprint(typed_data)
+    # pprint(typed_data)
     return encode_structured_data(typed_data)
 
 def event_to_typedData_dict(evt: shop_events_pb2.ShopEvent, spec_for_event):

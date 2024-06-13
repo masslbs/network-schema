@@ -30,7 +30,7 @@ def test_hash_empty_event():
   pk = Account.from_key("0x1234567890123456789012345678901234567890123456789012345678901234")
   events = [
     (shop_events_pb2.ShopEvent(shop_manifest=shop_events_pb2.ShopManifest()),
-     "0x7ee4efb60d8e75f85279bf77a624d9e4a06c229967b364994aade0a62f07aa0a"),
+     "0xd759d9766d1adecf8a948544a3339c8a73306b787a525e33fcee9989297171f8"),
 
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest()),
       "0x85bbef285ac2f6bd688923693d88a9a753bda5261d4b71b9142903166e8fc588"),
@@ -92,7 +92,8 @@ def test_optional_fields():
   pk = Account.from_key("0x1234567890123456789012345678901234567890123456789012345678901234")
   test_event_id = binascii.unhexlify("beef" * 16)
   assert len(test_event_id) == 32
-  test_addr = bytes(bytearray(20))
+  test_addr = bytes(20)
+  test_currency = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=42, addr=test_addr)
   events = [
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(domain="cryptix.pizza")),
      "0x96819fb3b634e1c6d690f75ba43279f1eb2a23016ae4db0a00b1e7badb1b7fa2"),
@@ -100,8 +101,8 @@ def test_optional_fields():
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(published_tag_id=test_event_id)),
      "0x8bee526dd02c85ceeaac7217ee74eca062709654d5cd2b976e37b4feeb6fecd1"),
 
-    (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(add_erc20_addr=test_addr)),
-     "0xe9ee0646767d8a1769e5979f46d95746dc4dd1de59b177781ed51f792df4ee4e"),
+    (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(set_base_currency=test_currency)),
+     "0x2a07e820193194f25a07940f9f41c0196c3411f51abd065c8ac2f2190b98cfdb"),
 
     (shop_events_pb2.ShopEvent(update_item=shop_events_pb2.UpdateItem(item_id=test_event_id, price="123.00")),
       "0xd15c3125c09e8ce65d4bce08434d065a339ea3d4b2f9e9a410926c16f5d3fa84"),

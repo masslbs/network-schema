@@ -9,10 +9,6 @@
       "type": "bytes32"
     },
     {
-      "name": "domain",
-      "type": "string"
-    },
-    {
       "name": "published_tag_id",
       "type": "bytes32"
     },
@@ -26,6 +22,10 @@
     },
     {
       "name": "profile_picture_url",
+      "type": "string"
+    },
+    {
+      "name": "domain",
       "type": "string"
     }
   ],
@@ -35,22 +35,6 @@
       "type": "bytes32"
     },
     {
-      "name": "domain",
-      "type": "string"
-    },
-    {
-      "name": "published_tag_id",
-      "type": "bytes32"
-    },
-    {
-      "name": "add_erc20_addr",
-      "type": "address"
-    },
-    {
-      "name": "remove_erc20_addr",
-      "type": "address"
-    },
-    {
       "name": "name",
       "type": "string"
     },
@@ -61,6 +45,70 @@
     {
       "name": "profile_picture_url",
       "type": "string"
+    },
+    {
+      "name": "domain",
+      "type": "string"
+    },
+    {
+      "name": "published_tag_id",
+      "type": "bytes32"
+    },
+    {
+      "name": "update_payee",
+      "message": [
+        {
+          "name": "chain",
+          "type": "uint64"
+        },
+        {
+          "name": "addr",
+          "type": "address"
+        },
+        {
+          "name": "call_as_contract",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "add_accepted_currency",
+      "message": [
+        {
+          "name": "chain",
+          "type": "uint64"
+        },
+        {
+          "name": "addr",
+          "type": "address"
+        }
+      ]
+    },
+    {
+      "name": "remove_accepted_currency",
+      "message": [
+        {
+          "name": "chain",
+          "type": "uint64"
+        },
+        {
+          "name": "addr",
+          "type": "address"
+        }
+      ]
+    },
+    {
+      "name": "set_base_currency",
+      "message": [
+        {
+          "name": "chain",
+          "type": "uint64"
+        },
+        {
+          "name": "addr",
+          "type": "address"
+        }
+      ]
     }
   ],
   "CreateItem": [

@@ -18,7 +18,7 @@ build:
 	${PYTHON} -m build -n
 
 publish:
-	${PYTHON} -m twine upload dist/massmarket_hash_event-${VERSION}.tar.gz
+	${PYTHON} -m twine upload dist/massmarket_hash_event-${VERSION}*
 
 %_pb2.py %_pb2.pyi: ../%.proto
 	protoc -I=.. --python_out=${OUT} $<
