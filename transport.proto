@@ -42,10 +42,15 @@ import "error.proto";
 // Event syncronization
 // ====================
 
+message SignedEvent {
+  google.protobuf.Any event = 1;
+  bytes signature = 2; // EIP-191 of any.value
+}
+
 // Used by the Client to write a single event to the shop.
 message EventWriteRequest {
   bytes request_id = 1;
-  google.protobuf.Any event = 2;
+  SignedEvent event = 2;
 }
 
 // Might return an error if the event or its signature is invalid.
@@ -63,7 +68,7 @@ message EventWriteResponse {
 // Will not sent more events until the client has acknowledged the last batch.
 message EventPushRequest {
   bytes request_id = 1;
-  repeated google.protobuf.Any events = 2;
+  repeated SignedEvent events = 2;
 }
 
 message EventPushResponse {

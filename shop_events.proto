@@ -199,9 +199,6 @@ message UpdateOrder {
 // Therefore, the structured data specification
 // needs to be pruned from fields that are not set.
 message ShopEvent {
-  // use ecrecover() to extract the keycard that created the event
-  bytes signature = 1;
-
   oneof union {
     ShopManifest shop_manifest = 2;
     UpdateShopManifest update_shop_manifest = 3;
