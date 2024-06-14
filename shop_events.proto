@@ -6,9 +6,7 @@ syntax = "proto3";
 
 package market.mass;
 
-// ======
-// Events
-// ======
+import "shop.proto";
 
 // First genisis message of a shop.
 // Has to be the first message that is written and can only be written once.
@@ -52,26 +50,21 @@ message UpdateShopManifest {
   optional bytes published_tag_id = 6;
 
   message Payee {
-    uint64 chain = 1;
+    string name = 1; // user handle, like "escrow" or "direct", used during checkout
     bytes addr = 2;
+    uint64 chain_id = 3;
+
     // controls weather the payment is transfered via forwarded via pay() method or not.
     // see https://github.com/masslbs/contracts/blob/377aba24796e029945696350db581ec1f65da657/src/IPayments.sol#L90-L95.
-    bool call_as_contract = 3;
+    bool call_as_contract = 4;
   };
 
-  optional Payee update_payee = 7;
+  optional Payee add_payee = 7;
+  optional Payee remove_payee = 8;
 
-  message ShopCurrency {
-    uint64 chain = 1;
-
-    // The contract address for an ERC20.
-    // 20 zero bytes for native chain currency, like ETH.
-    bytes addr = 2;
-  };
-
-  optional ShopCurrency add_accepted_currency = 8;
-  optional ShopCurrency remove_accepted_currency = 9;
-  optional ShopCurrency set_base_currency = 10;
+  optional ShopCurrency add_accepted_currency = 9;
+  optional ShopCurrency remove_accepted_currency = 10;
+  optional ShopCurrency set_base_currency = 11;
 }
 
 // Creates an item in the shop.
@@ -188,7 +181,7 @@ message UpdateOrder {
     string ttl = 5;
     bytes order_hash = 6;
     bytes currency_addr = 7;
-    string total_in_crypto = 8; // "amount" (bigint as string)
+    bytes total_in_crypto = 8; // big-endian uint256
     bytes payee_addr = 9;
     bool is_payment_endpoint = 10;
     bytes shop_signature = 11;
@@ -218,9 +211,6 @@ message UpdateOrder {
 // Therefore, the structured data specification
 // needs to be pruned from fields that are not set.
 message ShopEvent {
-  // use ecrecover() to extract the keycard that created the event
-  bytes signature = 1;
-
   oneof union {
     ShopManifest shop_manifest = 2;
     UpdateShopManifest update_shop_manifest = 3;

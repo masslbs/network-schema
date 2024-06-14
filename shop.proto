@@ -1,0 +1,15 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+message ShopCurrency {
+  uint64 chain_id = 1;
+
+  // Contract address for an ERC20 token.
+  // 20 zero bytes for native chain currency, like ETH.
+  bytes token_addr = 2;
+};

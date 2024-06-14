@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "massmarket_hash_event"
-version = "2.0.0-alpha5"
+version = "2.0.0-alpha7"
 authors = [
     {name = "Henry Bubert", email = "henry@mass.market"},
 ]

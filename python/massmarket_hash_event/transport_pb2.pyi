@@ -11,13 +11,21 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class SignedEvent(_message.Message):
+    __slots__ = ["event", "signature"]
+    EVENT_FIELD_NUMBER: _ClassVar[int]
+    SIGNATURE_FIELD_NUMBER: _ClassVar[int]
+    event: _any_pb2.Any
+    signature: bytes
+    def __init__(self, event: _Optional[_Union[_any_pb2.Any, _Mapping]] = ..., signature: _Optional[bytes] = ...) -> None: ...
+
 class EventWriteRequest(_message.Message):
     __slots__ = ["request_id", "event"]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     EVENT_FIELD_NUMBER: _ClassVar[int]
     request_id: bytes
-    event: _any_pb2.Any
-    def __init__(self, request_id: _Optional[bytes] = ..., event: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...) -> None: ...
+    event: SignedEvent
+    def __init__(self, request_id: _Optional[bytes] = ..., event: _Optional[_Union[SignedEvent, _Mapping]] = ...) -> None: ...
 
 class EventWriteResponse(_message.Message):
     __slots__ = ["request_id", "error", "new_shop_hash", "event_sequence_no"]
@@ -36,8 +44,8 @@ class EventPushRequest(_message.Message):
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     request_id: bytes
-    events: _containers.RepeatedCompositeFieldContainer[_any_pb2.Any]
-    def __init__(self, request_id: _Optional[bytes] = ..., events: _Optional[_Iterable[_Union[_any_pb2.Any, _Mapping]]] = ...) -> None: ...
+    events: _containers.RepeatedCompositeFieldContainer[SignedEvent]
+    def __init__(self, request_id: _Optional[bytes] = ..., events: _Optional[_Iterable[_Union[SignedEvent, _Mapping]]] = ...) -> None: ...
 
 class EventPushResponse(_message.Message):
     __slots__ = ["request_id", "error"]
