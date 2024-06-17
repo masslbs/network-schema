@@ -6,6 +6,9 @@ syntax = "proto3";
 
 package market.mass;
 
+import "error.proto";
+
+
 // ======
 // Events
 // ======
@@ -14,13 +17,6 @@ package market.mass;
 // Has to be the first message that is written and can only be written once.
 // Use UpdateShopManifest to make changes.
 message ShopManifest {
-  // The event_id is a unique identifier for an event.
-  // Currently it's 32 bytes of random data.
-  // It also functions as a nonce for The events signature.
-  // The global identifier of an Item should also include the shop_token_id.
-  // hash(shop_token_id:signature) might suffice then with a smaller nonce.
-  bytes event_id = 1;
-
   // The NFT Token ID used in ShopReg.registerShop().
   // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
   bytes shop_token_id = 2;
@@ -43,9 +39,6 @@ message ShopManifest {
 // Used to update the shop manifest.
 // The Field enum determines the field to be updated and the value to be used.
 message UpdateShopManifest {
-  // See ShopManifest for details
-  bytes event_id = 1;
-
   optional string domain = 2;
   optional bytes published_tag_id = 3;
   optional bytes add_erc20_addr = 4;
@@ -57,9 +50,6 @@ message UpdateShopManifest {
 
 // Creates an item in the shop.
 message CreateItem {
-  // See ShopManifest for details
-  bytes event_id = 1;
-
   // decimal number as a string.
   // numbers need to be always formatted to 2 decimal places.
   // the demcimal place must use a dot ('.') as the separator.
@@ -73,8 +63,6 @@ message CreateItem {
 // UpdateItem changes the price or metadata of an item.
 // Follows the same pattern as UpdateManifest.
 message UpdateItem {
-  // See ShopManifest for details
-  bytes event_id = 1;
   bytes item_id = 2; // the event_id of the CreateItem event
 
   optional string price = 3;
@@ -86,14 +74,10 @@ message UpdateItem {
 // There are also a couple of system-level tags, like published.
 // Thse are used to filter items in the shop.
 message CreateTag {
-  // See ShopManifest for details
-  bytes event_id = 1;
   string name = 2;
 }
 
 message UpdateTag {
-  // See ShopManifest for details
-  bytes event_id = 1;
   bytes tag_id = 2;
 
   optional bytes add_item_id = 3;
@@ -108,44 +92,35 @@ message UpdateTag {
 // ChangeStock is used to update the stock of on or more items.
 // Created by the relay after an order has been paied for.
 message ChangeStock {
-  // See ShopManifest for details
-  bytes event_id = 1;
-
   // length needs to match the length of the diff field
   repeated bytes item_ids = 2;
   repeated sint32 diffs = 3;
 
-  // (optional) only set by the relay.
-  // signals payment completion after a CommitOrderRequest
-  bytes order_id = 4;
-  bytes tx_hash = 5;
+  optional bytes order_id = 4;
 }
 
 // created by the relay when a user enrolls a key card
 message NewKeyCard {
-  // See ShopManifest for details
-  bytes event_id = 1;
   bytes user_wallet_addr = 2;
   bytes card_public_key = 3;
   bool is_guest = 4;
 }
 
-// CreateOrder is used to create a new order.
-message CreateOrder {
-  // See ShopManifest for details
-  bytes event_id = 1;
-}
 
 message UpdateOrder {
-  // See ShopManifest for details
-  bytes event_id = 1;
   bytes order_id = 2;
 
   oneof action {
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     OrderCanceled order_canceled = 5;
+    PaymentCompleted payment_completed = 6;
+    CreateOrder create_order = 7;
   };
+
+  // CreateOrder is used to create a new order.
+  message CreateOrder {
+  }
 
   // ChangeItems is used to add or remove items from an order.
   // Only valid before the items were finalized.
@@ -153,6 +128,18 @@ message UpdateOrder {
     bytes item_id = 1;
     sint32 quantity = 2;
   };
+
+  // Initiate check out of a cart
+  message CommitItems {
+    bytes erc20_addr = 3; // unset means vanilla ETH
+    uint64 chain_id = 4;
+  }
+
+
+  // Returns an error if the cart is already finalized.
+  message CommitItemsError {
+    Error error = 2;
+  }
 
   // Created by the relay after a CommitOrderRequest.
   // It signals that an order is about to be payed,
@@ -182,6 +169,10 @@ message UpdateOrder {
   message OrderCanceled {
     uint64 timestamp = 1;
   };
+
+  message PaymentCompleted {
+     bytes tx_hash = 5;
+  };
 }
 
 // ShopEvent is the transport wrapper for a single event in a shop.
@@ -199,6 +190,12 @@ message UpdateOrder {
 // Therefore, the structured data specification
 // needs to be pruned from fields that are not set.
 message ShopEvent {
+  // The event_id is a unique identifier for an event.
+  // Currently it's 32 bytes of random data.
+  // It also functions as a nonce for The events signature.
+  // The global identifier of an Item should also include the shop_token_id.
+  // hash(shop_token_id:signature) might suffice then with a smaller nonce.
+  bytes event_id = 1;
   oneof union {
     ShopManifest shop_manifest = 2;
     UpdateShopManifest update_shop_manifest = 3;

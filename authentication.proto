@@ -10,7 +10,6 @@ import "error.proto";
 
 // Initiates the challenge/response protocol.
 message AuthenticateRequest {
-  // See PingRequest for details
   bytes public_key = 2; // of their keyCard
 }
 
