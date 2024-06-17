@@ -49,14 +49,12 @@ message EntryPointMessage {
     PingRequest ping_request = 8;
     PingResponse ping_response = 9;
     // shop requests
-    CommitItemsToOrderRequest commit_items_to_order_request = 10;
-    CommitItemsToOrderResponse commit_items_to_order_response = 11;
-    GetBlobUploadURLRequest get_blob_upload_url_request = 12;
-    GetBlobUploadURLResponse get_blob_upload_url_response = 13;
+    GetBlobUploadURLRequest get_blob_upload_url_request = 10;
+    GetBlobUploadURLResponse get_blob_upload_url_response = 11;
     // authentification messages
-    AuthenticateRequest auth_request = 14; 
-    AuthenticateResponse auth_response = 15;
-    ChallengeSolvedRequest challenge_solution_request = 16;
-    ChallengeSolvedResponse challenge_solution_response = 17;
+    AuthenticateRequest auth_request = 12; 
+    AuthenticateResponse auth_response = 13;
+    ChallengeSolvedRequest challenge_solution_request = 14;
+    ChallengeSolvedResponse challenge_solution_response = 15;
   }
 }

@@ -8,20 +8,6 @@ package market.mass;
 
 import "error.proto";
 
-// Initiate check out of a cart
-message CommitItemsToOrderRequest {
-  bytes order_id = 2;
-  bytes erc20_addr = 3; // unset means vanilla ETH
-  uint64 chain_id = 4;
-}
-
-// Returns an error if the cart is already finalized.
-// No error blocks further changes to a cart and starts the payment process.
-message CommitItemsToOrderResponse {
-  Error error = 2;
-  bytes order_finalized_id = 3;
-}
-
 // Get an URL to upload a blob to.
 // This exists for future-proofing the protocol
 // and reduce stress on the websocket connection.

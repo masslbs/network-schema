@@ -10,23 +10,24 @@ import "error.proto";
 
 // Initiates the challenge/response protocol.
 message AuthenticateRequest {
-  // See PingRequest for details
-  bytes public_key = 2; // of their keyCard
+  bytes public_key = 1; // of their keyCard
 }
 
 // Returns an error if the public key is not an enrolled KeyCard.
 // or a challenge to be signed by the KeyCard.
 message AuthenticateResponse {
-  Error error = 2;
-  bytes challenge = 3;
+  oneof response {
+    Error error = 1;
+    bytes challenge = 2;
+  }
 }
 
 // Completes authentication by supplying the signature over the challenge.
 message ChallengeSolvedRequest {
-  bytes signature = 2;
+  bytes signature = 1;
 }
 
 // No error means the user is authenticated.
 message ChallengeSolvedResponse {
-  Error error = 2;
+  optional Error error = 1;
 }

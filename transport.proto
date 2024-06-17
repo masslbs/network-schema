@@ -57,9 +57,15 @@ message EventWriteRequest {
 // the new_shop_hash is the hash of the shop with the new event applied.
 // The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
-  Error error = 2;
-  bytes new_shop_hash = 3;
-  uint64 event_sequence_no = 4;
+  oneof response {
+    Error error = 2;
+    Success success = 3;
+  } 
+
+  message Success {
+    bytes new_shop_hash = 1;
+    uint64 event_sequence_no = 2;
+  }
 }
 
 // Used by the relay to push events to the client.
@@ -69,7 +75,7 @@ message EventPushRequest {
 }
 
 message EventPushResponse {
-  Error error = 2;
+  optional Error error = 2;
 }
 
 // Sent by the relay to signal the number of unpushed events.
@@ -78,7 +84,7 @@ message SyncStatusRequest {
 }
 
 message SyncStatusResponse {
-  Error error = 2;
+  optional Error error = 2;
 }
 
 // Sent by the relay to check for the clients liveness.
@@ -88,5 +94,5 @@ message PingRequest{
 }
 
 message PingResponse {
-  Error error = 2;
+  optional Error error = 2;
 }
