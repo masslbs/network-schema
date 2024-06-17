@@ -12,8 +12,7 @@ random.seed("mass-market-test-vectors")
 
 from protobuf_to_dict import protobuf_to_dict
 
-from massmarket_hash_event import Hasher, shop_events_pb2
-hasher = Hasher(31337, "0x0000000000000000000000001234567890abcdef")
+from massmarket_hash_event import hash_event, shop_events_pb2
 
 from web3 import Account
 
@@ -296,7 +295,7 @@ for idx, evt in enumerate(events):
   else:
     raise Exception(f"Unknown event type: {type_name}")
 
-  h = hasher.hash_event(wrapped)
+  h = hash_event(wrapped)
   msg = kc1.sign_message(h)
   wrapped.signature = msg.signature
 
@@ -314,8 +313,6 @@ for idx, evt in enumerate(events):
 
 output = {
   "signatures": {
-    "chain_id": hasher.chain_id,
-    "contract_address": hasher.shopRegAddress,
     "signer_address": kc1.address,
   },
   "events": wrapped_events,

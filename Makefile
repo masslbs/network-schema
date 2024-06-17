@@ -4,15 +4,12 @@
 
 .phony: all lint reuse
 
-all: testVectors.json typedData.json python-package reuse
+all: testVectors.json python-package reuse
 
 python-package:
 	make -C python
 
-typedData.json: generate_typedData_json.py *.proto
-	PYTHONPATH=$$PYTHONPATH:$(PWD)/python $(PYTHON) ./generate_typedData_json.py
-
-testVectors.json: generate_testVectors_json.py typedData.json
+testVectors.json: generate_testVectors_json.py
 	PYTHONPATH=$$PYTHONPATH:$(PWD)/python $(PYTHON) ./generate_testVectors_json.py
 
 lint:

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
-#
-# SPDX-License-Identifier: MIT
-
 from massmarket_hash_event import error_pb2 as _error_pb2
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
