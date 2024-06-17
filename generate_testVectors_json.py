@@ -297,7 +297,7 @@ for idx, evt in enumerate(events):
 
   h = hash_event(wrapped)
   msg = kc1.sign_message(h)
-  wrapped.signature = msg.signature
+  #pprint.pprint(msg)
 
   debug(pprint.pformat(wrapped))
   bin = wrapped.SerializeToString()

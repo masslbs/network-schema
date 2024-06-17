@@ -53,6 +53,9 @@ def test_hash_empty_event():
     evt_name = evt.WhichOneof("union")
     assert msg_hash == expected, f"Failed on event {idx} ({evt_name})"
 
+
+from pprint import pprint
+
 # check that the test vectors we generated are valid
 def test_verify_vector_file():
   with open("../testVectors.json") as f:
@@ -65,10 +68,10 @@ def test_verify_vector_file():
   for idx, evt in enumerate(vector['events']):
     parsed = shop_events_pb2.ShopEvent()
     parsed.ParseFromString(bytes.fromhex(evt['encoded']))
-    assert len(parsed.signature) == 65, f"invalid signature on event {idx}"
     print(f"hashing {idx}")
+    pprint(evt)
     encoded_data = hash_event(parsed)
-    pub_key = Account.recover_message(encoded_data, signature=parsed.signature)
+    pub_key = Account.recover_message(encoded_data, signature=evt["signature"])
     their_addr = Web3.to_checksum_address(pub_key)
     assert their_addr == signer, f"invalid signer on event {idx}"
 
@@ -80,25 +83,25 @@ def test_optional_fields():
   test_currency = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=42, addr=test_addr)
   events = [
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(domain="cryptix.pizza")),
-     "0x96819fb3b634e1c6d690f75ba43279f1eb2a23016ae4db0a00b1e7badb1b7fa2"),
+     "0x8a492edbcde76fabb5289ef6cbce5497d6fe7f47f40d2ecd08ef8464a3df6728"),
 
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(published_tag_id=test_event_id)),
-     "0x8bee526dd02c85ceeaac7217ee74eca062709654d5cd2b976e37b4feeb6fecd1"),
+     "0x4e38b37be03dfafdd2ce4801d06d6fbbe444cd01ff4b8dc6b1c68855df154432"),
 
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(set_base_currency=test_currency)),
-     "0x2a07e820193194f25a07940f9f41c0196c3411f51abd065c8ac2f2190b98cfdb"),
+     "0xe5efb1888ae5401942ddfba777f6f20d7fa3e89820ac131d55bd06599488a559"),
 
     (shop_events_pb2.ShopEvent(update_item=shop_events_pb2.UpdateItem(item_id=test_event_id, price="123.00")),
-      "0xd15c3125c09e8ce65d4bce08434d065a339ea3d4b2f9e9a410926c16f5d3fa84"),
+      "0xd3e8a09891568e3bfb5b3556a0de093c1906d9609b2992021fb20aa227a8ba85"),
 
     (shop_events_pb2.ShopEvent(update_item=shop_events_pb2.UpdateItem(item_id=test_event_id, metadata=b'{ "name": "test" }')),
-      "0x16fe5abbbe35d9e269970db6a844f9df697b809a36fc9c36d245685a887ad592"),
+      "0x0ee4003b9fc7c111e53c4a085b59898e9a0ace380044c7f7c945b5983a360dd3"),
 
     (shop_events_pb2.ShopEvent(change_stock=shop_events_pb2.ChangeStock(item_ids=[test_event_id], diffs=[1])),
-      "0xe6c9896786eaa08950cb49cca8ed1ed5fb3c128979ea7bf0d0187e478fcd88d1"),
+      "0xb5d719f8e03391080d93585110d2b1fe6ba5f3dc7340dc92eef60cbee3bb3daa"),
 
     (shop_events_pb2.ShopEvent(change_stock=shop_events_pb2.ChangeStock(item_ids=[test_event_id], diffs=[1], order_id=test_event_id, tx_hash=bytes(bytearray(32)))),
-      "0x20d541a8d06cbbde3810533a4314b939eebe43ab19d0a9b134c7d5c2a2f379f8"),
+      "0xa4053e374ff7e6c404ff9d577eda736ae36bedf26a4a8a877f2b0f7814a29f95"),
   ]
   for idx, (evt, expected) in enumerate(events):
     data = hash_event(evt)

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -193,8 +197,7 @@ class UpdateOrder(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., order_id: _Optional[bytes] = ..., change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ..., items_finalized: _Optional[_Union[UpdateOrder.ItemsFinalized, _Mapping]] = ..., order_canceled: _Optional[_Union[UpdateOrder.OrderCanceled, _Mapping]] = ...) -> None: ...
 
 class ShopEvent(_message.Message):
-    __slots__ = ["signature", "shop_manifest", "update_shop_manifest", "create_item", "update_item", "create_tag", "update_tag", "create_order", "update_order", "change_stock", "new_key_card"]
-    SIGNATURE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["shop_manifest", "update_shop_manifest", "create_item", "update_item", "create_tag", "update_tag", "create_order", "update_order", "change_stock", "new_key_card"]
     SHOP_MANIFEST_FIELD_NUMBER: _ClassVar[int]
     UPDATE_SHOP_MANIFEST_FIELD_NUMBER: _ClassVar[int]
     CREATE_ITEM_FIELD_NUMBER: _ClassVar[int]
@@ -205,7 +208,6 @@ class ShopEvent(_message.Message):
     UPDATE_ORDER_FIELD_NUMBER: _ClassVar[int]
     CHANGE_STOCK_FIELD_NUMBER: _ClassVar[int]
     NEW_KEY_CARD_FIELD_NUMBER: _ClassVar[int]
-    signature: bytes
     shop_manifest: ShopManifest
     update_shop_manifest: UpdateShopManifest
     create_item: CreateItem
@@ -216,4 +218,4 @@ class ShopEvent(_message.Message):
     update_order: UpdateOrder
     change_stock: ChangeStock
     new_key_card: NewKeyCard
-    def __init__(self, signature: _Optional[bytes] = ..., shop_manifest: _Optional[_Union[ShopManifest, _Mapping]] = ..., update_shop_manifest: _Optional[_Union[UpdateShopManifest, _Mapping]] = ..., create_item: _Optional[_Union[CreateItem, _Mapping]] = ..., update_item: _Optional[_Union[UpdateItem, _Mapping]] = ..., create_tag: _Optional[_Union[CreateTag, _Mapping]] = ..., update_tag: _Optional[_Union[UpdateTag, _Mapping]] = ..., create_order: _Optional[_Union[CreateOrder, _Mapping]] = ..., update_order: _Optional[_Union[UpdateOrder, _Mapping]] = ..., change_stock: _Optional[_Union[ChangeStock, _Mapping]] = ..., new_key_card: _Optional[_Union[NewKeyCard, _Mapping]] = ...) -> None: ...
+    def __init__(self, shop_manifest: _Optional[_Union[ShopManifest, _Mapping]] = ..., update_shop_manifest: _Optional[_Union[UpdateShopManifest, _Mapping]] = ..., create_item: _Optional[_Union[CreateItem, _Mapping]] = ..., update_item: _Optional[_Union[UpdateItem, _Mapping]] = ..., create_tag: _Optional[_Union[CreateTag, _Mapping]] = ..., update_tag: _Optional[_Union[UpdateTag, _Mapping]] = ..., create_order: _Optional[_Union[CreateOrder, _Mapping]] = ..., update_order: _Optional[_Union[UpdateOrder, _Mapping]] = ..., change_stock: _Optional[_Union[ChangeStock, _Mapping]] = ..., new_key_card: _Optional[_Union[NewKeyCard, _Mapping]] = ...) -> None: ...
