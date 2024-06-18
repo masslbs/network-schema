@@ -10,7 +10,7 @@ random.seed("massmarket-testing")
 
 from web3 import Account, Web3
 
-from massmarket_hash_event import hash_event, shop_events_pb2
+from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
 
 def test_hash_empty_event():
   pk = Account.from_key("0x1234567890123456789012345678901234567890123456789012345678901234")
@@ -69,7 +69,6 @@ def test_verify_vector_file():
     parsed = shop_events_pb2.ShopEvent()
     parsed.ParseFromString(bytes.fromhex(evt['encoded']))
     print(f"hashing {idx}")
-    pprint(evt)
     encoded_data = hash_event(parsed)
     pub_key = Account.recover_message(encoded_data, signature=evt["signature"])
     their_addr = Web3.to_checksum_address(pub_key)
@@ -80,7 +79,7 @@ def test_optional_fields():
   test_event_id = binascii.unhexlify("beef" * 16)
   assert len(test_event_id) == 32
   test_addr = bytes(20)
-  test_currency = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=42, addr=test_addr)
+  test_currency = shop_pb2.ShopCurrency(chain_id=42, token_addr=test_addr)
   events = [
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(domain="cryptix.pizza")),
      "0x8a492edbcde76fabb5289ef6cbce5497d6fe7f47f40d2ecd08ef8464a3df6728"),
@@ -89,7 +88,7 @@ def test_optional_fields():
      "0x4e38b37be03dfafdd2ce4801d06d6fbbe444cd01ff4b8dc6b1c68855df154432"),
 
     (shop_events_pb2.ShopEvent(update_shop_manifest=shop_events_pb2.UpdateShopManifest(set_base_currency=test_currency)),
-     "0xe5efb1888ae5401942ddfba777f6f20d7fa3e89820ac131d55bd06599488a559"),
+     "0x3e7f32f280d8fcc767a9494e320a7b0bbb3c8165d2b90453070a2dc9af22e752"),
 
     (shop_events_pb2.ShopEvent(update_item=shop_events_pb2.UpdateItem(item_id=test_event_id, price="123.00")),
       "0xd3e8a09891568e3bfb5b3556a0de093c1906d9609b2992021fb20aa227a8ba85"),

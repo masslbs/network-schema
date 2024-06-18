@@ -12,7 +12,7 @@ random.seed("mass-market-test-vectors")
 
 from protobuf_to_dict import protobuf_to_dict
 
-from massmarket_hash_event import hash_event, shop_events_pb2
+from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
 
 from web3 import Account
 
@@ -85,7 +85,7 @@ events.append(updateMeta2)
 
 # Add Currencies
 zero_addr = bytes(20)
-vanilla_eth = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=1, addr=zero_addr)
+vanilla_eth = shop_pb2.ShopCurrency(chain_id=1, token_addr=zero_addr)
 addEth = shop_events_pb2.UpdateShopManifest(add_accepted_currency=vanilla_eth)
 addEth.event_id = random.randbytes(32)
 events.append(addEth)
@@ -93,12 +93,12 @@ events.append(addEth)
 erc20_one = random.randbytes(20)
 erc20_two = random.randbytes(20)
 
-c_one = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=1, addr=erc20_one)
+c_one = shop_pb2.ShopCurrency(chain_id=1, token_addr=erc20_one)
 addErc20One = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_one)
 addErc20One.event_id = random.randbytes(32)
 events.append(addErc20One)
 
-c_two = shop_events_pb2.UpdateShopManifest.ShopCurrency(chain=23, addr=erc20_two)
+c_two = shop_pb2.ShopCurrency(chain_id=23, token_addr=erc20_two)
 addErc20Two = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_two)
 addErc20Two.event_id = random.randbytes(32)
 events.append(addErc20Two)

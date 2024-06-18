@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from massmarket_hash_event import shop_pb2 as _shop_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -28,30 +29,26 @@ class ShopManifest(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ...) -> None: ...
 
 class UpdateShopManifest(_message.Message):
-    __slots__ = ["event_id", "name", "description", "profile_picture_url", "domain", "published_tag_id", "update_payee", "add_accepted_currency", "remove_accepted_currency", "set_base_currency"]
+    __slots__ = ["event_id", "name", "description", "profile_picture_url", "domain", "published_tag_id", "add_payee", "remove_payee", "add_accepted_currency", "remove_accepted_currency", "set_base_currency"]
     class Payee(_message.Message):
-        __slots__ = ["chain", "addr", "call_as_contract"]
-        CHAIN_FIELD_NUMBER: _ClassVar[int]
+        __slots__ = ["name", "addr", "chain_id", "call_as_contract"]
+        NAME_FIELD_NUMBER: _ClassVar[int]
         ADDR_FIELD_NUMBER: _ClassVar[int]
+        CHAIN_ID_FIELD_NUMBER: _ClassVar[int]
         CALL_AS_CONTRACT_FIELD_NUMBER: _ClassVar[int]
-        chain: int
+        name: str
         addr: bytes
+        chain_id: int
         call_as_contract: bool
-        def __init__(self, chain: _Optional[int] = ..., addr: _Optional[bytes] = ..., call_as_contract: bool = ...) -> None: ...
-    class ShopCurrency(_message.Message):
-        __slots__ = ["chain", "addr"]
-        CHAIN_FIELD_NUMBER: _ClassVar[int]
-        ADDR_FIELD_NUMBER: _ClassVar[int]
-        chain: int
-        addr: bytes
-        def __init__(self, chain: _Optional[int] = ..., addr: _Optional[bytes] = ...) -> None: ...
+        def __init__(self, name: _Optional[str] = ..., addr: _Optional[bytes] = ..., chain_id: _Optional[int] = ..., call_as_contract: bool = ...) -> None: ...
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
     DOMAIN_FIELD_NUMBER: _ClassVar[int]
     PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PAYEE_FIELD_NUMBER: _ClassVar[int]
+    ADD_PAYEE_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_PAYEE_FIELD_NUMBER: _ClassVar[int]
     ADD_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     REMOVE_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     SET_BASE_CURRENCY_FIELD_NUMBER: _ClassVar[int]
@@ -61,11 +58,12 @@ class UpdateShopManifest(_message.Message):
     profile_picture_url: str
     domain: str
     published_tag_id: bytes
-    update_payee: UpdateShopManifest.Payee
-    add_accepted_currency: UpdateShopManifest.ShopCurrency
-    remove_accepted_currency: UpdateShopManifest.ShopCurrency
-    set_base_currency: UpdateShopManifest.ShopCurrency
-    def __init__(self, event_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., update_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., add_accepted_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ..., remove_accepted_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ..., set_base_currency: _Optional[_Union[UpdateShopManifest.ShopCurrency, _Mapping]] = ...) -> None: ...
+    add_payee: UpdateShopManifest.Payee
+    remove_payee: UpdateShopManifest.Payee
+    add_accepted_currency: _shop_pb2.ShopCurrency
+    remove_accepted_currency: _shop_pb2.ShopCurrency
+    set_base_currency: _shop_pb2.ShopCurrency
+    def __init__(self, event_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., remove_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., add_accepted_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ..., remove_accepted_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ..., set_base_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ...) -> None: ...
 
 class CreateItem(_message.Message):
     __slots__ = ["event_id", "price", "metadata"]

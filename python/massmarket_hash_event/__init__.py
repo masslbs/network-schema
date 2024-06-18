@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 __all__ = ['hash_event',
-           'transport_pb2', 'authentication_pb2', 'shop_requests_pb2', 'error_pb2',
+           'transport_pb2', 'authentication_pb2', 'shop_pb2', 'shop_requests_pb2', 'error_pb2',
            'shop_events_pb2']
 
 import json
