@@ -172,11 +172,11 @@ class UpdateOrder(_message.Message):
         ttl: str
         order_hash: bytes
         currency_addr: bytes
-        total_in_crypto: str
+        total_in_crypto: bytes
         payee_addr: bytes
         is_payment_endpoint: bool
         shop_signature: bytes
-        def __init__(self, payment_id: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., ttl: _Optional[str] = ..., order_hash: _Optional[bytes] = ..., currency_addr: _Optional[bytes] = ..., total_in_crypto: _Optional[str] = ..., payee_addr: _Optional[bytes] = ..., is_payment_endpoint: bool = ..., shop_signature: _Optional[bytes] = ...) -> None: ...
+        def __init__(self, payment_id: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., ttl: _Optional[str] = ..., order_hash: _Optional[bytes] = ..., currency_addr: _Optional[bytes] = ..., total_in_crypto: _Optional[bytes] = ..., payee_addr: _Optional[bytes] = ..., is_payment_endpoint: bool = ..., shop_signature: _Optional[bytes] = ...) -> None: ...
     class OrderCanceled(_message.Message):
         __slots__ = ["timestamp"]
         TIMESTAMP_FIELD_NUMBER: _ClassVar[int]

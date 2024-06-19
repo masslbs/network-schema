@@ -187,7 +187,7 @@ commit_order.shop_signature = random.randbytes(64)
 commit_order.sub_total = "1764.00" # 42*42
 commit_order.sales_tax = "88.20"   # 5%
 commit_order.total = "1852.20"
-commit_order.total_in_crypto = "1852.20"
+commit_order.total_in_crypto = int(185220).to_bytes(32, 'big')
 update_order = shop_events_pb2.UpdateOrder(items_finalized=commit_order)
 update_order.event_id = random.randbytes(32)
 update_order.order_id = order2.event_id
@@ -223,7 +223,7 @@ commit_order3.shop_signature = random.randbytes(64)
 commit_order3.sub_total = "42.00"
 commit_order3.sales_tax = "2.10"
 commit_order3.total = "44.10"
-commit_order3.total_in_crypto = "xxxx"
+commit_order3.total_in_crypto = int(4410).to_bytes(32, "big")
 update_order2 = shop_events_pb2.UpdateOrder(items_finalized=commit_order3)
 update_order2.event_id = random.randbytes(32)
 update_order2.order_id = order3.event_id
@@ -259,7 +259,7 @@ commit_order4.shop_signature = random.randbytes(64)
 commit_order4.sub_total = "168.00"
 commit_order4.sales_tax = "8.40"
 commit_order4.total = "176.40"
-commit_order4.total_in_crypto = "xxxx"
+commit_order4.total_in_crypto = int(17640).to_bytes(32, "big")
 update_order3 = shop_events_pb2.UpdateOrder(items_finalized=commit_order4)
 update_order3.event_id = random.randbytes(32)
 update_order3.order_id = order4.event_id

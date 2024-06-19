@@ -181,7 +181,7 @@ message UpdateOrder {
     string ttl = 5;
     bytes order_hash = 6;
     bytes currency_addr = 7;
-    string total_in_crypto = 8; // "amount" (bigint as string)
+    bytes total_in_crypto = 8; // big-endian uint256
     bytes payee_addr = 9;
     bool is_payment_endpoint = 10;
     bytes shop_signature = 11;
