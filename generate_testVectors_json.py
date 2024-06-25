@@ -265,6 +265,20 @@ update_order3.event_id = random.randbytes(32)
 update_order3.order_id = order4.event_id
 events.append(update_order3)
 
+addr = shop_events_pb2.UpdateOrder.AddressDetails()
+addr.name = "Max Mustermann"
+addr.address1 = "Somestreet 1"
+# addr2 is empty
+addr.city = "City"
+addr.postal_code = "12345"
+addr.country = "Isla de Muerta"
+addr.phone_number = "+0155512345"
+update_order4 = shop_events_pb2.UpdateOrder(update_shipping_details=addr)
+update_order4.event_id = random.randbytes(32)
+update_order4.order_id = order4.event_id
+events.append(update_order4)
+
+
 wrapped_events = []
 for idx, evt in enumerate(events):
   type_name = evt.__class__.__name__
