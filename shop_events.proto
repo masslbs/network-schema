@@ -157,6 +157,7 @@ message UpdateOrder {
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     OrderCanceled order_canceled = 5;
+    AddressDetails update_shipping_details = 6;
   };
 
   // ChangeItems is used to add or remove items from an order.
@@ -193,6 +194,16 @@ message UpdateOrder {
   // This frees up the items locked up in the finalized order.
   message OrderCanceled {
     uint64 timestamp = 1;
+  };
+
+  message AddressDetails {
+    string name = 1;
+    string address1 = 2;
+    string address2 = 3;
+    string city = 4;
+    string postal_code = 5;
+    string country = 6;
+    string phone_number = 7;
   };
 }
 
