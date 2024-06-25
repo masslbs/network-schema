@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package market.mass;
 
-import "shop.proto";
 import "error.proto";
+import "shop.proto";
 
 // Initiate check out of a cart
 message CommitItemsToOrderRequest {

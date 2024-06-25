@@ -50,12 +50,18 @@ message UpdateShopManifest {
   optional bytes published_tag_id = 6;
 
   message Payee {
-    string name = 1; // user handle, like "escrow" or "direct", used during checkout
+    // user handle, like "escrow" or "direct", used during checkout
+    string name = 1;
     bytes addr = 2;
     uint64 chain_id = 3;
 
-    // controls weather the payment is transfered via forwarded via pay() method or not.
-    // see https://github.com/masslbs/contracts/blob/377aba24796e029945696350db581ec1f65da657/src/IPayments.sol#L90-L95.
+    // controls how the payment is reaches the payee.
+    // true:  forwarded via pay() method
+    // false: normal transfer
+    // See also:
+    // https://github.com/masslbs/contracts/
+    // commit: 377aba24796e029945696350db581ec1f65da657
+    // file: src/IPayments.sol#L90-L95.
     bool call_as_contract = 4;
   };
 
