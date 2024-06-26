@@ -144,7 +144,7 @@ class CreateOrder(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ...) -> None: ...
 
 class UpdateOrder(_message.Message):
-    __slots__ = ["event_id", "order_id", "change_items", "items_finalized", "order_canceled"]
+    __slots__ = ["event_id", "order_id", "change_items", "items_finalized", "order_canceled", "update_shipping_details"]
     class ChangeItems(_message.Message):
         __slots__ = ["item_id", "quantity"]
         ITEM_ID_FIELD_NUMBER: _ClassVar[int]
@@ -182,17 +182,36 @@ class UpdateOrder(_message.Message):
         TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
         timestamp: int
         def __init__(self, timestamp: _Optional[int] = ...) -> None: ...
+    class AddressDetails(_message.Message):
+        __slots__ = ["name", "address1", "address2", "city", "postal_code", "country", "phone_number"]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        ADDRESS1_FIELD_NUMBER: _ClassVar[int]
+        ADDRESS2_FIELD_NUMBER: _ClassVar[int]
+        CITY_FIELD_NUMBER: _ClassVar[int]
+        POSTAL_CODE_FIELD_NUMBER: _ClassVar[int]
+        COUNTRY_FIELD_NUMBER: _ClassVar[int]
+        PHONE_NUMBER_FIELD_NUMBER: _ClassVar[int]
+        name: str
+        address1: str
+        address2: str
+        city: str
+        postal_code: str
+        country: str
+        phone_number: str
+        def __init__(self, name: _Optional[str] = ..., address1: _Optional[str] = ..., address2: _Optional[str] = ..., city: _Optional[str] = ..., postal_code: _Optional[str] = ..., country: _Optional[str] = ..., phone_number: _Optional[str] = ...) -> None: ...
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     CHANGE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FINALIZED_FIELD_NUMBER: _ClassVar[int]
     ORDER_CANCELED_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_SHIPPING_DETAILS_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     order_id: bytes
     change_items: UpdateOrder.ChangeItems
     items_finalized: UpdateOrder.ItemsFinalized
     order_canceled: UpdateOrder.OrderCanceled
-    def __init__(self, event_id: _Optional[bytes] = ..., order_id: _Optional[bytes] = ..., change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ..., items_finalized: _Optional[_Union[UpdateOrder.ItemsFinalized, _Mapping]] = ..., order_canceled: _Optional[_Union[UpdateOrder.OrderCanceled, _Mapping]] = ...) -> None: ...
+    update_shipping_details: UpdateOrder.AddressDetails
+    def __init__(self, event_id: _Optional[bytes] = ..., order_id: _Optional[bytes] = ..., change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ..., items_finalized: _Optional[_Union[UpdateOrder.ItemsFinalized, _Mapping]] = ..., order_canceled: _Optional[_Union[UpdateOrder.OrderCanceled, _Mapping]] = ..., update_shipping_details: _Optional[_Union[UpdateOrder.AddressDetails, _Mapping]] = ...) -> None: ...
 
 class ShopEvent(_message.Message):
     __slots__ = ["shop_manifest", "update_shop_manifest", "create_item", "update_item", "create_tag", "update_tag", "create_order", "update_order", "change_stock", "new_key_card"]

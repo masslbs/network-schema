@@ -50,12 +50,18 @@ message UpdateShopManifest {
   optional bytes published_tag_id = 6;
 
   message Payee {
-    string name = 1; // user handle, like "escrow" or "direct", used during checkout
+    // user handle, like "escrow" or "direct", used during checkout
+    string name = 1;
     bytes addr = 2;
     uint64 chain_id = 3;
 
-    // controls weather the payment is transfered via forwarded via pay() method or not.
-    // see https://github.com/masslbs/contracts/blob/377aba24796e029945696350db581ec1f65da657/src/IPayments.sol#L90-L95.
+    // controls how the payment is reaches the payee.
+    // true:  forwarded via pay() method
+    // false: normal transfer
+    // See also:
+    // https://github.com/masslbs/contracts/
+    // commit: 377aba24796e029945696350db581ec1f65da657
+    // file: src/IPayments.sol#L90-L95.
     bool call_as_contract = 4;
   };
 
@@ -157,6 +163,7 @@ message UpdateOrder {
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     OrderCanceled order_canceled = 5;
+    AddressDetails update_shipping_details = 6;
   };
 
   // ChangeItems is used to add or remove items from an order.
@@ -193,6 +200,16 @@ message UpdateOrder {
   // This frees up the items locked up in the finalized order.
   message OrderCanceled {
     uint64 timestamp = 1;
+  };
+
+  message AddressDetails {
+    string name = 1;
+    string address1 = 2;
+    string address2 = 3;
+    string city = 4;
+    string postal_code = 5;
+    string country = 6;
+    string phone_number = 7;
   };
 }
 
