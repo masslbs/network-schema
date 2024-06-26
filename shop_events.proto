@@ -6,136 +6,96 @@ syntax = "proto3";
 
 package market.mass;
 
-import "error.proto";
+import "shop.proto";
 
-
-// ======
-// Events
-// ======
-
+// First genisis message of a shop.
+// Has to be the first message that is written and can only be written once.
+// Use UpdateShopManifest to make changes.
 message Manifest {
-  oneof action {
-    Create create = 1;
-    Update update = 2;
-  }
-  // First genisis message of a shop.
-  // Has to be the first message that is written and can only be written once.
-  // Use UpdateShopManifest to make changes.
-  message Create {
-    // The NFT Token ID used in ShopReg.registerShop().
-    // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
-    bytes shop_token_id = 1;
+  // can only be set once when creating the shop
+  optional bytes shop_token_id = 2;
+  // shop metadata
+  optional string name = 2;
+  optional string description = 3;
+  optional string profile_picture_url = 4;
+  optional string domain = 5;
 
-    // Website URL of the shop
-    // TODO: might change this to metdata inside the NFT URL.
-    string domain = 2;
-
-    // the system tag used to list active items
-    bytes published_tag_id = 3;
-
-    // erc20s are updated via UpdateShopManifest
-
-    // shop metadata
-    string name = 4;
-    string description = 5;
-    string profile_picture_url = 6;
-  }
-
-  // Used to update the shop manifest.
-  // The Field enum determines the field to be updated and the value to be used.
-  message Update {
-    optional string domain = 1;
-    optional bytes published_tag_id = 2;
-    optional bytes add_erc20_addr = 3;
-    optional bytes remove_erc20_addr = 4;
-    optional string name = 5;
-    optional string description = 6;
-    optional string profile_picture_url = 7;
-  }
-}
-
-message Item {
-  bytes id = 1;
-  oneof action {
-    Create create = 2;
-    Update update = 3;
-    ChangeStock change_stock = 4;
-  }
-  // Creates an item in the shop.
-  message Create {
-    // decimal number as a string.
-    // numbers need to be always formatted to 2 decimal places.
-    // the demcimal place must use a dot ('.') as the separator.
-    string price = 1;
-    // should be valid JSON
-    // TODO: make a json schmea with minimal/required fields
-    bytes metadata = 2;
-  }
-
-  // UpdateItem changes the price or metadata of an item.
-  // Follows the same pattern as UpdateManifest.
-  message Update {
-    optional string price = 1;
-    optional bytes metadata = 2;
-  }
-
-  // private shop information
-  // =========================
-
-  // ChangeStock is used to update the stock of on or more items.
-  // Created by the relay after an order has been paied for.
-  message ChangeStock {
-    // length needs to match the length of the diff field
-    repeated sint32 diffs = 1;
-    optional bytes order_id = 2;
-  }
-}
-
-message Tag {
-  // Creates a tag in the shop.
-  // These can be used to group items into categories.
-  // There are also a couple of system-level tags, like published.
-  // Thse are used to filter items in the shop.
-  bytes id = 1;
-  oneof action {
-    Create create = 2;
-    Update update = 3;
-  }
-  message Create {
+  message Payee {
+    // user handle, like "escrow" or "direct", used during checkout
     string name = 1;
-  }
+    bytes addr = 2;
+    uint64 chain_id = 3;
 
-  message Update {
-    optional bytes add_item_id = 1;
-    optional bytes remove_item_id = 2;
-    optional bool delete = 3;
-    optional string rename = 4;
-  }
+    // controls how the payment is reaches the payee.
+    // true:  forwarded via pay() method
+    // false: normal transfer
+    // See also:
+    // https://github.com/masslbs/contracts/
+    // commit: 377aba24796e029945696350db581ec1f65da657
+    // file: src/IPayments.sol#L90-L95.
+    bool call_as_contract = 4;
+  };
+
+  optional Payee add_payee = 7;
+  optional Payee remove_payee = 8;
+
+  optional ShopCurrency add_accepted_currency = 9;
+  optional ShopCurrency remove_accepted_currency = 10;
+  optional ShopCurrency set_base_currency = 11;
+}
+
+// Creates an item in the shop.
+message Item {
+  // See ShopManifest for details
+  bytes item_id = 2; // the event_id of the CreateItem event
+
+  // decimal number as a string.
+  // numbers need to be always formatted to 2 decimal places.
+  // the demcimal place must use a dot ('.') as the separator.
+  optional string price = 3;
+
+  // should be valid JSON
+  // TODO: make a json schmea with minimal/required fields
+  optional bytes metadata = 4;
+  // Private
+  optional int32 stock = 5;
+  optional string view_state = 6;
+}
+
+
+// Creates a tag in the shop.
+// These can be used to group items into categories.
+// There are also a couple of system-level tags, like published.
+// Thse are used to filter items in the shop.
+message Tag {
+  // See ShopManifest for details
+  bytes tag_id = 2;
+  optional string name = 3;
+  optional bytes add_item_id = 4;
+  optional bytes remove_item_id = 5;
+  optional bool delete = 6;
 }
 
 
 // created by the relay when a user enrolls a key card
 message NewKeyCard {
-  bytes user_wallet_addr = 1;
-  bytes card_public_key = 2;
-  bool is_guest = 3;
+  // See ShopManifest for details
+  bytes user_wallet_addr = 2;
+  bytes card_public_key = 3;
+  bool is_guest = 4;
 }
 
-
 message Order {
-  bytes id = 1;
+  // See ShopManifest for details
+  bytes order_id = 2;
 
   oneof action {
-    CreateOrder create_order = 2;
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     OrderCanceled order_canceled = 5;
-    PaymentCompleted payment_completed = 6;
+    AddressDetails update_shipping_details = 6;
+    OrderPaid order_paid = 7;
   };
-
-  // CreateOrder is used to create a new order.
-  message CreateOrder {
-  }
 
   // ChangeItems is used to add or remove items from an order.
   // Only valid before the items were finalized.
@@ -143,18 +103,6 @@ message Order {
     bytes item_id = 1;
     sint32 quantity = 2;
   };
-
-  // Initiate check out of a cart
-  message CommitItems {
-    bytes erc20_addr = 1; // unset means vanilla ETH
-    uint64 chain_id = 2;
-  }
-
-
-  // Returns an error if the cart is already finalized.
-  message CommitItemsError {
-    Error error = 1;
-  }
 
   // Created by the relay after a CommitOrderRequest.
   // It signals that an order is about to be payed,
@@ -171,7 +119,7 @@ message Order {
     string ttl = 5;
     bytes order_hash = 6;
     bytes currency_addr = 7;
-    string total_in_crypto = 8; // "amount" (bigint as string)
+    bytes total_in_crypto = 8; // big-endian uint256
     bytes payee_addr = 9;
     bool is_payment_endpoint = 10;
     bytes shop_signature = 11;
@@ -185,10 +133,26 @@ message Order {
     uint64 timestamp = 1;
   };
 
-  message PaymentCompleted {
+  message AddressDetails {
+    string name = 1;
+    string address1 = 2;
+    string address2 = 3;
+    string city = 4;
+    string postal_code = 5;
+    string country = 6;
+    string phone_number = 7;
+  };
+
+  message CommitOrder {
+    ShopCurrency currency = 3;
+    string payee_name = 4;
+  };
+
+  message OrderPaid {
     bytes tx_hash = 1;
   };
 }
+
 
 // ShopEvent is the transport wrapper for a single event in a shop.
 //
@@ -212,20 +176,10 @@ message ShopEvent {
   // hash(shop_token_id:signature) might suffice then with a smaller nonce.
   bytes event_id = 1;
   oneof union {
-    ShopManifest shop_manifest = 2;
-    UpdateShopManifest update_shop_manifest = 3;
-
-    CreateItem create_item = 4;
-    UpdateItem update_item = 5;
-
-    CreateTag create_tag = 6;
-    UpdateTag update_tag = 7;
-
-    CreateOrder create_order = 8;
-    UpdateOrder update_order = 9;
-
-    ChangeStock change_stock = 12;
-
+    Manifest shop_manifest = 2;
+    Item create_item = 4;
+    Tag update_tag = 7;
+    Order create_order = 8;
     NewKeyCard new_key_card = 13;
   }
 }

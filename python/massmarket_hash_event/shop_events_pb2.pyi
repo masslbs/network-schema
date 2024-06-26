@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from massmarket_hash_event import shop_pb2 as _shop_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -10,42 +11,59 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ShopManifest(_message.Message):
-    __slots__ = ["event_id", "shop_token_id", "domain", "published_tag_id", "name", "description", "profile_picture_url"]
+    __slots__ = ["event_id", "shop_token_id", "published_tag_id", "name", "description", "profile_picture_url", "domain"]
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     SHOP_TOKEN_ID_FIELD_NUMBER: _ClassVar[int]
-    DOMAIN_FIELD_NUMBER: _ClassVar[int]
     PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
+    DOMAIN_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     shop_token_id: bytes
-    domain: str
     published_tag_id: bytes
     name: str
     description: str
     profile_picture_url: str
-    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
+    domain: str
+    def __init__(self, event_id: _Optional[bytes] = ..., shop_token_id: _Optional[bytes] = ..., published_tag_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ...) -> None: ...
 
 class UpdateShopManifest(_message.Message):
-    __slots__ = ["event_id", "domain", "published_tag_id", "add_erc20_addr", "remove_erc20_addr", "name", "description", "profile_picture_url"]
+    __slots__ = ["event_id", "name", "description", "profile_picture_url", "domain", "published_tag_id", "add_payee", "remove_payee", "add_accepted_currency", "remove_accepted_currency", "set_base_currency"]
+    class Payee(_message.Message):
+        __slots__ = ["name", "addr", "chain_id", "call_as_contract"]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        ADDR_FIELD_NUMBER: _ClassVar[int]
+        CHAIN_ID_FIELD_NUMBER: _ClassVar[int]
+        CALL_AS_CONTRACT_FIELD_NUMBER: _ClassVar[int]
+        name: str
+        addr: bytes
+        chain_id: int
+        call_as_contract: bool
+        def __init__(self, name: _Optional[str] = ..., addr: _Optional[bytes] = ..., chain_id: _Optional[int] = ..., call_as_contract: bool = ...) -> None: ...
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
-    DOMAIN_FIELD_NUMBER: _ClassVar[int]
-    PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
-    ADD_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_ERC20_ADDR_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     PROFILE_PICTURE_URL_FIELD_NUMBER: _ClassVar[int]
+    DOMAIN_FIELD_NUMBER: _ClassVar[int]
+    PUBLISHED_TAG_ID_FIELD_NUMBER: _ClassVar[int]
+    ADD_PAYEE_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_PAYEE_FIELD_NUMBER: _ClassVar[int]
+    ADD_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ACCEPTED_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    SET_BASE_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
-    domain: str
-    published_tag_id: bytes
-    add_erc20_addr: bytes
-    remove_erc20_addr: bytes
     name: str
     description: str
     profile_picture_url: str
-    def __init__(self, event_id: _Optional[bytes] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_erc20_addr: _Optional[bytes] = ..., remove_erc20_addr: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ...) -> None: ...
+    domain: str
+    published_tag_id: bytes
+    add_payee: UpdateShopManifest.Payee
+    remove_payee: UpdateShopManifest.Payee
+    add_accepted_currency: _shop_pb2.ShopCurrency
+    remove_accepted_currency: _shop_pb2.ShopCurrency
+    set_base_currency: _shop_pb2.ShopCurrency
+    def __init__(self, event_id: _Optional[bytes] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., profile_picture_url: _Optional[str] = ..., domain: _Optional[str] = ..., published_tag_id: _Optional[bytes] = ..., add_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., remove_payee: _Optional[_Union[UpdateShopManifest.Payee, _Mapping]] = ..., add_accepted_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ..., remove_accepted_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ..., set_base_currency: _Optional[_Union[_shop_pb2.ShopCurrency, _Mapping]] = ...) -> None: ...
 
 class CreateItem(_message.Message):
     __slots__ = ["event_id", "price", "metadata"]
@@ -126,7 +144,7 @@ class CreateOrder(_message.Message):
     def __init__(self, event_id: _Optional[bytes] = ...) -> None: ...
 
 class UpdateOrder(_message.Message):
-    __slots__ = ["event_id", "order_id", "change_items", "items_finalized", "order_canceled"]
+    __slots__ = ["event_id", "order_id", "change_items", "items_finalized", "order_canceled", "update_shipping_details"]
     class ChangeItems(_message.Message):
         __slots__ = ["item_id", "quantity"]
         ITEM_ID_FIELD_NUMBER: _ClassVar[int]
@@ -154,31 +172,49 @@ class UpdateOrder(_message.Message):
         ttl: str
         order_hash: bytes
         currency_addr: bytes
-        total_in_crypto: str
+        total_in_crypto: bytes
         payee_addr: bytes
         is_payment_endpoint: bool
         shop_signature: bytes
-        def __init__(self, payment_id: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., ttl: _Optional[str] = ..., order_hash: _Optional[bytes] = ..., currency_addr: _Optional[bytes] = ..., total_in_crypto: _Optional[str] = ..., payee_addr: _Optional[bytes] = ..., is_payment_endpoint: bool = ..., shop_signature: _Optional[bytes] = ...) -> None: ...
+        def __init__(self, payment_id: _Optional[bytes] = ..., sub_total: _Optional[str] = ..., sales_tax: _Optional[str] = ..., total: _Optional[str] = ..., ttl: _Optional[str] = ..., order_hash: _Optional[bytes] = ..., currency_addr: _Optional[bytes] = ..., total_in_crypto: _Optional[bytes] = ..., payee_addr: _Optional[bytes] = ..., is_payment_endpoint: bool = ..., shop_signature: _Optional[bytes] = ...) -> None: ...
     class OrderCanceled(_message.Message):
         __slots__ = ["timestamp"]
         TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
         timestamp: int
         def __init__(self, timestamp: _Optional[int] = ...) -> None: ...
+    class AddressDetails(_message.Message):
+        __slots__ = ["name", "address1", "address2", "city", "postal_code", "country", "phone_number"]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        ADDRESS1_FIELD_NUMBER: _ClassVar[int]
+        ADDRESS2_FIELD_NUMBER: _ClassVar[int]
+        CITY_FIELD_NUMBER: _ClassVar[int]
+        POSTAL_CODE_FIELD_NUMBER: _ClassVar[int]
+        COUNTRY_FIELD_NUMBER: _ClassVar[int]
+        PHONE_NUMBER_FIELD_NUMBER: _ClassVar[int]
+        name: str
+        address1: str
+        address2: str
+        city: str
+        postal_code: str
+        country: str
+        phone_number: str
+        def __init__(self, name: _Optional[str] = ..., address1: _Optional[str] = ..., address2: _Optional[str] = ..., city: _Optional[str] = ..., postal_code: _Optional[str] = ..., country: _Optional[str] = ..., phone_number: _Optional[str] = ...) -> None: ...
     EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     CHANGE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FINALIZED_FIELD_NUMBER: _ClassVar[int]
     ORDER_CANCELED_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_SHIPPING_DETAILS_FIELD_NUMBER: _ClassVar[int]
     event_id: bytes
     order_id: bytes
     change_items: UpdateOrder.ChangeItems
     items_finalized: UpdateOrder.ItemsFinalized
     order_canceled: UpdateOrder.OrderCanceled
-    def __init__(self, event_id: _Optional[bytes] = ..., order_id: _Optional[bytes] = ..., change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ..., items_finalized: _Optional[_Union[UpdateOrder.ItemsFinalized, _Mapping]] = ..., order_canceled: _Optional[_Union[UpdateOrder.OrderCanceled, _Mapping]] = ...) -> None: ...
+    update_shipping_details: UpdateOrder.AddressDetails
+    def __init__(self, event_id: _Optional[bytes] = ..., order_id: _Optional[bytes] = ..., change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ..., items_finalized: _Optional[_Union[UpdateOrder.ItemsFinalized, _Mapping]] = ..., order_canceled: _Optional[_Union[UpdateOrder.OrderCanceled, _Mapping]] = ..., update_shipping_details: _Optional[_Union[UpdateOrder.AddressDetails, _Mapping]] = ...) -> None: ...
 
 class ShopEvent(_message.Message):
-    __slots__ = ["signature", "shop_manifest", "update_shop_manifest", "create_item", "update_item", "create_tag", "update_tag", "create_order", "update_order", "change_stock", "new_key_card"]
-    SIGNATURE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["shop_manifest", "update_shop_manifest", "create_item", "update_item", "create_tag", "update_tag", "create_order", "update_order", "change_stock", "new_key_card"]
     SHOP_MANIFEST_FIELD_NUMBER: _ClassVar[int]
     UPDATE_SHOP_MANIFEST_FIELD_NUMBER: _ClassVar[int]
     CREATE_ITEM_FIELD_NUMBER: _ClassVar[int]
@@ -189,7 +225,6 @@ class ShopEvent(_message.Message):
     UPDATE_ORDER_FIELD_NUMBER: _ClassVar[int]
     CHANGE_STOCK_FIELD_NUMBER: _ClassVar[int]
     NEW_KEY_CARD_FIELD_NUMBER: _ClassVar[int]
-    signature: bytes
     shop_manifest: ShopManifest
     update_shop_manifest: UpdateShopManifest
     create_item: CreateItem
@@ -200,4 +235,4 @@ class ShopEvent(_message.Message):
     update_order: UpdateOrder
     change_stock: ChangeStock
     new_key_card: NewKeyCard
-    def __init__(self, signature: _Optional[bytes] = ..., shop_manifest: _Optional[_Union[ShopManifest, _Mapping]] = ..., update_shop_manifest: _Optional[_Union[UpdateShopManifest, _Mapping]] = ..., create_item: _Optional[_Union[CreateItem, _Mapping]] = ..., update_item: _Optional[_Union[UpdateItem, _Mapping]] = ..., create_tag: _Optional[_Union[CreateTag, _Mapping]] = ..., update_tag: _Optional[_Union[UpdateTag, _Mapping]] = ..., create_order: _Optional[_Union[CreateOrder, _Mapping]] = ..., update_order: _Optional[_Union[UpdateOrder, _Mapping]] = ..., change_stock: _Optional[_Union[ChangeStock, _Mapping]] = ..., new_key_card: _Optional[_Union[NewKeyCard, _Mapping]] = ...) -> None: ...
+    def __init__(self, shop_manifest: _Optional[_Union[ShopManifest, _Mapping]] = ..., update_shop_manifest: _Optional[_Union[UpdateShopManifest, _Mapping]] = ..., create_item: _Optional[_Union[CreateItem, _Mapping]] = ..., update_item: _Optional[_Union[UpdateItem, _Mapping]] = ..., create_tag: _Optional[_Union[CreateTag, _Mapping]] = ..., update_tag: _Optional[_Union[UpdateTag, _Mapping]] = ..., create_order: _Optional[_Union[CreateOrder, _Mapping]] = ..., update_order: _Optional[_Union[UpdateOrder, _Mapping]] = ..., change_stock: _Optional[_Union[ChangeStock, _Mapping]] = ..., new_key_card: _Optional[_Union[NewKeyCard, _Mapping]] = ...) -> None: ...
