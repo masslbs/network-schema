@@ -38,7 +38,7 @@
         inherit packageOverrides;
         self = pkgs.python3;
       };
-      
+
       protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
         pname = "protobuf-to-dict";
         version = "0.3.0";
@@ -61,6 +61,7 @@
           protobuf
           protobuf_to_dict
           web3
+          safe-pysha3
           # packaging massmarket_hash_event
           pytest
           setuptools

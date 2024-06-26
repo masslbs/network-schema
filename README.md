@@ -10,7 +10,7 @@ This repository specifies the structure and content of the communication between
 
 On an abstract level, the _Relays_ build an [Append-Only Log](https://en.wikipedia.org/wiki/Append-only) per registered _Store_. These logs are accessible via a Request/Response scheme. The _Clients_ cryptographically sign _Events_ and write them to the _Relay_. A _Relay_ keeps track of which _Events_ were send and received from which _Client_ and thus is able to push _Events_ to _Clients_ that haven't written them such that all _Clients_ can build the same state of a _Store_ eventually.
 
-For a detailed description of each message see `schema.proto` and the `CHANGELOG.md`.
+For a detailed description of each message see comments in the individual `.proto` files and the `CHANGELOG.md`.
 
 For a detailed description of how Events are signed as well as the HTTP Reqeusts acompanying the WebSocket connection, see our [documentation page](https://docs.mass.market).
 
