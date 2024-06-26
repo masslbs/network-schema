@@ -49,7 +49,6 @@ message SignedEvent {
 
 // Used by the Client to write a single event to the shop.
 message EventWriteRequest {
-  bytes request_id = 1;
   SignedEvent event = 2;
 }
 
@@ -58,7 +57,6 @@ message EventWriteRequest {
 // the new_shop_hash is the hash of the shop with the new event applied.
 // The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
-  bytes request_id = 1;
   Error error = 2;
   bytes new_shop_hash = 3;
   uint64 event_sequence_no = 4;
@@ -67,23 +65,19 @@ message EventWriteResponse {
 // Used by the relay to push events to the client.
 // Will not sent more events until the client has acknowledged the last batch.
 message EventPushRequest {
-  bytes request_id = 1;
   repeated SignedEvent events = 2;
 }
 
 message EventPushResponse {
-  bytes request_id = 1;
   Error error = 2;
 }
 
 // Sent by the relay to signal the number of unpushed events.
 message SyncStatusRequest {
-  bytes request_id = 1;
   uint64 unpushed_events = 2;
 }
 
 message SyncStatusResponse {
-  bytes request_id = 1;
   Error error = 2;
 }
 
@@ -91,12 +85,8 @@ message SyncStatusResponse {
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
 message PingRequest{
-  // 16 bytes, chosen by the sender but should be random.
-  // Used to match the response to the request.
-  bytes request_id = 1;
 }
 
 message PingResponse {
-  bytes request_id = 1;
   Error error = 2;
 }
