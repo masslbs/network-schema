@@ -12,8 +12,7 @@ random.seed("mass-market-test-vectors")
 
 from protobuf_to_dict import protobuf_to_dict
 
-from massmarket_hash_event import Hasher, shop_events_pb2
-hasher = Hasher(31337, "0x0000000000000000000000001234567890abcdef")
+from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
 
 from web3 import Account
 
@@ -84,23 +83,28 @@ updateMeta2.event_id = random.randbytes(32)
 updateMeta2.profile_picture_url = "https://s3.amazonaws.com/nightjarprod/content/uploads/sites/34/2019/04/28111813/bxRm8F7rnCsVDyrNh3K9yIFFBKL.jpg"
 events.append(updateMeta2)
 
-# Add ERC20s
+# Add Currencies
+zero_addr = bytes(20)
+vanilla_eth = shop_pb2.ShopCurrency(chain_id=1, token_addr=zero_addr)
+addEth = shop_events_pb2.UpdateShopManifest(add_accepted_currency=vanilla_eth)
+addEth.event_id = random.randbytes(32)
+events.append(addEth)
+
 erc20_one = random.randbytes(20)
 erc20_two = random.randbytes(20)
 
-addErc20One = shop_events_pb2.UpdateShopManifest()
+c_one = shop_pb2.ShopCurrency(chain_id=1, token_addr=erc20_one)
+addErc20One = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_one)
 addErc20One.event_id = random.randbytes(32)
-addErc20One.add_erc20_addr = erc20_one
 events.append(addErc20One)
 
-addErc20Two = shop_events_pb2.UpdateShopManifest()
+c_two = shop_pb2.ShopCurrency(chain_id=23, token_addr=erc20_two)
+addErc20Two = shop_events_pb2.UpdateShopManifest(add_accepted_currency=c_two)
 addErc20Two.event_id = random.randbytes(32)
-addErc20Two.add_erc20_addr = erc20_two
 events.append(addErc20Two)
 
-rmTokenOne = shop_events_pb2.UpdateShopManifest()
+rmTokenOne = shop_events_pb2.UpdateShopManifest(remove_accepted_currency=c_one)
 rmTokenOne.event_id = random.randbytes(32)
-rmTokenOne.remove_erc20_addr = erc20_one
 events.append(rmTokenOne)
 
 # listing managment
@@ -183,7 +187,7 @@ commit_order.shop_signature = random.randbytes(64)
 commit_order.sub_total = "1764.00" # 42*42
 commit_order.sales_tax = "88.20"   # 5%
 commit_order.total = "1852.20"
-commit_order.total_in_crypto = "1852.20"
+commit_order.total_in_crypto = int(185220).to_bytes(32, 'big')
 update_order = shop_events_pb2.UpdateOrder(items_finalized=commit_order)
 update_order.event_id = random.randbytes(32)
 update_order.order_id = order2.event_id
@@ -219,7 +223,7 @@ commit_order3.shop_signature = random.randbytes(64)
 commit_order3.sub_total = "42.00"
 commit_order3.sales_tax = "2.10"
 commit_order3.total = "44.10"
-commit_order3.total_in_crypto = "xxxx"
+commit_order3.total_in_crypto = int(4410).to_bytes(32, "big")
 update_order2 = shop_events_pb2.UpdateOrder(items_finalized=commit_order3)
 update_order2.event_id = random.randbytes(32)
 update_order2.order_id = order3.event_id
@@ -255,11 +259,25 @@ commit_order4.shop_signature = random.randbytes(64)
 commit_order4.sub_total = "168.00"
 commit_order4.sales_tax = "8.40"
 commit_order4.total = "176.40"
-commit_order4.total_in_crypto = "xxxx"
+commit_order4.total_in_crypto = int(17640).to_bytes(32, "big")
 update_order3 = shop_events_pb2.UpdateOrder(items_finalized=commit_order4)
 update_order3.event_id = random.randbytes(32)
 update_order3.order_id = order4.event_id
 events.append(update_order3)
+
+addr = shop_events_pb2.UpdateOrder.AddressDetails()
+addr.name = "Max Mustermann"
+addr.address1 = "Somestreet 1"
+# addr2 is empty
+addr.city = "City"
+addr.postal_code = "12345"
+addr.country = "Isla de Muerta"
+addr.phone_number = "+0155512345"
+update_order4 = shop_events_pb2.UpdateOrder(update_shipping_details=addr)
+update_order4.event_id = random.randbytes(32)
+update_order4.order_id = order4.event_id
+events.append(update_order4)
+
 
 wrapped_events = []
 for idx, evt in enumerate(events):
@@ -291,9 +309,9 @@ for idx, evt in enumerate(events):
   else:
     raise Exception(f"Unknown event type: {type_name}")
 
-  h = hasher.hash_event(wrapped)
+  h = hash_event(wrapped)
   msg = kc1.sign_message(h)
-  wrapped.signature = msg.signature
+  #pprint.pprint(msg)
 
   debug(pprint.pformat(wrapped))
   bin = wrapped.SerializeToString()
@@ -309,8 +327,6 @@ for idx, evt in enumerate(events):
 
 output = {
   "signatures": {
-    "chain_id": hasher.chain_id,
-    "contract_address": hasher.shopRegAddress,
     "signer_address": kc1.address,
   },
   "events": wrapped_events,
@@ -326,10 +342,11 @@ output = {
           "text": newTag1.name
         }
       },
-      "enabled_erc20s": {
-          hex(erc20_one): False,
-          hex(erc20_two): True,
-      },
+      "accepted_currencies": [
+          {"chain": 1, "addr": hex(zero_addr)},
+          {"chain": 23, "addr": hex(erc20_two)},
+      ],
+      "base_currency": {"chain": 1, "addr": hex(zero_addr)},
     },
     "keycards": {
       hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),

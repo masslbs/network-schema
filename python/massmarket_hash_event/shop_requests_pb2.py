@@ -15,22 +15,23 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
+from massmarket_hash_event import shop_pb2 as shop__pb2
 from massmarket_hash_event import error_pb2 as error__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13shop_requests.proto\x12\x0bmarket.mass\x1a\x0b\x65rror.proto\"g\n\x19\x43ommitItemsToOrderRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12\x10\n\x08order_id\x18\x02 \x01(\x0c\x12\x12\n\nerc20_addr\x18\x03 \x01(\x0c\x12\x10\n\x08\x63hain_id\x18\x04 \x01(\x04\"o\n\x1a\x43ommitItemsToOrderResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Error\x12\x1a\n\x12order_finalized_id\x18\x03 \x01(\x0c\"-\n\x17GetBlobUploadURLRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\"^\n\x18GetBlobUploadURLResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Error\x12\x0b\n\x03url\x18\x03 \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13shop_requests.proto\x12\x0bmarket.mass\x1a\nshop.proto\x1a\x0b\x65rror.proto\"\x82\x01\n\x19\x43ommitItemsToOrderRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12\x10\n\x08order_id\x18\x02 \x01(\x0c\x12+\n\x08\x63urrency\x18\x03 \x01(\x0b\x32\x19.market.mass.ShopCurrency\x12\x12\n\npayee_name\x18\x04 \x01(\t\"o\n\x1a\x43ommitItemsToOrderResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Error\x12\x1a\n\x12order_finalized_id\x18\x03 \x01(\x0c\"-\n\x17GetBlobUploadURLRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\"^\n\x18GetBlobUploadURLResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Error\x12\x0b\n\x03url\x18\x03 \x01(\tb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'shop_requests_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_COMMITITEMSTOORDERREQUEST']._serialized_start=49
-  _globals['_COMMITITEMSTOORDERREQUEST']._serialized_end=152
-  _globals['_COMMITITEMSTOORDERRESPONSE']._serialized_start=154
-  _globals['_COMMITITEMSTOORDERRESPONSE']._serialized_end=265
-  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_start=267
-  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_end=312
-  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_start=314
-  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_end=408
+  _globals['_COMMITITEMSTOORDERREQUEST']._serialized_start=62
+  _globals['_COMMITITEMSTOORDERREQUEST']._serialized_end=192
+  _globals['_COMMITITEMSTOORDERRESPONSE']._serialized_start=194
+  _globals['_COMMITITEMSTOORDERRESPONSE']._serialized_end=305
+  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_start=307
+  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_end=352
+  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_start=354
+  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_end=448
 # @@protoc_insertion_point(module_scope)

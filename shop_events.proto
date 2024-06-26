@@ -6,9 +6,7 @@ syntax = "proto3";
 
 package market.mass;
 
-// ======
-// Events
-// ======
+import "shop.proto";
 
 // First genisis message of a shop.
 // Has to be the first message that is written and can only be written once.
@@ -25,19 +23,16 @@ message ShopManifest {
   // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
   bytes shop_token_id = 2;
 
-  // Website URL of the shop
-  // TODO: might change this to metdata inside the NFT URL.
-  string domain = 3;
-
   // the system tag used to list active items
-  bytes published_tag_id = 4;
-
-  // erc20s are updated via UpdateShopManifest
+  bytes published_tag_id = 3;
 
   // shop metadata
-  string name = 5;
-  string description = 6;
-  string profile_picture_url = 7;
+  string name = 4;
+  string description = 5;
+  string profile_picture_url = 6;
+  string domain = 7; // Website URL of the shop
+
+  // accepted currencies and payout address is controlled via UpdateShopManifest
 }
 
 // Used to update the shop manifest.
@@ -46,13 +41,36 @@ message UpdateShopManifest {
   // See ShopManifest for details
   bytes event_id = 1;
 
-  optional string domain = 2;
-  optional bytes published_tag_id = 3;
-  optional bytes add_erc20_addr = 4;
-  optional bytes remove_erc20_addr = 5;
-  optional string name = 6;
-  optional string description = 7;
-  optional string profile_picture_url = 8;
+  // shop metadata
+  optional string name = 2;
+  optional string description = 3;
+  optional string profile_picture_url = 4;
+  optional string domain = 5;
+
+  optional bytes published_tag_id = 6;
+
+  message Payee {
+    // user handle, like "escrow" or "direct", used during checkout
+    string name = 1;
+    bytes addr = 2;
+    uint64 chain_id = 3;
+
+    // controls how the payment is reaches the payee.
+    // true:  forwarded via pay() method
+    // false: normal transfer
+    // See also:
+    // https://github.com/masslbs/contracts/
+    // commit: 377aba24796e029945696350db581ec1f65da657
+    // file: src/IPayments.sol#L90-L95.
+    bool call_as_contract = 4;
+  };
+
+  optional Payee add_payee = 7;
+  optional Payee remove_payee = 8;
+
+  optional ShopCurrency add_accepted_currency = 9;
+  optional ShopCurrency remove_accepted_currency = 10;
+  optional ShopCurrency set_base_currency = 11;
 }
 
 // Creates an item in the shop.
@@ -145,6 +163,7 @@ message UpdateOrder {
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     OrderCanceled order_canceled = 5;
+    AddressDetails update_shipping_details = 6;
   };
 
   // ChangeItems is used to add or remove items from an order.
@@ -169,7 +188,7 @@ message UpdateOrder {
     string ttl = 5;
     bytes order_hash = 6;
     bytes currency_addr = 7;
-    string total_in_crypto = 8; // "amount" (bigint as string)
+    bytes total_in_crypto = 8; // big-endian uint256
     bytes payee_addr = 9;
     bool is_payment_endpoint = 10;
     bytes shop_signature = 11;
@@ -181,6 +200,16 @@ message UpdateOrder {
   // This frees up the items locked up in the finalized order.
   message OrderCanceled {
     uint64 timestamp = 1;
+  };
+
+  message AddressDetails {
+    string name = 1;
+    string address1 = 2;
+    string address2 = 3;
+    string city = 4;
+    string postal_code = 5;
+    string country = 6;
+    string phone_number = 7;
   };
 }
 

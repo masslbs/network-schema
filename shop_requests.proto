@@ -7,12 +7,13 @@ syntax = "proto3";
 package market.mass;
 
 import "error.proto";
+import "shop.proto";
 
 // Initiate check out of a cart
 message CommitItemsToOrderRequest {
   bytes order_id = 2;
-  bytes erc20_addr = 3; // unset means vanilla ETH
-  uint64 chain_id = 4;
+  ShopCurrency currency = 3;
+  string payee_name = 4;
 }
 
 // Returns an error if the cart is already finalized.
