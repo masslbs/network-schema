@@ -36,9 +36,9 @@ package market.mass;
 
 import "google/protobuf/any.proto";
 
+import "base_types.proto";
 import "error.proto";
 import "shop_events.proto";
-import "base_types.proto";
 
 // ====================
 // Event syncronization
@@ -70,7 +70,6 @@ message EventWriteResponse {
 
   message Success {
     Hash state_root = 1;
-    uint64 event_sequence_number = 2;
   }
 }
 

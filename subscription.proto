@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package market.mass;
 
-import "error.proto";
 import "base_types.proto";
+import "error.proto";
 import "transport.proto";
 
 // The types of objects that events effect
@@ -26,11 +26,12 @@ enum ObjectType {
 message SubscriptionRequest {
   // The relay will send events from the shop log starting from this
   // sequence number.
-  uint64 start_seqeunce_number = 1;
+  // what happens if this no longer exists?
+  Hash start_state_hash = 1
   // The id of the shop that is being subscribed to. If an objectType 
   // is not specified then the relay will return all the events for
   // the shop given the currently level of authentication. 
-  uint256 shop_id = 2;
+  Uint256 shop_id = 2;
   // Filter can be applyed to return only a subset of events
   repeated Filter filters = 3;
   message Filter {

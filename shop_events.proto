@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package market.mass;
 
+import "google/protobuf/timestamp.proto";
+
 import "base_types.proto";
 
 message ShopCurrency {
@@ -50,7 +52,7 @@ message Manifest {
 
 message Listing {
   uint64 id = 1;
-  optional uint256 price = 2;
+  optional Uint256 price = 2;
   // should be valid JSON
   // TODO: make a json schmea with minimal/required fields
   optional bytes metadata = 3;
@@ -59,12 +61,11 @@ message Listing {
 
 }
 
-// Private; the number of listing to add or subtract
+// the number of listing to add or subtract
+// Seprated from listing, since this is private 
 message ChangeStock {
   uint64 id = 1;
   sint32 change_stoock = 2;
-  // the order event that generated the change
-  optional Order order_event = 3;
 }
 
 // Creates a tag in the shop.
@@ -86,7 +87,6 @@ message Account {
     OnchainAction add = 1;
 
     // this message is created by the relay when it sees a clerk's address
-
     // being deleted.
     OnchainAction remove = 2;
     // Enrolls a keycard; should be signed with EIP-712 instead of EIP-191
@@ -94,11 +94,17 @@ message Account {
   }
 
   message OnchainAction {
-      EthereumAddress address = 1;
-      Hash tx = 2;
+    EthereumAddress account_address = 1;
+    Hash tx = 2;
   }
 
+  // when a new keycard is added to an account
   message EnrollKeyCard {
+    EthereumAddress public_key = 1; 
+  }
+
+  // Removes a keycard from an account
+  message RevokeKeyCard {
     PublicKey public_key = 1; 
   }
 } 
@@ -129,9 +135,9 @@ message Order {
     // for verification. Compare against getPaymentId(PaymentReq)
     Hash payment_id = 1;
 
-    uint256 sub_total = 2;
-    uint256 sales_tax = 3;
-    uint256 total = 4; // = subtotal + sales_tax
+    Uint256 sub_total = 2;
+    Uint256 sales_tax = 3;
+    Uint256 total = 4; // = subtotal + sales_tax
     // the list of the hash of all the items being purchased
     // we cannot just refer to them by their id anymore since 
     // since the cart is locked to a particler version
@@ -178,14 +184,17 @@ message ShopEvent {
   uint64 nonce = 1;
   // Every signed event must be tied to a shop id. This allow the
   // event to processed outside the context of the currenct connection.
-  uint256 shop_id = 2; 
+  Uint256 shop_id = 2; 
+  // the time when this event was created. 
+  // The relay should reject any events in the future
+  google.protobuf.Timestamp timestamp = 3;
 
   oneof union {
-    Manifest shop_manifest = 3;
-    Listing listing = 4;
-    Tag tag = 5;
-    Order order = 6;
-    Account account = 7;
-    ChangeStock change_stock = 8;
+    Manifest shop_manifest = 4;
+    Listing listing = 5;
+    Tag tag = 6;
+    Order order = 7;
+    Account account = 8;
+    ChangeStock change_stock = 9;
   }
 }

@@ -22,6 +22,6 @@ message EthereumAddress {
   bytes raw = 1;
 }
 
-message uint256 {
+message Uint256 {
   bytes raw = 1;
 }
