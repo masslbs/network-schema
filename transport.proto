@@ -37,6 +37,8 @@ package market.mass;
 import "google/protobuf/any.proto";
 
 import "error.proto";
+import "shop_events.proto";
+import "base_types.proto";
 
 // ====================
 // Event syncronization
@@ -44,12 +46,15 @@ import "error.proto";
 
 message SignedEvent {
   google.protobuf.Any event = 1;
-  bytes signature = 2; // EIP-191 of any.value
+  Signature signature = 2; // EIP-191 of any.value
 }
 
 // Used by the Client to write a single event to the shop.
+// WriteRequests are ONLY authenticated by thier signature
+// meaning an Authentication/req/res is not nessicary
+// this allows for guest to create carts without authenticating
 message EventWriteRequest {
-  SignedEvent event = 2;
+  SignedEvent event = 1;
 }
 
 // Might return an error if the event or its signature is invalid.
@@ -57,33 +62,26 @@ message EventWriteRequest {
 // the new_shop_hash is the hash of the shop with the new event applied.
 // The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
+  Hash request_hash = 1;
   oneof response {
     Error error = 2;
     Success success = 3;
   } 
 
   message Success {
-    bytes new_shop_hash = 1;
-    uint64 event_sequence_no = 2;
+    Hash state_root = 1;
+    uint64 event_sequence_number = 2;
   }
-}
-
-// Used by the relay to push events to the client.
-// Will not sent more events until the client has acknowledged the last batch.
-message EventPushRequest {
-  repeated SignedEvent events = 2;
-}
-
-message EventPushResponse {
-  optional Error error = 2;
 }
 
 // Sent by the relay to signal the number of unpushed events.
 message SyncStatusRequest {
+  uint64 request_id = 1;
   uint64 unpushed_events = 2;
 }
 
 message SyncStatusResponse {
+  uint64 request_id = 1;
   optional Error error = 2;
 }
 
@@ -91,8 +89,10 @@ message SyncStatusResponse {
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
 message PingRequest{
+  uint64 request_id = 1;
 }
 
 message PingResponse {
+  uint64 request_id = 1;
   optional Error error = 2;
 }

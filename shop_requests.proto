@@ -7,7 +7,6 @@ syntax = "proto3";
 package market.mass;
 
 import "error.proto";
-import "shop.proto";
 
 // Get an URL to upload a blob to.
 // This exists for future-proofing the protocol

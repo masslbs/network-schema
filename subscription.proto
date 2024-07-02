@@ -1,0 +1,76 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+import "error.proto";
+import "base_types.proto";
+import "transport.proto";
+
+// The types of objects that events effect
+enum ObjectType {
+  LISTING = 0;
+  TAG = 1;
+  ORDER = 2;
+  // accounts refer to keycards enrollments and customer accounts
+  ACCOUNT = 3;
+  MANIFEST = 4;
+  // inventory is seperated since you must first authenticate to get the events
+  INVENTORY = 5;
+}
+
+// Used by the client to subscribe to a subset of event from the store
+message SubscriptionRequest {
+  // The relay will send events from the shop log starting from this
+  // sequence number.
+  uint64 start_seqeunce_number = 1;
+  // The id of the shop that is being subscribed to. If an objectType 
+  // is not specified then the relay will return all the events for
+  // the shop given the currently level of authentication. 
+  uint256 shop_id = 2;
+  // Filter can be applyed to return only a subset of events
+  repeated Filter filters = 3;
+  message Filter {
+    // Which object that is being subscribed to. Subscribing to an object
+    // will return a  stream of events
+    // that modify that object type. For example subscribing to LISTING
+    // will return a stream of all the events
+    // that modify listings in the store. 
+    ObjectType object_type = 3;
+    // Optional subscribe to only events that modify a single item.
+    // We assume object_id is only unique for a given object_type, so
+    // object_type is required.  
+    optional bytes object_id = 4;
+  }
+}
+
+// Used by the relay to notify the client that the subscription have
+// been sucseful
+message SubscriptionResponse {
+  // the subscription id should alway be the hash of the initail subscription
+  Hash request_hash = 1;
+  optional Error error = 2;
+}
+
+
+// Used by the relay to push events to the client.
+// Will not sent more events until the client has acknowledged the last batch.
+message SubscriptionPush {
+  Hash request_hash = 1;
+  repeated SignedEvent events = 2;
+}
+
+// Used by the client to tell the relay to continue sending events
+message SubscriptionPushResponse {
+  Hash request_hash = 1;
+}
+
+// Used by the client or the relay to cancel the stream
+message SubscriptionCancel {
+  Hash request_hash = 1;
+  optional Error error = 2;
+}
+

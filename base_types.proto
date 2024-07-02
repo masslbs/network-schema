@@ -1,0 +1,27 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+message Signature {
+  bytes raw = 1;
+}
+
+message PublicKey {
+  bytes raw = 1;
+}
+
+message Hash {
+  bytes raw = 1;
+}
+
+message EthereumAddress {
+  bytes raw = 1;
+}
+
+message uint256 {
+  bytes raw = 1;
+}

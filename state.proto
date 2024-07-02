@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+
+import "base_types.proto";
+
+message Hash {
+  bytes hash = 1;
+}
+
+
+message Node {
+  message LeftHash {
+    Hash left_hash = 1;
+  }
+
+  message RightHash {
+    Hash left_hash = 1;
+  }
+
+  message LeafNode {
+    oneof leafs {
+      Manifest shop_manifest = 1;
+      Item item = 2;
+      Tag tag = 3;
+      Order order = 4;
+    }
+  }
+
+  oneof nodeType {
+    LeftHash left_hash = 1;
+    RightHash right_hash = 2;
+    LeafNode leaf_node = 3;
+  }
+
+}
+
+message StateAccessRequest {
+  bytes shop_id = 1;
+  ObjectType object_type = 2;
+  bytes object_id = 3;
+}
+
+message StateAccessRespone {
+  repeated Nodes nodes = 1;
+}
+
+message StateAccessError {
+  Error error = 1;
+}
