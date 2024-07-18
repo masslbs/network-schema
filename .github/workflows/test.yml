@@ -18,8 +18,6 @@ jobs:
       - name: REUSE Compliance Check
         uses: fsfe/reuse-action@v2
       - name: Protobuf lint
-        run: nix develop -c protolint lint schema.proto
-      - name: Check constants
-        run: nix develop -c python3 ./check.py
+        run: nix develop -c bash -c "make lint"
       - name: Run pip package tests
         run: nix develop -c bash -c "cd python && pytest"

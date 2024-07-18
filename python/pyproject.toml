@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "massmarket_hash_event"
-version = "0.0.12-alpha2"
+dynamic = [ "version" ]
 authors = [
     {name = "Henry Bubert", email = "henry@mass.market"},
 ]
@@ -51,5 +51,5 @@ include-package-data = true
 include = ["massmarket_hash_event"]
 namespaces = false
 
-[tool.setuptools.package-data]
-massmarket_hash_event = ["typedData.json"]
+[tool.setuptools_scm]
+root = ".."
