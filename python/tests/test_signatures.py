@@ -12,6 +12,11 @@ from web3 import Account, Web3
 
 from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
 
+def unhex(b):
+  if b.startswith("0x"):
+    b = b[2:]
+  return bytes.fromhex(b)
+
 def test_hash_empty_event():
   pk = Account.from_key("0x1234567890123456789012345678901234567890123456789012345678901234")
   events = [
@@ -67,10 +72,10 @@ def test_verify_vector_file():
   assert signer == "0x27B369BDD9b49C322D13e7E91d83cFD47d465713"
   for idx, evt in enumerate(vector['events']):
     parsed = shop_events_pb2.ShopEvent()
-    parsed.ParseFromString(bytes.fromhex(evt['encoded']))
+    parsed.ParseFromString(unhex(evt['encoded']))
     print(f"hashing {idx}")
     encoded_data = hash_event(parsed)
-    pub_key = Account.recover_message(encoded_data, signature=evt["signature"])
+    pub_key = Account.recover_message(encoded_data, signature=unhex(evt["signature"]))
     their_addr = Web3.to_checksum_address(pub_key)
     assert their_addr == signer, f"invalid signer on event {idx}"
 
