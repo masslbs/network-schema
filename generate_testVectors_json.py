@@ -10,14 +10,25 @@ import pprint
 import random
 
 random.seed("mass-market-test-vectors")
+import math
 
+max_uint64 = int(math.pow(2, 64) - 1)
+
+
+def rand_uint64():
+    return random.randint(0, max_uint64)
+
+
+from google.protobuf import timestamp_pb2
+from web3 import Account
+from eth_keys import keys
 from protobuf_to_dict import protobuf_to_dict
 
-from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
-
-from web3 import Account
-
-from eth_keys import keys
+from massmarket_hash_event import (
+    hash_event,
+    base_types_pb2 as mtypes,
+    shop_events_pb2 as mevents,
+)
 
 
 def public_key_from_account(account):
@@ -40,269 +51,601 @@ def unhex(a):
     return binascii.a2b_hex(a)
 
 
+shop_id = mtypes.Uint256(raw=random.randbytes(32))
+
+user1Addr = mtypes.EthereumAddress(raw=random.randbytes(20))
 kc1 = Account.from_key(random.randbytes(32))
 debug(f"kc1: {kc1.address}")
+user2Addr = mtypes.EthereumAddress(raw=random.randbytes(20))
 kc2 = Account.from_key(random.randbytes(32))
 debug(f"kc2: {kc2.address}")
+guestKeyPair = Account.from_key(random.randbytes(32))
 
 events = []
 
-manifest = shop_events_pb2.ShopManifest()
-manifest.event_id = random.randbytes(32)
-manifest.shop_token_id = random.randbytes(32)
-manifest.domain = "https://masslbs.xyz"
-manifest.published_tag_id = random.randbytes(32)
+##############
+## Manifest ##
+##############
+
+manifest = mevents.Manifest(token_id=shop_id)
 events.append(manifest)
 
-newKc1 = shop_events_pb2.NewKeyCard()
-newKc1.event_id = random.randbytes(32)
-newKc1.card_public_key = public_key_from_account(kc1).to_bytes()
-newKc1.user_wallet_addr = random.randbytes(20)
+##############
+## Accounts ##
+##############
+
+newKc1 = mevents.Account(
+    enroll_keycard=mevents.Account.KeyCardEnroll(
+        user_wallet=user1Addr,
+        keycard_pubkey=mtypes.PublicKey(raw=public_key_from_account(kc1).to_bytes()),
+    )
+)
 events.append(newKc1)
 
-newKc2 = shop_events_pb2.NewKeyCard()
-newKc2.event_id = random.randbytes(32)
-newKc2.card_public_key = public_key_from_account(kc2).to_bytes()
-newKc2.user_wallet_addr = random.randbytes(20)
+newKc2 = mevents.Account(
+    enroll_keycard=mevents.Account.KeyCardEnroll(
+        user_wallet=user2Addr,
+        keycard_pubkey=mtypes.PublicKey(raw=public_key_from_account(kc2).to_bytes()),
+    )
+)
 events.append(newKc2)
 
-update2 = shop_events_pb2.UpdateShopManifest()
-update2.event_id = random.randbytes(32)
-update2.domain = "https://shop.mass.market"
-events.append(update2)
+zero_addr = mtypes.EthereumAddress(raw=bytes(20))
+guestKc = mevents.Account(
+    enroll_keycard=mevents.Account.KeyCardEnroll(
+        user_wallet=zero_addr,
+        keycard_pubkey=mtypes.PublicKey(
+            raw=public_key_from_account(guestKeyPair).to_bytes()
+        ),
+    )
+)
+events.append(guestKc)
 
-newTag1 = shop_events_pb2.CreateTag()
-newTag1.event_id = random.randbytes(32)
-newTag1.name = "Tag1"
-events.append(newTag1)
+################
+## Currencies ##
+################
 
-newTag2 = shop_events_pb2.CreateTag()
-newTag2.event_id = random.randbytes(32)
-newTag2.name = "Tag2"
-events.append(newTag2)
-
-update3 = shop_events_pb2.UpdateShopManifest()
-update3.event_id = random.randbytes(32)
-update3.published_tag_id = newTag1.event_id
-events.append(update3)
-
-updateMeta1 = shop_events_pb2.UpdateShopManifest()
-updateMeta1.event_id = random.randbytes(32)
-updateMeta1.name = "little shop of horrors"
-updateMeta1.description = "Seymour and Audrey are going digital!"
-events.append(updateMeta1)
-
-updateMeta2 = shop_events_pb2.UpdateShopManifest()
-updateMeta2.event_id = random.randbytes(32)
-updateMeta2.profile_picture_url = "https://s3.amazonaws.com/nightjarprod/content/uploads/sites/34/2019/04/28111813/bxRm8F7rnCsVDyrNh3K9yIFFBKL.jpg"
-events.append(updateMeta2)
-
-# Add Currencies
-zero_addr = bytes(20)
-vanilla_eth = shop_pb2.ShopCurrency(chain_id=1, token_addr=zero_addr)
-addEth = shop_events_pb2.UpdateShopManifest(
+payee = mtypes.Payee(
+    name="default",
+    address=user1Addr,
+    chain_id=1,
+)
+vanilla_eth = mtypes.ShopCurrency(
+    chain_id=1,
+    address=zero_addr,
+)
+addEth = mevents.UpdateManifest(
+    add_payee=payee,
     add_accepted_currencies=[vanilla_eth],
     set_base_currency=vanilla_eth,
 )
-addEth.event_id = random.randbytes(32)
 events.append(addEth)
 
-erc20_one = random.randbytes(20)
-erc20_two = random.randbytes(20)
+erc20_one = mtypes.EthereumAddress(raw=random.randbytes(20))
+erc20_two = mtypes.EthereumAddress(raw=random.randbytes(20))
 
-c_one = shop_pb2.ShopCurrency(chain_id=1, token_addr=erc20_one)
-addErc20One = shop_events_pb2.UpdateShopManifest(add_accepted_currencies=[c_one])
-addErc20One.event_id = random.randbytes(32)
+c_one = mtypes.ShopCurrency(
+    chain_id=1,
+    address=erc20_one,
+)
+addErc20One = mevents.UpdateManifest(
+    add_accepted_currencies=[c_one],
+)
 events.append(addErc20One)
 
-c_two = shop_pb2.ShopCurrency(chain_id=23, token_addr=erc20_two)
-addErc20Two = shop_events_pb2.UpdateShopManifest(add_accepted_currencies=[c_two])
-addErc20Two.event_id = random.randbytes(32)
+
+payee23 = mtypes.Payee(
+    name="L23",
+    address=user1Addr,
+    chain_id=23,
+)
+c_two = mtypes.ShopCurrency(
+    chain_id=23,
+    address=erc20_two,
+)
+addErc20Two = mevents.UpdateManifest(
+    add_accepted_currencies=[c_two],
+    remove_accepted_currencies=[c_one],
+)
 events.append(addErc20Two)
 
-rmTokenOne = shop_events_pb2.UpdateShopManifest(remove_accepted_currencies=[c_one])
-rmTokenOne.event_id = random.randbytes(32)
-events.append(rmTokenOne)
 
-# listing managment
-newItem = shop_events_pb2.CreateItem()
-newItem.event_id = random.randbytes(32)
-newItem.price = "42.00"
-newItem.metadata = b'{"title":"best shoes", "image":"https://masslbs.xyz/shoes.jpg"}'
-events.append(newItem)
+##########
+## Tags ##
+##########
 
-publishItem = shop_events_pb2.UpdateTag()
-publishItem.event_id = random.randbytes(32)
-publishItem.tag_id = newTag1.event_id
-publishItem.add_item_id = newItem.event_id
-events.append(publishItem)
 
-changePrice = shop_events_pb2.UpdateItem()
-changePrice.event_id = random.randbytes(32)
-changePrice.item_id = newItem.event_id
-changePrice.price = "23.00"
-events.append(changePrice)
-
-notPublishedItem = shop_events_pb2.CreateItem()
-notPublishedItem.event_id = random.randbytes(32)
-notPublishedItem.price = "13.12"
-notPublishedItem.metadata = (
-    b'{"title":"not yet published", "image":"https://masslbs.xyz/shoes.jpg"}'
+tag_stuff = mevents.Tag(
+    id=rand_uint64(),
+    name="Stuff",
 )
-events.append(notPublishedItem)
+events.append(tag_stuff)
 
-publishItem2 = shop_events_pb2.UpdateTag()
-publishItem2.event_id = random.randbytes(32)
-publishItem2.tag_id = newTag1.event_id
-publishItem2.add_item_id = notPublishedItem.event_id
-events.append(publishItem2)
-
-unpublishItem = shop_events_pb2.UpdateTag()
-unpublishItem.event_id = random.randbytes(32)
-unpublishItem.tag_id = newTag1.event_id
-unpublishItem.remove_item_id = notPublishedItem.event_id
-events.append(unpublishItem)
-
-unpublishItem = shop_events_pb2.UpdateTag()
-unpublishItem.event_id = random.randbytes(32)
-unpublishItem.tag_id = newTag2.event_id
-unpublishItem.add_item_id = notPublishedItem.event_id
-events.append(unpublishItem)
-
-changeStock = shop_events_pb2.ChangeStock(
-    item_ids=[newItem.event_id, notPublishedItem.event_id], diffs=[100, 123]
+tag_clothes = mevents.Tag(
+    id=rand_uint64(),
+    name="Clothes",
 )
-changeStock.event_id = random.randbytes(32)
-events.append(changeStock)
+events.append(tag_clothes)
 
-# open order
-order1 = shop_events_pb2.CreateOrder()
-order1.event_id = random.randbytes(32)
-events.append(order1)
+#######################
+## listing managment ##
+#######################
 
-change = shop_events_pb2.UpdateOrder.ChangeItems()
-change.item_id = newItem.event_id
-change.quantity = 23
-atc1 = shop_events_pb2.UpdateOrder(change_items=change)
-atc1.event_id = random.randbytes(32)
-atc1.order_id = order1.event_id
-events.append(atc1)
+# no options
+listing_simple = mevents.Listing(
+    id=rand_uint64(),
+    base_price=mtypes.Uint256(raw=random.randbytes(32)),
+    base_info=mtypes.ListingMetadata(
+        title="the pen",
+        description="great pen",
+        images=["https://masslbs.xyz/pen.jpg"],
+    ),
+)
+events.append(listing_simple)
 
-# order to be payed
-order2 = shop_events_pb2.CreateOrder()
-order2.event_id = random.randbytes(32)
-events.append(order2)
+sort_listing_simple = mevents.UpdateTag(
+    id=tag_stuff.id,
+    add_listing_ids=[listing_simple.id],
+)
+events.append(sort_listing_simple)
 
-change2 = shop_events_pb2.UpdateOrder.ChangeItems()
-change2.item_id = newItem.event_id
-change2.quantity = 42
-atc2 = shop_events_pb2.UpdateOrder(change_items=change2)
-atc2.event_id = random.randbytes(32)
-atc2.order_id = order2.event_id
-events.append(atc2)
+change_price = mevents.Listing(
+    id=listing_simple.id,
+    base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
+)
+events.append(change_price)
 
-# created by the relay.
-# client would send a CommitOrderRequest to finalize the order.
-commit_order = shop_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order.ttl = "1"
-commit_order.is_payment_endpoint = True
-commit_order.payee_addr = random.randbytes(20)
-commit_order.payment_id = random.randbytes(32)
-commit_order.currency_addr = random.randbytes(20)
-commit_order.order_hash = random.randbytes(32)
-commit_order.shop_signature = random.randbytes(64)
-commit_order.sub_total = "1764.00"  # 42*42
-commit_order.sales_tax = "88.20"  # 5%
-commit_order.total = "1852.20"
-commit_order.total_in_crypto = int(185220).to_bytes(32, "big")
-update_order = shop_events_pb2.UpdateOrder(items_finalized=commit_order)
-update_order.event_id = random.randbytes(32)
-update_order.order_id = order2.event_id
-events.append(update_order)
+change_inventory = mevents.ChangeInventory(
+    id=listing_simple.id,
+    diff=100,
+)
+events.append(change_inventory)
 
-# would be created by the relay after payment is completed
-payedOrder = shop_events_pb2.ChangeStock(item_ids=[newItem.event_id], diffs=[-42])
-payedOrder.event_id = random.randbytes(32)
-payedOrder.order_id = order2.event_id
-payedOrder.tx_hash = random.randbytes(32)
-events.append(payedOrder)
+stock_status = mtypes.ListingStockStatus(in_stock=True)
+publish_simple = mevents.UpdateListing(
+    id=listing_simple.id,
+    view_state=mtypes.ListingViewState.LISTING_VIEW_STATE_PUBLISHED,
+    stock_updates=[stock_status],
+)
+events.append(publish_simple)
 
-# this order will be abandoned
-order3 = shop_events_pb2.CreateOrder()
-order3.event_id = random.randbytes(32)
-events.append(order3)
+# one option
+# ==========
+l1_small = rand_uint64()
+l1_medium = rand_uint64()
+l1_large = rand_uint64()
 
-change3 = shop_events_pb2.UpdateOrder.ChangeItems()
-change3.item_id = newItem.event_id
-change3.quantity = 1
-atc3 = shop_events_pb2.UpdateOrder(change_items=change3)
-atc3.event_id = random.randbytes(32)
-atc3.order_id = order3.event_id
-events.append(atc3)
+listing_w_sizes = mevents.Listing(
+    id=rand_uint64(),
+    base_price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
+    base_info=mtypes.ListingMetadata(
+        title="The Painting (print)",
+        description="Beautiful, in all sizes",
+        images=["https://masslbs.xyz/painting.jpg"],
+    ),
+    view_state=mtypes.ListingViewState.LISTING_VIEW_STATE_PUBLISHED,
+    options=[
+        mtypes.ListingOption(
+            id=rand_uint64(),
+            title="Size",
+            variations=[
+                mtypes.ListingVariation(
+                    id=l1_small,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Small",
+                        description="400x300",
+                    ),
+                ),
+                mtypes.ListingVariation(
+                    id=l1_medium,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Medium",
+                        description="600x450",
+                    ),
+                    price_diff_sign=True,
+                    price_diff=mtypes.Uint256(raw=int(200).to_bytes(32, "big")),
+                ),
+                mtypes.ListingVariation(
+                    id=l1_large,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Large",
+                        description="800x600",
+                    ),
+                    price_diff_sign=True,
+                    price_diff=mtypes.Uint256(raw=int(400).to_bytes(32, "big")),
+                ),
+            ],
+        )
+    ],
+    stock_statuses=[
+        mtypes.ListingStockStatus(
+            variation_ids=[l1_small],
+            in_stock=True,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l1_medium],
+            in_stock=True,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l1_large],
+            expected_in_stock_by=timestamp_pb2.Timestamp(seconds=9999999),
+        ),
+    ],
+)
+events.append(listing_w_sizes)
 
-commit_order3 = shop_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order3.ttl = "2"
-commit_order3.payee_addr = unhex(kc1.address)
-commit_order3.payment_id = random.randbytes(32)
-commit_order3.order_hash = random.randbytes(32)
-commit_order3.is_payment_endpoint = False
-commit_order3.shop_signature = random.randbytes(64)
-commit_order3.sub_total = "42.00"
-commit_order3.sales_tax = "2.10"
-commit_order3.total = "44.10"
-commit_order3.total_in_crypto = int(4410).to_bytes(32, "big")
-update_order2 = shop_events_pb2.UpdateOrder(items_finalized=commit_order3)
-update_order2.event_id = random.randbytes(32)
-update_order2.order_id = order3.event_id
-events.append(update_order2)
+# update stock/inventory of individual variations
+change_inventory2_small = mevents.ChangeInventory(
+    id=listing_w_sizes.id,
+    variation_ids=[l1_small],
+    diff=10,
+)
+events.append(change_inventory2_small)
+change_inventory2_medium = mevents.ChangeInventory(
+    id=listing_w_sizes.id,
+    variation_ids=[l1_medium],
+    diff=20,
+)
+events.append(change_inventory2_medium)
 
-# 24hrs pass and the sale times out
-cancel = shop_events_pb2.UpdateOrder.OrderCanceled(timestamp=23)
-update_order3 = shop_events_pb2.UpdateOrder(order_canceled=cancel)
-update_order3.event_id = random.randbytes(32)
-update_order3.order_id = order3.event_id
-events.append(update_order3)
+# two options
+# ===========
+l2_opt_size = rand_uint64()
 
-# order 4 is in limbo. Finalized but not yet payed
-order4 = shop_events_pb2.CreateOrder()
-order4.event_id = random.randbytes(32)
-events.append(order4)
+l2_size10 = rand_uint64()
+l2_size11 = rand_uint64()
+l2_size12 = rand_uint64()
 
-change4 = shop_events_pb2.UpdateOrder.ChangeItems()
-change4.item_id = newItem.event_id
-change4.quantity = 4
-atc4 = shop_events_pb2.UpdateOrder(change_items=change4)
-atc4.event_id = random.randbytes(32)
-atc4.order_id = order4.event_id
-events.append(atc4)
+l2_color_red = rand_uint64()
+l2_color_green = rand_uint64()
+l2_color_blue = rand_uint64()
 
-commit_order4 = shop_events_pb2.UpdateOrder.ItemsFinalized()
-commit_order4.ttl = "3"
-commit_order4.payee_addr = unhex(kc1.address)
-commit_order4.is_payment_endpoint = False
-commit_order4.payment_id = random.randbytes(32)
-commit_order4.order_hash = random.randbytes(32)
-commit_order4.shop_signature = random.randbytes(64)
-commit_order4.sub_total = "168.00"
-commit_order4.sales_tax = "8.40"
-commit_order4.total = "176.40"
-commit_order4.total_in_crypto = int(17640).to_bytes(32, "big")
-update_order3 = shop_events_pb2.UpdateOrder(items_finalized=commit_order4)
-update_order3.event_id = random.randbytes(32)
-update_order3.order_id = order4.event_id
-events.append(update_order3)
+listing_color_and_size = mevents.Listing(
+    id=rand_uint64(),
+    base_price=mtypes.Uint256(raw=int(10000).to_bytes(32, "big")),
+    options=[
+        mtypes.ListingOption(
+            id=l2_opt_size,
+            title="Size",
+            variations=[
+                mtypes.ListingVariation(
+                    id=l2_size10,
+                    variation_info=mtypes.ListingMetadata(
+                        title="10 (US)",
+                        description="US 10 equals EU xyz",
+                    ),
+                ),
+                mtypes.ListingVariation(
+                    id=l2_size11,
+                    variation_info=mtypes.ListingMetadata(
+                        title="11",
+                    ),
+                ),
+                mtypes.ListingVariation(
+                    id=l2_size12,
+                    variation_info=mtypes.ListingMetadata(
+                        title="12",
+                    ),
+                ),
+            ],
+        ),
+        mtypes.ListingOption(
+            id=rand_uint64(),
+            title="Color",
+            variations=[
+                mtypes.ListingVariation(
+                    id=l2_color_red,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Red",
+                    ),
+                ),
+                mtypes.ListingVariation(
+                    id=l2_color_green,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Green",
+                    ),
+                ),
+                mtypes.ListingVariation(
+                    id=l2_color_blue,
+                    variation_info=mtypes.ListingMetadata(
+                        title="Blue",
+                    ),
+                ),
+            ],
+        ),
+    ],
+    stock_statuses=[
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size10, l2_color_red],
+            in_stock=True,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size11, l2_color_red],
+            in_stock=True,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size12, l2_color_red],
+            in_stock=False,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size10, l2_color_green],
+            in_stock=False,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size10, l2_color_blue],
+            in_stock=True,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size11, l2_color_blue],
+            in_stock=False,
+        ),
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size12, l2_color_blue],
+            in_stock=True,
+        ),
+    ],
+)
+events.append(listing_color_and_size)
 
-addr = shop_events_pb2.UpdateOrder.AddressDetails()
+# add a variation to an option
+l2_size13 = rand_uint64()
+add_size_var = mevents.UpdateListing.AddVariation(
+    option_id=l2_opt_size,
+    variation=mtypes.ListingVariation(
+        id=l2_size13, variation_info=mtypes.ListingMetadata(title="13")
+    ),
+)
+add_size_evt = mevents.UpdateListing(
+    id=listing_color_and_size.id,
+    add_variations=[add_size_var],
+)
+events.append(add_size_evt)
+
+update_stock_evt = mevents.UpdateListing(
+    id=listing_color_and_size.id,
+    stock_updates=[
+        mtypes.ListingStockStatus(
+            variation_ids=[l2_size13, l2_color_blue],
+            in_stock=True,
+        ),
+    ],
+)
+events.append(update_stock_evt)
+
+# remove a variation
+rm_combo_evt = mevents.UpdateListing(
+    id=listing_color_and_size.id,
+    remove_variations=[
+        l2_color_red,
+    ],
+)
+events.append(add_size_evt)
+
+# manually apply update to listing
+current = listing_color_and_size.options[1]
+listing_color_and_size.options[1].CopyFrom(
+    mtypes.ListingOption(
+        id=current.id,
+        variations=[v for v in current.variations if v.id != l2_color_red],
+    )
+)
+current = listing_color_and_size.stock_statuses
+for found in [ss for ss in current if l2_color_red in ss.variation_ids]:
+    listing_color_and_size.stock_statuses.remove(found)
+
+# update stock/inventory of individual variations
+change_inventory3_10green = mevents.ChangeInventory(
+    id=listing_color_and_size.id,
+    variation_ids=[l2_size10, l2_color_green],
+    diff=127,
+)
+events.append(change_inventory3_10green)
+change_inventory2_13blue = mevents.ChangeInventory(
+    id=listing_color_and_size.id,
+    variation_ids=[l2_size13, l2_color_blue],
+    diff=171,
+)
+events.append(change_inventory2_13blue)
+
+
+############
+## Orders ##
+############
+
+addr = mtypes.AddressDetails()
 addr.name = "Max Mustermann"
 addr.address1 = "Somestreet 1"
-# addr2 is empty
 addr.city = "City"
 addr.postal_code = "12345"
 addr.country = "Isla de Muerta"
 addr.phone_number = "+0155512345"
-update_order4 = shop_events_pb2.UpdateOrder(update_shipping_details=addr)
-update_order4.event_id = random.randbytes(32)
-update_order4.order_id = order4.event_id
+addr.email_address = "some1@no.where"
+
+# open
+# ====
+order_open = mevents.CreateOrder(id=rand_uint64())
+events.append(order_open)
+
+order_open_item = mtypes.OrderedItem(
+    listing_id=listing_simple.id,
+    quantity=23,
+)
+add_to_order_open = mevents.UpdateOrder(
+    id=order_open.id,
+    add_items=[order_open_item],
+)
+events.append(add_to_order_open)
+
+# paid
+# ====
+order_paid = mevents.CreateOrder(id=rand_uint64())
+events.append(order_paid)
+
+order_paid_item = mtypes.OrderedItem(
+    listing_id=listing_simple.id,
+    quantity=42,
+)
+add_to_order_paid = mevents.UpdateOrder(
+    id=order_paid.id,
+    add_items=[order_paid_item],
+)
+events.append(add_to_order_paid)
+
+order_paid_add_addr = mevents.UpdateOrder(
+    id=order_paid.id,
+    invoice_address=addr,
+)
+events.append(order_paid_add_addr)
+
+commit_order_paid = mevents.UpdateOrder(
+    id=order_paid.id,
+    commit=mevents.UpdateOrder.CommitItems(
+        currency=c_two,
+        payee=payee,
+    ),
+)
+events.append(commit_order_paid)
+
+# created by the relay on receiving the commit
+listing_simple_hash = mtypes.Hash(raw=random.randbytes(32))
+order_open_payment_details = mtypes.PaymentDetails(
+    ttl="1",
+    total=mtypes.Uint256(
+        raw=int(123400 * order_paid_item.quantity).to_bytes(32, "big"),
+    ),
+    # TODO: hash the actual value
+    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    item_hashes=[listing_simple_hash],
+    shop_signature=mtypes.Signature(raw=random.randbytes(64)),
+)
+finalized_order = mevents.UpdateOrder(
+    id=order_paid.id,
+    payment_details=order_open_payment_details,
+)
+events.append(finalized_order)
+
+# would be created by the relay after payment is completed
+paid_stock_change = mevents.ChangeInventory(
+    id=listing_simple.id,
+    diff=-42,
+)
+events.append(paid_stock_change)
+
+order_is_paid = mevents.UpdateOrder(
+    id=order_paid.id,
+    paid=mtypes.OrderPaid(
+        tx_hash=mtypes.Hash(raw=random.randbytes(32)),
+    ),
+)
+events.append(order_is_paid)
+
+# this will be canceled
+# =====================
+order_canceled = mevents.CreateOrder(
+    id=rand_uint64(),
+)
+events.append(order_canceled)
+
+order_canceled_item = mtypes.OrderedItem(
+    listing_id=listing_w_sizes.id,
+    variation_ids=[l1_medium],
+    quantity=2,
+)
+
+add_to_order_canceled = mevents.UpdateOrder(
+    id=order_canceled.id,
+    add_items=[order_canceled_item],
+)
+events.append(add_to_order_canceled)
+
+order_canceled_add_addr = mevents.UpdateOrder(
+    id=order_canceled.id,
+    invoice_address=addr,
+)
+events.append(order_canceled_add_addr)
+
+commit_order_canceled = mevents.UpdateOrder(
+    id=order_canceled.id,
+    commit=mevents.UpdateOrder.CommitItems(
+        currency=c_two,
+        payee=payee,
+    ),
+)
+events.append(commit_order_canceled)
+
+payment_details3 = mtypes.PaymentDetails(
+    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    ttl="2",
+    shop_signature=mtypes.Signature(raw=random.randbytes(65)),
+    total=mtypes.Uint256(raw=int(1400).to_bytes(32, "big")),
+    item_hashes=[listing_simple_hash],
+)
+update_order_paid = mevents.UpdateOrder(
+    id=order_canceled.id,
+    payment_details=payment_details3,
+)
+events.append(update_order_paid)
+
+# 24hrs pass and the sale times out
+cancel = mevents.UpdateOrder.Canceled(
+    canceld_at=timestamp_pb2.Timestamp(seconds=23),
+)
+update_order_canceled = mevents.UpdateOrder(
+    id=order_canceled.id,
+    canceled=cancel,
+)
+events.append(update_order_canceled)
+
+# order 4 is in limbo.
+# Finalized but not yet payed
+# ===========================
+order4 = mevents.CreateOrder(
+    id=rand_uint64(),
+)
+events.append(order4)
+
+change4_1 = mtypes.OrderedItem(
+    listing_id=listing_color_and_size.id,
+    variation_ids=[l2_size10, l2_color_green],
+    quantity=4,
+)
+change4_2 = mtypes.OrderedItem(
+    listing_id=listing_color_and_size.id,
+    variation_ids=[l2_size13, l2_color_blue],
+    quantity=10,
+)
+add_to_order4 = mevents.UpdateOrder(
+    id=order4.id,
+    add_items=[change4_1, change4_2],
+)
+events.append(add_to_order4)
+
+commit_order4 = mevents.UpdateOrder(
+    id=order4.id,
+    commit=mevents.UpdateOrder.CommitItems(
+        currency=c_two,
+        payee=payee,
+    ),
+)
+events.append(commit_order4)
+
+order4_add_addr = mevents.UpdateOrder(
+    id=order4.id,
+    invoice_address=addr,
+)
+events.append(order4_add_addr)
+
+commit_order4 = mtypes.PaymentDetails(
+    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    ttl="3",
+    shop_signature=mtypes.Signature(raw=random.randbytes(65)),
+    total=mtypes.Uint256(raw=int(16800).to_bytes(32, "big")),
+    item_hashes=[listing_simple_hash],
+)
+update_order4 = mevents.UpdateOrder(
+    id=order4.id,
+    payment_details=commit_order4,
+)
 events.append(update_order4)
 
 
@@ -313,115 +656,194 @@ for idx, evt in enumerate(events):
     debug(f"\nEvent idx={idx} type={type_name}\n{evt}")
 
     wrapped = None
-    if type_name == "ShopManifest":
-        wrapped = shop_events_pb2.ShopEvent(shop_manifest=evt)
-    elif type_name == "UpdateShopManifest":
-        wrapped = shop_events_pb2.ShopEvent(update_shop_manifest=evt)
-    elif type_name == "CreateItem":
-        wrapped = shop_events_pb2.ShopEvent(create_item=evt)
-    elif type_name == "UpdateItem":
-        wrapped = shop_events_pb2.ShopEvent(update_item=evt)
-    elif type_name == "CreateTag":
-        wrapped = shop_events_pb2.ShopEvent(create_tag=evt)
+
+    if type_name == "Manifest":
+        wrapped = mevents.ShopEvent(manifest=evt)
+    elif type_name == "UpdateManifest":
+        wrapped = mevents.ShopEvent(update_manifest=evt)
+    elif type_name == "Account":
+        wrapped = mevents.ShopEvent(account=evt)
+
+    elif type_name == "Listing":
+        wrapped = mevents.ShopEvent(listing=evt)
+    elif type_name == "UpdateListing":
+        wrapped = mevents.ShopEvent(update_listing=evt)
+
+    elif type_name == "ChangeInventory":
+        wrapped = mevents.ShopEvent(change_inventory=evt)
+
+    elif type_name == "Tag":
+        wrapped = mevents.ShopEvent(tag=evt)
     elif type_name == "UpdateTag":
-        wrapped = shop_events_pb2.ShopEvent(update_tag=evt)
-    elif type_name == "NewKeyCard":
-        wrapped = shop_events_pb2.ShopEvent(new_key_card=evt)
-    elif type_name == "ChangeStock":
-        wrapped = shop_events_pb2.ShopEvent(change_stock=evt)
+        wrapped = mevents.ShopEvent(update_tag=evt)
+
     elif type_name == "CreateOrder":
-        wrapped = shop_events_pb2.ShopEvent(create_order=evt)
+        wrapped = mevents.ShopEvent(create_order=evt)
     elif type_name == "UpdateOrder":
-        wrapped = shop_events_pb2.ShopEvent(update_order=evt)
+        wrapped = mevents.ShopEvent(update_order=evt)
+
     else:
-        raise Exception(f"Unknown event type: {type_name}")
+        raise Exception(f"Unknown event[{idx}] type: {type_name}")
+
+    assert wrapped is not None
+    wrapped.shop_id.CopyFrom(shop_id)
+    n = len(wrapped_events)
+    wrapped.nonce = n
+    wrapped.timestamp.CopyFrom(timestamp_pb2.Timestamp(seconds=3600 * n))
 
     h = hash_event(wrapped)
-    msg = kc1.sign_message(h)
+    sig = kc1.sign_message(h)
     # pprint.pprint(msg)
 
     debug(pprint.pformat(wrapped))
     bin = wrapped.SerializeToString()
     debug(f"binary: {bin}")
 
+    obj_dict = protobuf_to_dict(evt)
+    # pprint.pp(obj_dict)
     wrapped_events.append(
         {
             "type": type_name,
-            "object": protobuf_to_dict(evt),
-            "signature": hex(msg.signature),
-            "hash": hex(msg.messageHash),
+            "object": obj_dict,
+            "signature": hex(sig.signature),
+            "hash": hex(sig.messageHash),
             "encoded": hex(bin),
         }
     )
 
+
+# stitch together current state
+# TODO: implement actual reducer logic
+
+current_manifest = mevents.Manifest(
+    token_id=shop_id,
+    payees=[
+        payee,
+        payee23,
+    ],
+    accepted_currencies=[
+        vanilla_eth,
+        c_two,
+    ],
+    base_currency=vanilla_eth,
+)
+
+current_order_open = mevents.Order(
+    id=order_open.id,
+    state=mevents.Order.State.STATE_OPEN,
+    items=[order_open_item],
+    invoice_address=addr,
+)
+
+current_order_paid = mevents.Order(
+    id=order_paid.id,
+    state=mevents.Order.State.STATE_PAID,
+    items=[order_paid_item],
+    invoice_address=addr,
+    chosen_payee=payee,
+    chosen_currency=c_two,
+    payment_details=order_open_payment_details,
+)
+
+current_order_canceled = mevents.Order(
+    id=order_canceled.id,
+    state=mevents.Order.State.STATE_CANCELED,
+    canceled_at=cancel.canceld_at,
+    items=[order_canceled_item],
+    invoice_address=addr,
+    chosen_payee=payee,
+    chosen_currency=c_two,
+    payment_details=payment_details3,
+)
+
+current_order_unpaid = mevents.Order(
+    id=order4.id,
+    state=mevents.Order.State.STATE_UNPAID,
+    items=[change4_1, change4_2],
+    invoice_address=addr,
+    chosen_payee=payee,
+    chosen_currency=c_two,
+    payment_details=commit_order4,
+)
+
+# construct json output object
+
 output = {
     "signatures": {
+        "shop_id": hex(shop_id.raw),
         "signer_address": kc1.address,
     },
     "events": wrapped_events,
     "reduced": {
-        "manifest": {
-            "shop_token_id": hex(manifest.shop_token_id),
-            "name": updateMeta1.name,
-            "description": updateMeta1.description,
-            "profile_picture_url": updateMeta2.profile_picture_url,
-            "domain": update2.domain,
-            "published_tag": hex(newTag1.event_id),
-            "accepted_currencies": [
-                {"chain": 1, "addr": hex(zero_addr)},
-                {"chain": 23, "addr": hex(erc20_two)},
-            ],
-            "base_currency": {"chain": 1, "addr": hex(zero_addr)},
-        },
+        "manifest": protobuf_to_dict(current_manifest),
         "keycards": {
-            hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),
-            hex(newKc2.card_public_key): hex(newKc2.user_wallet_addr),
+            kc1.address: hex(newKc1.enroll_keycard.user_wallet.raw),
+            kc2.address: hex(newKc2.enroll_keycard.user_wallet.raw),
+            guestKeyPair.address: hex(zero_addr.raw),
         },
-        "items": {
-            hex(newItem.event_id): {
-                "price": changePrice.price,
-                "metadata": newItem.metadata.decode("utf-8"),
-                "tag_id": [hex(newTag1.event_id)],
-                "stock_qty": 58,
-            },
-            hex(notPublishedItem.event_id): {
-                "price": notPublishedItem.price,
-                "metadata": notPublishedItem.metadata.decode("utf-8"),
-                "tag_id": [hex(newTag2.event_id)],
-                "stock_qty": 123,
-            },
-        },
+        "listings": [
+            protobuf_to_dict(listing_simple),
+            protobuf_to_dict(listing_w_sizes),
+            protobuf_to_dict(listing_color_and_size),
+        ],
         "tags": {
-            hex(newTag1.event_id): {"name": newTag1.name},
-            hex(newTag2.event_id): {"name": newTag2.name},
+            tag_stuff.id: {
+                "name": tag_stuff.name,
+                "item_ids": [listing_simple.id],
+            },
+            tag_clothes.id: {
+                "name": tag_clothes.name,
+                "item_ids": [],
+            },
         },
-        # an array of items published
-        "published_items": [hex(publishItem.add_item_id)],
-        "inventory": {hex(newItem.event_id): 58, hex(notPublishedItem.event_id): 123},
-        "orders": {
-            "open": [
-                {"order_id": hex(order1.event_id), "items": {hex(newItem.event_id): 23}}
-            ],
-            "committed": [
-                {
-                    "order_id": hex(order4.event_id),
-                    "payment_id": hex(commit_order4.payment_id),
-                    "items": {hex(newItem.event_id): 4},
-                    "total": "176.40",
-                }
-            ],
-            "payed": [
-                {
-                    "order_id": hex(order2.event_id),
-                    "tx_hash": hex(payedOrder.tx_hash),
-                }
-            ],
-            "abandoned": [
-                {"order_id": hex(order3.event_id)},
-            ],
-        },
+        "inventory": [
+            {
+                "listing_id": listing_simple.id,
+                "variations": [],
+                "quantity": 58,
+            },
+            {
+                "listing_id": listing_w_sizes.id,
+                "variations": [l1_small],
+                "quantity": 10,
+            },
+            {
+                "listing_id": listing_w_sizes.id,
+                "variations": [l1_medium],
+                "quantity": 20,
+            },
+            {
+                "listing_id": listing_color_and_size.id,
+                "variations": [l2_size10, l2_color_green],
+                "quantity": 123,
+            },
+            {
+                "listing_id": listing_color_and_size.id,
+                "variations": [l2_size13, l2_color_blue],
+                "quantity": 161,
+            },
+        ],
+        "orders": [
+            protobuf_to_dict(current_order_open),
+            protobuf_to_dict(current_order_paid),
+            protobuf_to_dict(current_order_canceled),
+            protobuf_to_dict(current_order_unpaid),
+        ],
     },
 }
 
+# fix rendering timestamps
+from datetime import datetime, timezone
+from json import JSONEncoder
+
+
+class DateTimeEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            utc = obj.astimezone(timezone.utc)
+            return utc.isoformat()
+        return super().default(obj)
+
+
 with open("testVectors.json", "w") as file:
-    json.dump(output, file, indent=2)
+    json.dump(output, file, indent=2, cls=DateTimeEncoder)

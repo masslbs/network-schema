@@ -3,13 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 OUT=massmarket_hash_event/
-PROTO_FILES = transport.proto authentication.proto shop.proto shop_requests.proto shop_events.proto error.proto
-PROTO_PY_FILES = $(PROTO_FILES:.proto=_pb2.py)
-PROTO_PYI_FILES = $(PROTO_FILES:.proto=_pb2.pyi)
-PROTO_PY_OUT = $(addprefix ${OUT}, $(PROTO_PY_FILES))
-PROTO_PYI_OUT = $(addprefix ${OUT}, $(PROTO_PYI_FILES))
 
-all: ${PROTO_PY_FILES} ${PROTO_PYI_FILES} test
+all: compile test
+
+compile:
+	protoc -I=.. --pyi_out=${OUT} --python_out=${OUT} ../*.proto
+	${PYTHON} ./tweak_imports.py
 
 test:
 	pytest
@@ -19,11 +18,3 @@ build:
 
 publish:
 	${PYTHON} -m twine upload dist/massmarket_hash_event-${VERSION}*
-
-%_pb2.py %_pb2.pyi: ../%.proto
-	protoc -I=.. --python_out=${OUT} $<
-	protoc -I=.. --pyi_out=${OUT} $<
-	sed -i 's#import error_pb2 as error__pb2#from massmarket_hash_event import error_pb2 as error__pb2#'  ${OUT}$*_pb2.py
-	sed -i 's#import error_pb2 as _error_pb2#from massmarket_hash_event import error_pb2 as _error_pb2#'  ${OUT}$*_pb2.pyi
-	sed -i 's#import shop_pb2 as shop__pb2#from massmarket_hash_event import shop_pb2 as shop__pb2#'  ${OUT}$*_pb2.py
-	sed -i 's#import shop_pb2 as _shop_pb2#from massmarket_hash_event import shop_pb2 as _shop_pb2#'  ${OUT}$*_pb2.pyi

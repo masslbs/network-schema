@@ -48,6 +48,11 @@ $PYTHON -m build -n
 $PYTHON -m twine upload dist/*
 ```
 
+## General Principals
+
+- anything that mutates the shops state is an event and needs to be signed.
+- ideally the relays would not create any events; the relay should be limited to a sandboxed set events that it can create. If it attempts to create any other event it should be considered invalid.
+
 ## LICENSE
 
 MIT

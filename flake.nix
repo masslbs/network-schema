@@ -73,8 +73,9 @@
       );
 
       buildInputs = with pkgs; [
+        buf
+        black
         reuse
-        nodePackages.prettier
         protobuf
         protolint
         pyright
