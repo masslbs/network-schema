@@ -26,10 +26,12 @@ def debug(message):
     sys.stderr.write(message + '\n')
 
 def hex(b):
-  return binascii.hexlify(b).decode('utf-8')
+  return "0x"+binascii.hexlify(b).decode('utf-8')
 
 def unhex(a):
-    return binascii.a2b_hex(a[2:])
+    if a.startswith("0x"):
+        a = a[2:]
+    return binascii.a2b_hex(a)
 
 kc1 = Account.from_key(random.randbytes(32))
 debug(f"kc1: {kc1.address}")
@@ -336,7 +338,7 @@ for idx, evt in enumerate(events):
     "object": protobuf_to_dict(evt),
     "signature": hex(msg.signature),
     "hash": hex(msg.messageHash),
-    "encoded": binascii.hexlify(bin).decode('utf-8')
+    "encoded": hex(bin)
   })
 
 output = {
@@ -373,7 +375,7 @@ output = {
       hex(notPublishedItem.event_id): {
         "price": notPublishedItem.price,
         "metadata": notPublishedItem.metadata.decode('utf-8'),
-        "tag_id":[],
+        "tag_id":[hex(newTag2.event_id)],
         "stock_qty": 123
       }
     },
