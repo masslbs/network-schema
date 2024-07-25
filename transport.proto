@@ -36,6 +36,7 @@ package market.mass;
 
 import "google/protobuf/any.proto";
 
+import "base_types.proto";
 import "error.proto";
 
 // ====================
@@ -44,12 +45,15 @@ import "error.proto";
 
 message SignedEvent {
   google.protobuf.Any event = 1;
-  bytes signature = 2; // EIP-191 of any.value
+  Signature signature = 2; // EIP-191 of any.value
 }
 
 // Used by the Client to write a single event to the shop.
+// WriteRequests are ONLY authenticated by thier signature
+// meaning an Authentication/req/res is not nessicary
+// this allows for guest to create carts without authenticating
 message EventWriteRequest {
-  bytes request_id = 1;
+  RequestId request_id = 1;
   SignedEvent event = 2;
 }
 
@@ -58,45 +62,38 @@ message EventWriteRequest {
 // the new_shop_hash is the hash of the shop with the new event applied.
 // The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  bytes new_shop_hash = 3;
-  uint64 event_sequence_no = 4;
-}
+  RequestId request_id = 1;
+  oneof response {
+    Error error = 2;
+    Success success = 3;
+  }
 
-// Used by the relay to push events to the client.
-// Will not sent more events until the client has acknowledged the last batch.
-message EventPushRequest {
-  bytes request_id = 1;
-  repeated SignedEvent events = 2;
-}
-
-message EventPushResponse {
-  bytes request_id = 1;
-  Error error = 2;
+  message Success {
+    Hash state_root = 1;
+  }
 }
 
 // Sent by the relay to signal the number of unpushed events.
 message SyncStatusRequest {
-  bytes request_id = 1;
+  RequestId request_id = 1;
   uint64 unpushed_events = 2;
 }
 
 message SyncStatusResponse {
-  bytes request_id = 1;
-  Error error = 2;
+  RequestId request_id = 1;
+
+  optional Error error = 2;
 }
 
 // Sent by the relay to check for the clients liveness.
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
 message PingRequest{
-  // 16 bytes, chosen by the sender but should be random.
-  // Used to match the response to the request.
-  bytes request_id = 1;
+  RequestId request_id = 1;
 }
 
 message PingResponse {
-  bytes request_id = 1;
-  Error error = 2;
+  RequestId request_id = 1;
+  // not sure what this would be for
+  // optional Error error = 2;
 }

@@ -1,0 +1,41 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package market.mass;
+
+message RequestId {
+  // sender chooses a unique number per request that can not conflict with requests the other party sends
+  // one suggestion would be two counters starting from zero.
+  // Connection initiator/client doing +1, receiver doing -1
+  sint64 raw = 1;
+}
+
+message Signature {
+  bytes raw = 1;
+}
+
+message PublicKey {
+  bytes raw = 1;
+}
+
+message Hash {
+  bytes raw = 1;
+}
+
+message EthereumAddress {
+  bytes raw = 1;
+}
+
+message Uint256 {
+  bytes raw = 1;
+}
+
+message ShopCurrency {
+  uint64 chain_id = 1;
+  // Contract address for an ERC20 token.
+  // 20 zero bytes for native chain currency, like ETH.
+  EthereumAddress address = 2;
+};

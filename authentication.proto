@@ -6,32 +6,35 @@ syntax = "proto3";
 
 package market.mass;
 
+import "base_types.proto";
 import "error.proto";
 
 // Initiates the challenge/response protocol.
 message AuthenticateRequest {
-  // See PingRequest for details
-  bytes request_id = 1;
-
-  bytes public_key = 2; // of their keyCard
+  uint64 request_id = 1;
+  PublicKey public_key = 2; // of their keyCard
 }
 
 // Returns an error if the public key is not an enrolled KeyCard.
 // or a challenge to be signed by the KeyCard.
 message AuthenticateResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  bytes challenge = 3;
+  uint64 request_id = 1;
+  oneof response {
+    Error error = 2;
+    bytes challenge = 3;
+  }
 }
 
 // Completes authentication by supplying the signature over the challenge.
 message ChallengeSolvedRequest {
-  bytes request_id = 1;
-  bytes signature = 2;
+  uint64 request_id = 1;
+  Signature signature = 2;
 }
 
 // No error means the user is authenticated.
 message ChallengeSolvedResponse {
-  bytes request_id = 1;
-  Error error = 2;
+  uint64 request_id = 1;
+  optional Error error = 2;
 }
+
+
