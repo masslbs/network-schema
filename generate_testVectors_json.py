@@ -86,7 +86,10 @@ events.append(updateMeta2)
 # Add Currencies
 zero_addr = bytes(20)
 vanilla_eth = shop_pb2.ShopCurrency(chain_id=1, token_addr=zero_addr)
-addEth = shop_events_pb2.UpdateShopManifest(add_accepted_currencies=[vanilla_eth])
+addEth = shop_events_pb2.UpdateShopManifest(
+    add_accepted_currencies=[vanilla_eth],
+    set_base_currency=vanilla_eth,
+)
 addEth.event_id = random.randbytes(32)
 events.append(addEth)
 
@@ -111,7 +114,7 @@ events.append(rmTokenOne)
 newItem = shop_events_pb2.CreateItem()
 newItem.event_id = random.randbytes(32)
 newItem.price = "42.00"
-newItem.metadata = b'{"title":"best schoes", "image":"https://masslbs.xyz/schoes.jpg"}'
+newItem.metadata = b'{"title":"best shoes", "image":"https://masslbs.xyz/shoes.jpg"}'
 events.append(newItem)
 
 publishItem = shop_events_pb2.UpdateTag()
@@ -129,7 +132,7 @@ events.append(changePrice)
 notPublishedItem = shop_events_pb2.CreateItem()
 notPublishedItem.event_id = random.randbytes(32)
 notPublishedItem.price = "13.12"
-notPublishedItem.metadata = b'{"title":"not yet published", "image":"https://masslbs.xyz/schoes.jpg"}'
+notPublishedItem.metadata = b'{"title":"not yet published", "image":"https://masslbs.xyz/shoes.jpg"}'
 events.append(notPublishedItem)
 
 publishItem2 = shop_events_pb2.UpdateTag()
@@ -337,11 +340,7 @@ output = {
       "description": updateMeta1.description,
       "profile_picture_url": updateMeta2.profile_picture_url,
       "domain": update2.domain,
-      "published_tag": {
-        hex(newTag1.event_id): {
-          "text": newTag1.name
-        }
-      },
+      "published_tag": hex(newTag1.event_id),
       "accepted_currencies": [
           {"chain": 1, "addr": hex(zero_addr)},
           {"chain": 23, "addr": hex(erc20_two)},
