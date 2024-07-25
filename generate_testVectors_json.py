@@ -67,6 +67,11 @@ newTag1.event_id = random.randbytes(32)
 newTag1.name = "Tag1"
 events.append(newTag1)
 
+newTag2 = shop_events_pb2.CreateTag()
+newTag2.event_id = random.randbytes(32)
+newTag2.name = "Tag2"
+events.append(newTag2)
+
 update3 = shop_events_pb2.UpdateShopManifest()
 update3.event_id = random.randbytes(32)
 update3.published_tag_id = newTag1.event_id
@@ -145,6 +150,12 @@ unpublishItem = shop_events_pb2.UpdateTag()
 unpublishItem.event_id = random.randbytes(32)
 unpublishItem.tag_id = newTag1.event_id
 unpublishItem.remove_item_id = notPublishedItem.event_id
+events.append(unpublishItem)
+
+unpublishItem = shop_events_pb2.UpdateTag()
+unpublishItem.event_id = random.randbytes(32)
+unpublishItem.tag_id = newTag2.event_id
+unpublishItem.add_item_id = notPublishedItem.event_id
 events.append(unpublishItem)
 
 changeStock = shop_events_pb2.ChangeStock(item_ids = [newItem.event_id, notPublishedItem.event_id], diffs = [100, 123] )
@@ -366,38 +377,49 @@ output = {
         "stock_qty": 123
       }
     },
-    # an array of items published
-    "published_items": [hex(publishItem.add_item_id)],
-
-    "open_orders": {
-      hex(order1.event_id): {
-          hex(newItem.event_id): 23
+    "tags":{
+      hex(newTag1.event_id):{
+        'name':newTag1.name
+      },
+      hex(newTag2.event_id):{
+        'name':newTag2.name
       }
     },
 
-    "commited_orders": {
-      hex(order4.event_id): {
-          "payment_id": hex(commit_order4.payment_id),
-          "items": {
-              hex(newItem.event_id): 4
-          },
-          "total": "176.40"
-      },
-    },
-
-    "payed_orders": [{
-        "order_id": hex(order2.event_id),
-        "tx_hash": hex(payedOrder.tx_hash),
-    }],
-
-    "abandoned_orders": [
-        hex(order3.event_id),
-    ],
+    # an array of items published
+    "published_items": [hex(publishItem.add_item_id)],
 
     "inventory": {
       hex(newItem.event_id): 58,
       hex(notPublishedItem.event_id): 123
-    }
+    },
+
+    "orders": {
+        "open": {
+            hex(order1.event_id): {
+                hex(newItem.event_id): 23
+            }
+        },
+
+        "items_finalized": {
+            hex(order4.event_id): {
+                "payment_id": hex(commit_order4.payment_id),
+                "items": {
+                    hex(newItem.event_id): 4
+                },
+                "total": "176.40"
+            },
+        },
+
+        "payed": [{
+            "order_id": hex(order2.event_id),
+            "tx_hash": hex(payedOrder.tx_hash),
+        }],
+
+        "abandoned": [
+            hex(order3.event_id),
+        ],
+    },
   }
 }
 
