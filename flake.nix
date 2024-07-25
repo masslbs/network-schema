@@ -41,10 +41,10 @@
 
       protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
         pname = "protobuf-to-dict";
-        version = "0.3.0";
+        version = "0.3.1";
         src = fetchGit {
           url = "https://github.com/masslbs/protobuf-to-dict.git";
-          rev = "0db9538ec4aa629290bf9f4330563c896d766bf0";
+          rev = "39d7ec2a3a72b5938fe9bddbc593d210bccb64b8";
           ref = "patch-reqs";
         };
         propagatedBuildInputs = [
