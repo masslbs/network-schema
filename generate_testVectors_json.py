@@ -373,7 +373,7 @@ output = {
       hex(notPublishedItem.event_id): {
         "price": notPublishedItem.price,
         "metadata": notPublishedItem.metadata.decode('utf-8'),
-        "tag_id":[],
+        "tag_id":[hex(newTag2.event_id)],
         "stock_qty": 123
       }
     },

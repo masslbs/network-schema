@@ -496,7 +496,9 @@
       "2dc2479de7e92ef9dd4deff6df3e0a7a87982a9ebd1974c5a429ff3df4bce0d9": {
         "price": "13.12",
         "metadata": "{\"title\":\"not yet published\", \"image\":\"https://masslbs.xyz/shoes.jpg\"}",
-        "tag_id": [],
+        "tag_id": [
+          "397a3d4257663059fa31eceb6b15f0ecbc40ddc84183f8ad553fb4f9ef402088"
+        ],
         "stock_qty": 123
       }
     },
