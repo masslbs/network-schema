@@ -51,7 +51,7 @@ message SubscriptionRequest {
 // Used by the relay to notify the client that the subscription have
 // been sucseful
 message SubscriptionResponse {
-  uint64 request_id = 1;
+  RequestId request_id = 1;
   optional Error error = 2;
 }
 
@@ -59,17 +59,17 @@ message SubscriptionResponse {
 // Used by the relay to push events to the client.
 // Will not sent more events until the client has acknowledged the last batch.
 message SubscriptionPush {
-  uint64 request_id = 1;
+  RequestId request_id = 1;
   repeated SignedEvent events = 2;
 }
 
 // Used by the client to tell the relay to continue sending events
 message SubscriptionPushResponse {
-  uint64 request_id = 1;
+  RequestId request_id = 1;
 }
 
 // Used by the client or the relay to cancel the stream
 message SubscriptionCancel {
-  uint64 request_id = 1;
+  RequestId request_id = 1;
   optional Error error = 2;
 }
