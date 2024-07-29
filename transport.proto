@@ -53,7 +53,6 @@ message SignedEvent {
 // meaning an Authentication/req/res is not nessicary
 // this allows for guest to create carts without authenticating
 message EventWriteRequest {
-  RequestId request_id = 1;
   SignedEvent event = 2;
 }
 
@@ -62,7 +61,6 @@ message EventWriteRequest {
 // the new_shop_hash is the hash of the shop with the new event applied.
 // The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
-  RequestId request_id = 1;
   oneof response {
     Error error = 2;
     Success success = 3;
@@ -75,13 +73,10 @@ message EventWriteResponse {
 
 // Sent by the relay to signal the number of unpushed events.
 message SyncStatusRequest {
-  RequestId request_id = 1;
   uint64 unpushed_events = 2;
 }
 
 message SyncStatusResponse {
-  RequestId request_id = 1;
-
   optional Error error = 2;
 }
 
@@ -89,11 +84,9 @@ message SyncStatusResponse {
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
 message PingRequest{
-  RequestId request_id = 1;
 }
 
 message PingResponse {
-  RequestId request_id = 1;
   // not sure what this would be for
   // optional Error error = 2;
 }

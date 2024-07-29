@@ -36,6 +36,7 @@ import "transport.proto";
 // This defines a singular entry point message that is to be read from the
 // a transport
 message EntryPointMessage {
+  RequestId request_id = 1;
   oneof message {
     // network messages
     EventWriteRequest event_write_request = 1;
