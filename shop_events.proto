@@ -51,6 +51,18 @@ message Listing {
   optional string view_state = 4;
   repeated Option options = 5;
 
+  oneof action {
+    Option add_option = 1;
+    Option remove_option = 2;
+    uint64 remove_variation = 3;
+    AddVariation add_variation = 4;
+  };
+
+  message AddVariation {
+    uint64 optionId = 1;
+    Variation variation = 2;
+  };
+
   message Metadata {
     string title = 1;
     string description = 2;
@@ -58,14 +70,16 @@ message Listing {
   };
 
   message Option {
-    // the title of the options, ie Color / Size 
-    string title = 1;
-    repeated Variation variations = 2;
+    // the title of the option, ie Color / Size 
+    uint64 id = 1;
+    string title = 2;
+    repeated Variation variations = 3;
   };
 
   message Variation {
     uint64 id = 1;
-    // the title of the variation for example of the option is Color then the title might be "Red"
+    // the metadata of the variation: for example if the option is Color
+    // then the title might be "Red"
     Metadata metadata = 1;
     // this overrides the base price
     // +/-
@@ -125,7 +139,8 @@ message Order {
     ChangeItems change_items = 3;
     ItemsFinalized items_finalized = 4;
     AddressDetails invoice_address = 5;
-    AddressDetails shipping_address = 6; // no shipping addr assumes invoice addr
+    // no shipping addr assumes invoice addr
+    AddressDetails shipping_address = 6; 
     Paid paid = 7;
     Commit commit = 8;
   };
@@ -184,7 +199,9 @@ message Order {
   // generate by the relay to notify that the oder has been paid for
   message Paid {
     Hash tx_hash = 1;
-    Hash block_hash = 2; // incase of an internal transaction, we might have a hard time finding the tx_hash
+    // incase of an internal transaction, we might have a hard 
+    // time finding the tx_hash
+    Hash block_hash = 2; 
   };
 }
 
