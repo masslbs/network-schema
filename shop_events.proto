@@ -46,19 +46,42 @@ message Manifest {
 message Listing {
   uint64 id = 1;
   optional Uint256 price = 2;
-  // should be valid JSON
-  // TODO: make a json schmea with minimal/required fields
-  optional bytes metadata = 3;
-  // If the listinghsould be published or not
-  optional string view_state = 5;
+  optional Metadata metadata = 3;
+  // If the listing sould be published or not
+  optional string view_state = 4;
+  repeated Option options = 5;
 
+  message Metadata {
+    string title = 1;
+    string description = 2;
+    repeated string images = 3;
+  };
+
+  message Option {
+    // the title of the options, ie Color / Size 
+    string title = 1;
+    repeated Variation variations = 2;
+  };
+
+  message Variation {
+    uint64 id = 1;
+    // the title of the variation for example of the option is Color then the title might be "Red"
+    Metadata metadata = 1;
+    // this overrides the base price
+    // +/-
+    bool price_diff_sign = 2;
+    Uint256 price_diff = 3;
+    // TODO add SKU
+  }
 }
 
 // the number of listing to add or subtract
 // Seprated from listing, since this is private
 message ChangeStock {
   uint64 id = 1;
-  sint32 change_stoock = 2;
+  // each listed option must have only one variation
+  repeated uint64 variation_ids = 2;
+  sint32 change_stock = 3;
 }
 
 // Creates a tag in the shop.
