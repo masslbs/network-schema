@@ -29,36 +29,40 @@ syntax = "proto3";
 package market.mass;
 
 import "authentication.proto";
+import "base_types.proto";
 import "shop_requests.proto";
 import "subscription.proto";
 import "transport.proto";
 
-// This defines a singular entry point message that is to be read from the
-// a transport
-message EntryPointMessage {
+// Envelope is how client and server exchange requests and responses.
+message Envelope {
   RequestId request_id = 1;
   oneof message {
-    // network messages
-    EventWriteRequest event_write_request = 1;
-    EventWriteResponse event_write_response = 2;
+    // write operation
+    EventWriteRequest event_write_request = 2;
+    EventWriteResponse event_write_response = 3;
+
     // subscriptions
-    SubscriptionRequest subscription_request = 3;
-    SubscriptionResponse subscription_response = 4;
-    SubscriptionCancel subscription_cancel = 5;
-    SubscriptionPush subscription_push = 6;
-    SubscriptionPushResponse subscription_push_response = 7;
+    SubscriptionRequest subscription_request = 4;
+    SubscriptionResponse subscription_response = 5;
+    SubscriptionCancel subscription_cancel = 6;
+    SubscriptionPush subscription_push = 7;
+    SubscriptionPushResponse subscription_push_response = 8;
+
     // sync state information
-    SyncStatusRequest sync_status_request = 8;
-    SyncStatusResponse sync_status_response = 9;
-    PingRequest ping_request = 10;
-    PingResponse ping_response = 11;
+    SyncStatusRequest sync_status_request = 9;
+    SyncStatusResponse sync_status_response = 10;
+    PingRequest ping_request = 11;
+    PingResponse ping_response = 12;
+
     // shop requests
-    GetBlobUploadURLRequest get_blob_upload_url_request = 12;
-    GetBlobUploadURLResponse get_blob_upload_url_response = 13;
+    GetBlobUploadURLRequest get_blob_upload_url_request = 13;
+    GetBlobUploadURLResponse get_blob_upload_url_response = 14;
+
     // authentification messages
-    AuthenticateRequest auth_request = 14;
-    AuthenticateResponse auth_response = 15;
-    ChallengeSolvedRequest challenge_solution_request = 16;
-    ChallengeSolvedResponse challenge_solution_response = 17;
-  }
+    AuthenticateRequest auth_request = 15;
+    AuthenticateResponse auth_response = 16;
+    ChallengeSolvedRequest challenge_solution_request = 17;
+    ChallengeSolvedResponse challenge_solution_response = 18;
+  };
 }
