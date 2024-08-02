@@ -11,14 +11,12 @@ import "error.proto";
 
 // Initiates the challenge/response protocol.
 message AuthenticateRequest {
-  RequestId request_id = 1;
   PublicKey public_key = 2; // of their keyCard
 }
 
 // Returns an error if the public key is not an enrolled KeyCard.
 // or a challenge to be signed by the KeyCard.
 message AuthenticateResponse {
-  RequestId request_id = 1;
   oneof response {
     Error error = 2;
     bytes challenge = 3;
@@ -27,12 +25,10 @@ message AuthenticateResponse {
 
 // Completes authentication by supplying the signature over the challenge.
 message ChallengeSolvedRequest {
-  RequestId request_id = 1;
   Signature signature = 2;
 }
 
 // No error means the user is authenticated.
 message ChallengeSolvedResponse {
-  RequestId request_id = 1;
   optional Error error = 2;
 }

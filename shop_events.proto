@@ -110,7 +110,7 @@ message ChangeInventory {
 message Tag {
   uint64 id = 1;
   string name = 2;
-  repeated uint64 item_ids = 3;
+  repeated uint64 listing_ids = 3;
   bool deleted = 4;
 }
 
@@ -118,8 +118,8 @@ message Tag {
 message UpdateTag {
   uint64 tag_id = 1;
   optional string rename = 2;
-  repeated uint64 add_item_ids = 3;
-  repeated uint64 remove_item_ids = 4;
+  repeated uint64 add_listing_ids = 3;
+  repeated uint64 remove_listing_ids = 4;
   optional  bool delete = 5;
 }
 
