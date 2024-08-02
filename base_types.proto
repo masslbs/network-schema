@@ -11,8 +11,8 @@ import "google/protobuf/timestamp.proto";
 message RequestId {
   // sender chooses a unique number per request that must not
   // conflict with requests the other party sends.
-  // one suggestion would be two counters starting from zero.
-  // Connection initiator/client doing +1 per request, receiver doing -1.
+  // one suggestion would be each party keeps a counter per sessions.
+  // responses use the negative request number.
   sint64 raw = 1;
 }
 
