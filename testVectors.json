@@ -162,9 +162,7 @@
         "base_info": {
           "title": "the pen",
           "description": "great pen",
-          "images": [
-            "https://masslbs.xyz/pen.jpg"
-          ]
+          "images": ["https://masslbs.xyz/pen.jpg"]
         }
       },
       "signature": "0x1f97a710674f3d3ff5db6934f20c0e1bc472f2b583d37917070e1bba03fe77142426f8bec4e49fc3e5d5ee3d64d86ff09804238666cb793eb61a5426917410d11b",
@@ -175,9 +173,7 @@
       "type": "UpdateTag",
       "object": {
         "tag_id": 10278936348185892724,
-        "add_item_ids": [
-          1316030894146752875
-        ]
+        "add_item_ids": [1316030894146752875]
       },
       "signature": "0x9f62b6b87c3ad76b0341e61766e2c23df354e01a5b473e116adb07153a3490423dfbc135e87ba5c9b528fd801a5f9bf82ab9bd625fb33566992d0d497c657b721c",
       "hash": "0x8d14272cd95cf13f8bdcdd33ca046c2280019f5ad03bfe447c1c1161a8e133c1",
@@ -230,9 +226,7 @@
         "base_info": {
           "title": "The Painting (print)",
           "description": "Beautiful, in all sizes",
-          "images": [
-            "https://masslbs.xyz/painting.jpg"
-          ]
+          "images": ["https://masslbs.xyz/painting.jpg"]
         },
         "view_state": 1,
         "options": [
@@ -274,21 +268,15 @@
         ],
         "stock_status": [
           {
-            "variation_ids": [
-              4773105566242763243
-            ],
+            "variation_ids": [4773105566242763243],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              6151876773098980454
-            ],
+            "variation_ids": [6151876773098980454],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              4399568019659142122
-            ],
+            "variation_ids": [4399568019659142122],
             "expected_in_stock_by": "1970-04-26T16:46:39+00:00"
           }
         ]
@@ -301,9 +289,7 @@
       "type": "ChangeInventory",
       "object": {
         "listing_id": 17421263195323983780,
-        "variation_ids": [
-          4773105566242763243
-        ],
+        "variation_ids": [4773105566242763243],
         "diff": 10
       },
       "signature": "0xb96d0ebac0d5479bbb6976c16c7182ec2128d0e6a28be4725f66b23952eec6770af5eab4a2996c2c33d26ae19158841ec65f2ba6e12610e1add77b8f872bdc041b",
@@ -314,9 +300,7 @@
       "type": "ChangeInventory",
       "object": {
         "listing_id": 17421263195323983780,
-        "variation_ids": [
-          6151876773098980454
-        ],
+        "variation_ids": [6151876773098980454],
         "diff": 20
       },
       "signature": "0xeb496686742b4331dfc4bb3d9a0c2ea8b92c580aa91c7d8fce3a6ebe5589d4be626d956d24ec76ca4cd36d74412340616ec869303af8fb790b149a2d086a44251c",
@@ -376,31 +360,19 @@
         ],
         "stock_status": [
           {
-            "variation_ids": [
-              10027856499048546033,
-              2264229891652266786
-            ],
+            "variation_ids": [10027856499048546033, 2264229891652266786],
             "in_stock": false
           },
           {
-            "variation_ids": [
-              10027856499048546033,
-              5381678921642544620
-            ],
+            "variation_ids": [10027856499048546033, 5381678921642544620],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              16835678932678986006,
-              5381678921642544620
-            ],
+            "variation_ids": [16835678932678986006, 5381678921642544620],
             "in_stock": false
           },
           {
-            "variation_ids": [
-              16687343255740137159,
-              5381678921642544620
-            ],
+            "variation_ids": [16687343255740137159, 5381678921642544620],
             "in_stock": true
           }
         ]
@@ -435,10 +407,7 @@
         "listing_id": 7180250926723281917,
         "stock_updates": [
           {
-            "variation_ids": [
-              10449477052807707476,
-              5381678921642544620
-            ],
+            "variation_ids": [10449477052807707476, 5381678921642544620],
             "in_stock": true
           }
         ]
@@ -471,10 +440,7 @@
       "type": "ChangeInventory",
       "object": {
         "listing_id": 7180250926723281917,
-        "variation_ids": [
-          10027856499048546033,
-          2264229891652266786
-        ],
+        "variation_ids": [10027856499048546033, 2264229891652266786],
         "diff": 127
       },
       "signature": "0xe8032cd573b01c82b245e1e2c6fdda0036567f89a640197a8731053958b9bddd5ebea4fc49724c6230020e0402b77106164bbd8994cb1427a865eb950185aa6f1c",
@@ -485,10 +451,7 @@
       "type": "ChangeInventory",
       "object": {
         "listing_id": 7180250926723281917,
-        "variation_ids": [
-          10449477052807707476,
-          5381678921642544620
-        ],
+        "variation_ids": [10449477052807707476, 5381678921642544620],
         "diff": 171
       },
       "signature": "0xaeff9dc68a7e076dd6b76f771133337f4630957bd07eaa3136dd62ef328fa8aa18a77787c5bf6df6474db280826261b3f89e76ed85dd493cb2ef2b4a29567fcb1b",
@@ -651,9 +614,7 @@
         "add_items_to_order": [
           {
             "listing_id": 17421263195323983780,
-            "variation_ids": [
-              6151876773098980454
-            ],
+            "variation_ids": [6151876773098980454],
             "quantity": 2
           }
         ]
@@ -758,18 +719,12 @@
         "add_items_to_order": [
           {
             "listing_id": 7180250926723281917,
-            "variation_ids": [
-              10027856499048546033,
-              2264229891652266786
-            ],
+            "variation_ids": [10027856499048546033, 2264229891652266786],
             "quantity": 4
           },
           {
             "listing_id": 7180250926723281917,
-            "variation_ids": [
-              10449477052807707476,
-              5381678921642544620
-            ],
+            "variation_ids": [10449477052807707476, 5381678921642544620],
             "quantity": 10
           }
         ]
@@ -903,9 +858,7 @@
         "base_info": {
           "title": "the pen",
           "description": "great pen",
-          "images": [
-            "https://masslbs.xyz/pen.jpg"
-          ]
+          "images": ["https://masslbs.xyz/pen.jpg"]
         }
       },
       {
@@ -916,9 +869,7 @@
         "base_info": {
           "title": "The Painting (print)",
           "description": "Beautiful, in all sizes",
-          "images": [
-            "https://masslbs.xyz/painting.jpg"
-          ]
+          "images": ["https://masslbs.xyz/painting.jpg"]
         },
         "view_state": 1,
         "options": [
@@ -960,21 +911,15 @@
         ],
         "stock_status": [
           {
-            "variation_ids": [
-              4773105566242763243
-            ],
+            "variation_ids": [4773105566242763243],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              6151876773098980454
-            ],
+            "variation_ids": [6151876773098980454],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              4399568019659142122
-            ],
+            "variation_ids": [4399568019659142122],
             "expected_in_stock_by": "1970-04-26T16:46:39+00:00"
           }
         ]
@@ -1030,31 +975,19 @@
         ],
         "stock_status": [
           {
-            "variation_ids": [
-              10027856499048546033,
-              2264229891652266786
-            ],
+            "variation_ids": [10027856499048546033, 2264229891652266786],
             "in_stock": false
           },
           {
-            "variation_ids": [
-              10027856499048546033,
-              5381678921642544620
-            ],
+            "variation_ids": [10027856499048546033, 5381678921642544620],
             "in_stock": true
           },
           {
-            "variation_ids": [
-              16835678932678986006,
-              5381678921642544620
-            ],
+            "variation_ids": [16835678932678986006, 5381678921642544620],
             "in_stock": false
           },
           {
-            "variation_ids": [
-              16687343255740137159,
-              5381678921642544620
-            ],
+            "variation_ids": [16687343255740137159, 5381678921642544620],
             "in_stock": true
           }
         ]
@@ -1063,9 +996,7 @@
     "tags": {
       "10278936348185892724": {
         "name": "Stuff",
-        "item_ids": [
-          1316030894146752875
-        ]
+        "item_ids": [1316030894146752875]
       },
       "63482958001825515": {
         "name": "Clothes",
@@ -1080,32 +1011,22 @@
       },
       {
         "listing_id": 17421263195323983780,
-        "variations": [
-          4773105566242763243
-        ],
+        "variations": [4773105566242763243],
         "quantity": 10
       },
       {
         "listing_id": 17421263195323983780,
-        "variations": [
-          6151876773098980454
-        ],
+        "variations": [6151876773098980454],
         "quantity": 20
       },
       {
         "listing_id": 7180250926723281917,
-        "variations": [
-          10027856499048546033,
-          2264229891652266786
-        ],
+        "variations": [10027856499048546033, 2264229891652266786],
         "quantity": 123
       },
       {
         "listing_id": 7180250926723281917,
-        "variations": [
-          10449477052807707476,
-          5381678921642544620
-        ],
+        "variations": [10449477052807707476, 5381678921642544620],
         "quantity": 161
       }
     ],
@@ -1183,9 +1104,7 @@
         "items": [
           {
             "listing_id": 17421263195323983780,
-            "variation_ids": [
-              6151876773098980454
-            ],
+            "variation_ids": [6151876773098980454],
             "quantity": 2
           }
         ],
@@ -1236,18 +1155,12 @@
         "items": [
           {
             "listing_id": 7180250926723281917,
-            "variation_ids": [
-              10027856499048546033,
-              2264229891652266786
-            ],
+            "variation_ids": [10027856499048546033, 2264229891652266786],
             "quantity": 4
           },
           {
             "listing_id": 7180250926723281917,
-            "variation_ids": [
-              10449477052807707476,
-              5381678921642544620
-            ],
+            "variation_ids": [10449477052807707476, 5381678921642544620],
             "quantity": 10
           }
         ],
