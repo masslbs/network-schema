@@ -173,7 +173,7 @@
       "type": "UpdateTag",
       "object": {
         "tag_id": 10278936348185892724,
-        "add_item_ids": [1316030894146752875]
+        "add_listing_ids": [1316030894146752875]
       },
       "signature": "0x9f62b6b87c3ad76b0341e61766e2c23df354e01a5b473e116adb07153a3490423dfbc135e87ba5c9b528fd801a5f9bf82ab9bd625fb33566992d0d497c657b721c",
       "hash": "0x8d14272cd95cf13f8bdcdd33ca046c2280019f5ad03bfe447c1c1161a8e133c1",

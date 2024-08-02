@@ -11,17 +11,13 @@ from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Opti
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class GetBlobUploadURLRequest(_message.Message):
-    __slots__ = ["request_id"]
-    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
-    request_id: _base_types_pb2.RequestId
-    def __init__(self, request_id: _Optional[_Union[_base_types_pb2.RequestId, _Mapping]] = ...) -> None: ...
+    __slots__ = []
+    def __init__(self) -> None: ...
 
 class GetBlobUploadURLResponse(_message.Message):
-    __slots__ = ["request_id", "error", "url"]
-    REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["error", "url"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     URL_FIELD_NUMBER: _ClassVar[int]
-    request_id: _base_types_pb2.RequestId
     error: _error_pb2.Error
     url: str
-    def __init__(self, request_id: _Optional[_Union[_base_types_pb2.RequestId, _Mapping]] = ..., error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ..., url: _Optional[str] = ...) -> None: ...
+    def __init__(self, error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ..., url: _Optional[str] = ...) -> None: ...

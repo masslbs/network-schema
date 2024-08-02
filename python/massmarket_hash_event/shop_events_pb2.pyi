@@ -122,30 +122,30 @@ class ChangeInventory(_message.Message):
     def __init__(self, listing_id: _Optional[int] = ..., variation_ids: _Optional[_Iterable[int]] = ..., diff: _Optional[int] = ...) -> None: ...
 
 class Tag(_message.Message):
-    __slots__ = ["id", "name", "item_ids", "deleted"]
+    __slots__ = ["id", "name", "listing_ids", "deleted"]
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
-    ITEM_IDS_FIELD_NUMBER: _ClassVar[int]
+    LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
     DELETED_FIELD_NUMBER: _ClassVar[int]
     id: int
     name: str
-    item_ids: _containers.RepeatedScalarFieldContainer[int]
+    listing_ids: _containers.RepeatedScalarFieldContainer[int]
     deleted: bool
-    def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., item_ids: _Optional[_Iterable[int]] = ..., deleted: bool = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., listing_ids: _Optional[_Iterable[int]] = ..., deleted: bool = ...) -> None: ...
 
 class UpdateTag(_message.Message):
-    __slots__ = ["tag_id", "rename", "add_item_ids", "remove_item_ids", "delete"]
+    __slots__ = ["tag_id", "rename", "add_listing_ids", "remove_listing_ids", "delete"]
     TAG_ID_FIELD_NUMBER: _ClassVar[int]
     RENAME_FIELD_NUMBER: _ClassVar[int]
-    ADD_ITEM_IDS_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_ITEM_IDS_FIELD_NUMBER: _ClassVar[int]
+    ADD_LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
     DELETE_FIELD_NUMBER: _ClassVar[int]
     tag_id: int
     rename: str
-    add_item_ids: _containers.RepeatedScalarFieldContainer[int]
-    remove_item_ids: _containers.RepeatedScalarFieldContainer[int]
+    add_listing_ids: _containers.RepeatedScalarFieldContainer[int]
+    remove_listing_ids: _containers.RepeatedScalarFieldContainer[int]
     delete: bool
-    def __init__(self, tag_id: _Optional[int] = ..., rename: _Optional[str] = ..., add_item_ids: _Optional[_Iterable[int]] = ..., remove_item_ids: _Optional[_Iterable[int]] = ..., delete: bool = ...) -> None: ...
+    def __init__(self, tag_id: _Optional[int] = ..., rename: _Optional[str] = ..., add_listing_ids: _Optional[_Iterable[int]] = ..., remove_listing_ids: _Optional[_Iterable[int]] = ..., delete: bool = ...) -> None: ...
 
 class Order(_message.Message):
     __slots__ = ["id", "items", "state", "invoice_address", "shipping_address", "canceled_at", "chosen_payee", "chosen_currency", "payment_details", "paid"]

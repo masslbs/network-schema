@@ -20,7 +20,7 @@ from massmarket_hash_event import base_types_pb2 as base__types__pb2
 from massmarket_hash_event import error_pb2 as error__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftransport.proto\x12\x0bmarket.mass\x1a\x19google/protobuf/any.proto\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\"]\n\x0bSignedEvent\x12#\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12)\n\tsignature\x18\x02 \x01(\x0b\x32\x16.market.mass.Signature\"<\n\x11\x45ventWriteRequest\x12\'\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x18.market.mass.SignedEvent\"\xb3\x01\n\x12\x45ventWriteResponse\x12#\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x12:\n\x07success\x18\x03 \x01(\x0b\x32\'.market.mass.EventWriteResponse.SuccessH\x00\x1a\x30\n\x07Success\x12%\n\nstate_root\x18\x01 \x01(\x0b\x32\x11.market.mass.HashB\n\n\x08response\",\n\x11SyncStatusRequest\x12\x17\n\x0funpushed_events\x18\x01 \x01(\x04\"F\n\x12SyncStatusResponse\x12&\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error\"\r\n\x0bPingRequest\"\x0e\n\x0cPingResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftransport.proto\x12\x0bmarket.mass\x1a\x19google/protobuf/any.proto\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\"]\n\x0bSignedEvent\x12#\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x14.google.protobuf.Any\x12)\n\tsignature\x18\x02 \x01(\x0b\x32\x16.market.mass.Signature\"=\n\x11\x45ventWriteRequest\x12(\n\x06\x65vents\x18\x01 \x03(\x0b\x32\x18.market.mass.SignedEvent\"\xb3\x01\n\x12\x45ventWriteResponse\x12#\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x12:\n\x07success\x18\x03 \x01(\x0b\x32\'.market.mass.EventWriteResponse.SuccessH\x00\x1a\x30\n\x07Success\x12%\n\nstate_root\x18\x01 \x01(\x0b\x32\x11.market.mass.HashB\n\n\x08response\",\n\x11SyncStatusRequest\x12\x17\n\x0funpushed_events\x18\x01 \x01(\x04\"F\n\x12SyncStatusResponse\x12&\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error\"\r\n\x0bPingRequest\"\x0e\n\x0cPingResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -30,17 +30,17 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_SIGNEDEVENT']._serialized_start=90
   _globals['_SIGNEDEVENT']._serialized_end=183
   _globals['_EVENTWRITEREQUEST']._serialized_start=185
-  _globals['_EVENTWRITEREQUEST']._serialized_end=245
-  _globals['_EVENTWRITERESPONSE']._serialized_start=248
-  _globals['_EVENTWRITERESPONSE']._serialized_end=427
-  _globals['_EVENTWRITERESPONSE_SUCCESS']._serialized_start=367
-  _globals['_EVENTWRITERESPONSE_SUCCESS']._serialized_end=415
-  _globals['_SYNCSTATUSREQUEST']._serialized_start=429
-  _globals['_SYNCSTATUSREQUEST']._serialized_end=473
-  _globals['_SYNCSTATUSRESPONSE']._serialized_start=475
-  _globals['_SYNCSTATUSRESPONSE']._serialized_end=545
-  _globals['_PINGREQUEST']._serialized_start=547
-  _globals['_PINGREQUEST']._serialized_end=560
-  _globals['_PINGRESPONSE']._serialized_start=562
-  _globals['_PINGRESPONSE']._serialized_end=576
+  _globals['_EVENTWRITEREQUEST']._serialized_end=246
+  _globals['_EVENTWRITERESPONSE']._serialized_start=249
+  _globals['_EVENTWRITERESPONSE']._serialized_end=428
+  _globals['_EVENTWRITERESPONSE_SUCCESS']._serialized_start=368
+  _globals['_EVENTWRITERESPONSE_SUCCESS']._serialized_end=416
+  _globals['_SYNCSTATUSREQUEST']._serialized_start=430
+  _globals['_SYNCSTATUSREQUEST']._serialized_end=474
+  _globals['_SYNCSTATUSRESPONSE']._serialized_start=476
+  _globals['_SYNCSTATUSRESPONSE']._serialized_end=546
+  _globals['_PINGREQUEST']._serialized_start=548
+  _globals['_PINGREQUEST']._serialized_end=561
+  _globals['_PINGRESPONSE']._serialized_start=563
+  _globals['_PINGRESPONSE']._serialized_end=577
 # @@protoc_insertion_point(module_scope)

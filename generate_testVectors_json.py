@@ -174,7 +174,7 @@ events.append(listing_simple)
 
 sort_listing_simple = mevents.UpdateTag(
     tag_id = tag_stuff.id,
-    add_item_ids = [listing_simple.id],
+    add_listing_ids = [listing_simple.id],
 )
 events.append(sort_listing_simple)
 

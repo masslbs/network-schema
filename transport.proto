@@ -49,17 +49,17 @@ message SignedEvent {
 }
 
 // Used by the Client to write events to the shop.
-// WriteRequests are ONLY authenticated by thier signature
-// meaning an Authentication/req/res is not nessicary
-// this allows for guest to create orders without authenticating
+// WriteRequests are ONLY authenticated by thier signature.
+// meaning an Authentication/req/res is not nessicary.
+// this allows for guest to create orders without authenticating.
+// If validation of one event fails, the whole write will fail.
 message EventWriteRequest {
-  SignedEvent event = 1;
+  repeated SignedEvent events = 1;
 }
 
 // Might return an error if the event or its signature is invalid.
 // If no error is returned,
 // the new_shop_hash is the hash of the shop with the new event applied.
-// The event_sequence_no is the index of the event in the shops log.
 message EventWriteResponse {
   oneof response {
     Error error = 2;
@@ -83,10 +83,6 @@ message SyncStatusResponse {
 // Sent by the relay to check for the clients liveness.
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
-message PingRequest{
-}
+message PingRequest {}
 
-message PingResponse {
-  // not sure what this would be for
-  // optional Error error = 2;
-}
+message PingResponse {}

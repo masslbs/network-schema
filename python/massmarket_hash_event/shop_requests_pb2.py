@@ -17,7 +17,7 @@ from massmarket_hash_event import base_types_pb2 as base__types__pb2
 from massmarket_hash_event import error_pb2 as error__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13shop_requests.proto\x12\x0bmarket.mass\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\"E\n\x17GetBlobUploadURLRequest\x12*\n\nrequest_id\x18\x01 \x01(\x0b\x32\x16.market.mass.RequestId\"\x84\x01\n\x18GetBlobUploadURLResponse\x12*\n\nrequest_id\x18\x01 \x01(\x0b\x32\x16.market.mass.RequestId\x12#\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x12\r\n\x03url\x18\x03 \x01(\tH\x00\x42\x08\n\x06resultb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13shop_requests.proto\x12\x0bmarket.mass\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\"\x19\n\x17GetBlobUploadURLRequest\"X\n\x18GetBlobUploadURLResponse\x12#\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x12\r\n\x03url\x18\x03 \x01(\tH\x00\x42\x08\n\x06resultb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -25,7 +25,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'shop_requests_pb2', _global
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _globals['_GETBLOBUPLOADURLREQUEST']._serialized_start=67
-  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_end=136
-  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_start=139
-  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_end=271
+  _globals['_GETBLOBUPLOADURLREQUEST']._serialized_end=92
+  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_start=94
+  _globals['_GETBLOBUPLOADURLRESPONSE']._serialized_end=182
 # @@protoc_insertion_point(module_scope)
