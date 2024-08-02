@@ -53,14 +53,14 @@ message SubscriptionRequest {
 // Used by the relay to notify the client that the subscription have
 // been sucseful
 message SubscriptionResponse {
-  optional Error error = 2;
+  optional Error error = 1;
 }
 
 
 // Used by the relay to push events to the client.
 // Will not sent more events until the client has acknowledged the last batch.
-message SubscriptionPush {
-  repeated SignedEvent events = 2;
+message SubscriptionPushRequest {
+  repeated SignedEvent events = 1;
 }
 
 // Used by the client to tell the relay to continue sending events
@@ -69,5 +69,5 @@ message SubscriptionPushResponse {
 
 // Used by the client or the relay to cancel the stream
 message SubscriptionCancel {
-  optional Error error = 2;
+  optional Error error = 1;
 }
