@@ -10,6 +10,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -20,13 +21,15 @@ from massmarket_hash_event import subscription_pb2 as subscription__pb2
 from massmarket_hash_event import transport_pb2 as transport__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x65nvelope.proto\x12\x0bmarket.mass\x1a\x14\x61uthentication.proto\x1a\x10\x62\x61se_types.proto\x1a\x13shop_requests.proto\x1a\x12subscription.proto\x1a\x0ftransport.proto\"\xa0\t\n\x08\x45nvelope\x12*\n\nrequest_id\x18\x01 \x01(\x0b\x32\x16.market.mass.RequestId\x12=\n\x13\x65vent_write_request\x18\x02 \x01(\x0b\x32\x1e.market.mass.EventWriteRequestH\x00\x12?\n\x14\x65vent_write_response\x18\x03 \x01(\x0b\x32\x1f.market.mass.EventWriteResponseH\x00\x12@\n\x14subscription_request\x18\x04 \x01(\x0b\x32 .market.mass.SubscriptionRequestH\x00\x12\x42\n\x15subscription_response\x18\x05 \x01(\x0b\x32!.market.mass.SubscriptionResponseH\x00\x12>\n\x13subscription_cancel\x18\x06 \x01(\x0b\x32\x1f.market.mass.SubscriptionCancelH\x00\x12:\n\x11subscription_push\x18\x07 \x01(\x0b\x32\x1d.market.mass.SubscriptionPushH\x00\x12K\n\x1asubscription_push_response\x18\x08 \x01(\x0b\x32%.market.mass.SubscriptionPushResponseH\x00\x12=\n\x13sync_status_request\x18\t \x01(\x0b\x32\x1e.market.mass.SyncStatusRequestH\x00\x12?\n\x14sync_status_response\x18\n \x01(\x0b\x32\x1f.market.mass.SyncStatusResponseH\x00\x12\x30\n\x0cping_request\x18\x0b \x01(\x0b\x32\x18.market.mass.PingRequestH\x00\x12\x32\n\rping_response\x18\x0c \x01(\x0b\x32\x19.market.mass.PingResponseH\x00\x12K\n\x1bget_blob_upload_url_request\x18\r \x01(\x0b\x32$.market.mass.GetBlobUploadURLRequestH\x00\x12M\n\x1cget_blob_upload_url_response\x18\x0e \x01(\x0b\x32%.market.mass.GetBlobUploadURLResponseH\x00\x12\x38\n\x0c\x61uth_request\x18\x0f \x01(\x0b\x32 .market.mass.AuthenticateRequestH\x00\x12:\n\rauth_response\x18\x10 \x01(\x0b\x32!.market.mass.AuthenticateResponseH\x00\x12I\n\x1a\x63hallenge_solution_request\x18\x11 \x01(\x0b\x32#.market.mass.ChallengeSolvedRequestH\x00\x12K\n\x1b\x63hallenge_solution_response\x18\x12 \x01(\x0b\x32$.market.mass.ChallengeSolvedResponseH\x00\x42\t\n\x07messageb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x0e\x65nvelope.proto\x12\x0bmarket.mass\x1a\x14\x61uthentication.proto\x1a\x10\x62\x61se_types.proto\x1a\x13shop_requests.proto\x1a\x12subscription.proto\x1a\x0ftransport.proto"\xaf\t\n\x08\x45nvelope\x12*\n\nrequest_id\x18\x01 \x01(\x0b\x32\x16.market.mass.RequestId\x12=\n\x13\x65vent_write_request\x18\x02 \x01(\x0b\x32\x1e.market.mass.EventWriteRequestH\x00\x12?\n\x14\x65vent_write_response\x18\x03 \x01(\x0b\x32\x1f.market.mass.EventWriteResponseH\x00\x12@\n\x14subscription_request\x18\x04 \x01(\x0b\x32 .market.mass.SubscriptionRequestH\x00\x12\x42\n\x15subscription_response\x18\x05 \x01(\x0b\x32!.market.mass.SubscriptionResponseH\x00\x12>\n\x13subscription_cancel\x18\x06 \x01(\x0b\x32\x1f.market.mass.SubscriptionCancelH\x00\x12I\n\x19subscription_push_request\x18\x07 \x01(\x0b\x32$.market.mass.SubscriptionPushRequestH\x00\x12K\n\x1asubscription_push_response\x18\x08 \x01(\x0b\x32%.market.mass.SubscriptionPushResponseH\x00\x12=\n\x13sync_status_request\x18\t \x01(\x0b\x32\x1e.market.mass.SyncStatusRequestH\x00\x12?\n\x14sync_status_response\x18\n \x01(\x0b\x32\x1f.market.mass.SyncStatusResponseH\x00\x12\x30\n\x0cping_request\x18\x0b \x01(\x0b\x32\x18.market.mass.PingRequestH\x00\x12\x32\n\rping_response\x18\x0c \x01(\x0b\x32\x19.market.mass.PingResponseH\x00\x12K\n\x1bget_blob_upload_url_request\x18\r \x01(\x0b\x32$.market.mass.GetBlobUploadURLRequestH\x00\x12M\n\x1cget_blob_upload_url_response\x18\x0e \x01(\x0b\x32%.market.mass.GetBlobUploadURLResponseH\x00\x12\x38\n\x0c\x61uth_request\x18\x0f \x01(\x0b\x32 .market.mass.AuthenticateRequestH\x00\x12:\n\rauth_response\x18\x10 \x01(\x0b\x32!.market.mass.AuthenticateResponseH\x00\x12I\n\x1a\x63hallenge_solution_request\x18\x11 \x01(\x0b\x32#.market.mass.ChallengeSolvedRequestH\x00\x12K\n\x1b\x63hallenge_solution_response\x18\x12 \x01(\x0b\x32$.market.mass.ChallengeSolvedResponseH\x00\x42\t\n\x07messageb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envelope_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "envelope_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  DESCRIPTOR._options = None
-  _globals['_ENVELOPE']._serialized_start=130
-  _globals['_ENVELOPE']._serialized_end=1314
+    DESCRIPTOR._options = None
+    _globals["_ENVELOPE"]._serialized_start = 130
+    _globals["_ENVELOPE"]._serialized_end = 1329
 # @@protoc_insertion_point(module_scope)

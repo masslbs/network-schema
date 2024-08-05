@@ -56,7 +56,6 @@ message SubscriptionResponse {
   optional Error error = 1;
 }
 
-
 // Used by the relay to push events to the client.
 // Will not sent more events until the client has acknowledged the last batch.
 message SubscriptionPushRequest {
@@ -65,6 +64,7 @@ message SubscriptionPushRequest {
 
 // Used by the client to tell the relay to continue sending events
 message SubscriptionPushResponse {
+  // empty
 }
 
 // Used by the client or the relay to cancel the stream

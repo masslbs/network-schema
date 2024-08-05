@@ -266,7 +266,7 @@
             ]
           }
         ],
-        "stock_status": [
+        "stock_statuses": [
           {
             "variation_ids": [4773105566242763243],
             "in_stock": true
@@ -358,7 +358,7 @@
             ]
           }
         ],
-        "stock_status": [
+        "stock_statuses": [
           {
             "variation_ids": [10027856499048546033, 2264229891652266786],
             "in_stock": false
@@ -471,7 +471,7 @@
       "type": "UpdateOrder",
       "object": {
         "order_id": 4002373302479722879,
-        "add_items_to_order": [
+        "add_items": [
           {
             "listing_id": 1316030894146752875,
             "quantity": 23
@@ -495,7 +495,7 @@
       "type": "UpdateOrder",
       "object": {
         "order_id": 15699756058211723684,
-        "add_items_to_order": [
+        "add_items": [
           {
             "listing_id": 1316030894146752875,
             "quantity": 42
@@ -611,7 +611,7 @@
       "type": "UpdateOrder",
       "object": {
         "order_id": 6606955170913022014,
-        "add_items_to_order": [
+        "add_items": [
           {
             "listing_id": 17421263195323983780,
             "variation_ids": [6151876773098980454],
@@ -716,7 +716,7 @@
       "type": "UpdateOrder",
       "object": {
         "order_id": 2797408169909466752,
-        "add_items_to_order": [
+        "add_items": [
           {
             "listing_id": 7180250926723281917,
             "variation_ids": [10027856499048546033, 2264229891652266786],
@@ -909,7 +909,7 @@
             ]
           }
         ],
-        "stock_status": [
+        "stock_statuses": [
           {
             "variation_ids": [4773105566242763243],
             "in_stock": true
@@ -973,7 +973,7 @@
             ]
           }
         ],
-        "stock_status": [
+        "stock_statuses": [
           {
             "variation_ids": [10027856499048546033, 2264229891652266786],
             "in_stock": false

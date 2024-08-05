@@ -41,7 +41,7 @@ message ShopCurrency {
   // Contract address for an ERC20 token.
   // 20 zero bytes for native chain currency, like ETH.
   EthereumAddress address = 2;
-};
+}
 
 message Payee {
   // user handle, like "escrow" or "direct", used during checkout
@@ -57,7 +57,7 @@ message Payee {
   // commit: 377aba24796e029945696350db581ec1f65da657
   // file: src/IPayments.sol#L90-L95.
   bool call_as_contract = 4;
-};
+}
 
 // listing related messages
 // ========================
@@ -142,11 +142,11 @@ message OrderPaid {
   // in case of an internal transaction, we might have a hard
   // time finding the tx_hash
   Hash block_hash = 2;
-};
+}
 
 // OrderedItems is used to add items to or remove items from an order.
 message OrderedItem {
   uint64 listing_id = 1;
   repeated uint64 variation_ids = 2;
   uint32 quantity = 3;
-};
+}

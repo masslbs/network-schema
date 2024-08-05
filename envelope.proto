@@ -64,5 +64,5 @@ message Envelope {
     AuthenticateResponse auth_response = 16;
     ChallengeSolvedRequest challenge_solution_request = 17;
     ChallengeSolvedResponse challenge_solution_response = 18;
-  };
+  }
 }

@@ -10,6 +10,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -18,25 +19,27 @@ from massmarket_hash_event import error_pb2 as error__pb2
 from massmarket_hash_event import transport_pb2 as transport__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12subscription.proto\x12\x0bmarket.mass\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\x1a\x0ftransport.proto\"\xef\x01\n\x13SubscriptionRequest\x12\x19\n\x11start_shop_seq_no\x18\x01 \x01(\x04\x12%\n\x07shop_id\x18\x02 \x01(\x0b\x32\x14.market.mass.Uint256\x12\x38\n\x07\x66ilters\x18\x03 \x03(\x0b\x32\'.market.mass.SubscriptionRequest.Filter\x1a\\\n\x06\x46ilter\x12,\n\x0bobject_type\x18\x03 \x01(\x0e\x32\x17.market.mass.ObjectType\x12\x16\n\tobject_id\x18\x04 \x01(\x0cH\x00\x88\x01\x01\x42\x0c\n\n_object_id\"H\n\x14SubscriptionResponse\x12&\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error\"<\n\x10SubscriptionPush\x12(\n\x06\x65vents\x18\x02 \x03(\x0b\x32\x18.market.mass.SignedEvent\"\x1a\n\x18SubscriptionPushResponse\"F\n\x12SubscriptionCancel\x12&\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error*\xbc\x01\n\nObjectType\x12\x1b\n\x17OBJECT_TYPE_UNSPECIFIED\x10\x00\x12\x17\n\x13OBJECT_TYPE_LISTING\x10\x01\x12\x13\n\x0fOBJECT_TYPE_TAG\x10\x02\x12\x15\n\x11OBJECT_TYPE_ORDER\x10\x03\x12\x17\n\x13OBJECT_TYPE_ACCOUNT\x10\x04\x12\x18\n\x14OBJECT_TYPE_MANIFEST\x10\x05\x12\x19\n\x15OBJECT_TYPE_INVENTORY\x10\x06\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x12subscription.proto\x12\x0bmarket.mass\x1a\x10\x62\x61se_types.proto\x1a\x0b\x65rror.proto\x1a\x0ftransport.proto"\xef\x01\n\x13SubscriptionRequest\x12\x19\n\x11start_shop_seq_no\x18\x01 \x01(\x04\x12%\n\x07shop_id\x18\x02 \x01(\x0b\x32\x14.market.mass.Uint256\x12\x38\n\x07\x66ilters\x18\x03 \x03(\x0b\x32\'.market.mass.SubscriptionRequest.Filter\x1a\\\n\x06\x46ilter\x12,\n\x0bobject_type\x18\x03 \x01(\x0e\x32\x17.market.mass.ObjectType\x12\x16\n\tobject_id\x18\x04 \x01(\x0cH\x00\x88\x01\x01\x42\x0c\n\n_object_id"H\n\x14SubscriptionResponse\x12&\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error"C\n\x17SubscriptionPushRequest\x12(\n\x06\x65vents\x18\x01 \x03(\x0b\x32\x18.market.mass.SignedEvent"\x1a\n\x18SubscriptionPushResponse"F\n\x12SubscriptionCancel\x12&\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x88\x01\x01\x42\x08\n\x06_error*\xbc\x01\n\nObjectType\x12\x1b\n\x17OBJECT_TYPE_UNSPECIFIED\x10\x00\x12\x17\n\x13OBJECT_TYPE_LISTING\x10\x01\x12\x13\n\x0fOBJECT_TYPE_TAG\x10\x02\x12\x15\n\x11OBJECT_TYPE_ORDER\x10\x03\x12\x17\n\x13OBJECT_TYPE_ACCOUNT\x10\x04\x12\x18\n\x14OBJECT_TYPE_MANIFEST\x10\x05\x12\x19\n\x15OBJECT_TYPE_INVENTORY\x10\x06\x62\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'subscription_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "subscription_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  DESCRIPTOR._options = None
-  _globals['_OBJECTTYPE']._serialized_start=562
-  _globals['_OBJECTTYPE']._serialized_end=750
-  _globals['_SUBSCRIPTIONREQUEST']._serialized_start=84
-  _globals['_SUBSCRIPTIONREQUEST']._serialized_end=323
-  _globals['_SUBSCRIPTIONREQUEST_FILTER']._serialized_start=231
-  _globals['_SUBSCRIPTIONREQUEST_FILTER']._serialized_end=323
-  _globals['_SUBSCRIPTIONRESPONSE']._serialized_start=325
-  _globals['_SUBSCRIPTIONRESPONSE']._serialized_end=397
-  _globals['_SUBSCRIPTIONPUSH']._serialized_start=399
-  _globals['_SUBSCRIPTIONPUSH']._serialized_end=459
-  _globals['_SUBSCRIPTIONPUSHRESPONSE']._serialized_start=461
-  _globals['_SUBSCRIPTIONPUSHRESPONSE']._serialized_end=487
-  _globals['_SUBSCRIPTIONCANCEL']._serialized_start=489
-  _globals['_SUBSCRIPTIONCANCEL']._serialized_end=559
+    DESCRIPTOR._options = None
+    _globals["_OBJECTTYPE"]._serialized_start = 569
+    _globals["_OBJECTTYPE"]._serialized_end = 757
+    _globals["_SUBSCRIPTIONREQUEST"]._serialized_start = 84
+    _globals["_SUBSCRIPTIONREQUEST"]._serialized_end = 323
+    _globals["_SUBSCRIPTIONREQUEST_FILTER"]._serialized_start = 231
+    _globals["_SUBSCRIPTIONREQUEST_FILTER"]._serialized_end = 323
+    _globals["_SUBSCRIPTIONRESPONSE"]._serialized_start = 325
+    _globals["_SUBSCRIPTIONRESPONSE"]._serialized_end = 397
+    _globals["_SUBSCRIPTIONPUSHREQUEST"]._serialized_start = 399
+    _globals["_SUBSCRIPTIONPUSHREQUEST"]._serialized_end = 466
+    _globals["_SUBSCRIPTIONPUSHRESPONSE"]._serialized_start = 468
+    _globals["_SUBSCRIPTIONPUSHRESPONSE"]._serialized_end = 494
+    _globals["_SUBSCRIPTIONCANCEL"]._serialized_start = 496
+    _globals["_SUBSCRIPTIONCANCEL"]._serialized_end = 566
 # @@protoc_insertion_point(module_scope)

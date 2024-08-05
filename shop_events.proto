@@ -6,10 +6,8 @@ syntax = "proto3";
 
 package market.mass;
 
-import "google/protobuf/timestamp.proto";
-
 import "base_types.proto";
-
+import "google/protobuf/timestamp.proto";
 
 // First genisis message of a shop.
 // Has to be the first message that is written and can only be written once.
@@ -56,9 +54,9 @@ message Account {
   message KeyCardEnroll {
     PublicKey keycard_pubkey = 1;
     // TODO: move to docs
-    // What to do about guest checkouts?
+    // What to do about checkouts of guest keycards?
     // - set to zero address
-    // - expose keycard secret key, that the frontend generated for them, during checkout for recovering access to order
+    // - expose  secret key during checkout for recovering access to order
     EthereumAddress user_wallet = 2;
   }
 }
@@ -72,8 +70,8 @@ message Listing {
   ListingViewState view_state = 4;
   repeated ListingOption options = 5;
   // one for each combination of variations
-  repeated ListingStockStatus stock_status = 6;
-};
+  repeated ListingStockStatus stock_statuses = 6;
+}
 
 // State transition of a listing
 message UpdateListing {
@@ -120,7 +118,7 @@ message UpdateTag {
   optional string rename = 2;
   repeated uint64 add_listing_ids = 3;
   repeated uint64 remove_listing_ids = 4;
-  optional  bool delete = 5;
+  optional bool delete = 5;
 }
 
 // Account messages mirror the events emitted by the ShopReg smart-contract
@@ -166,8 +164,8 @@ message UpdateOrder {
   uint64 order_id = 1;
 
   // only valid before items were commited to the order
-  repeated OrderedItem add_items_to_order = 2;
-  repeated OrderedItem remove_items_from_order = 3;
+  repeated OrderedItem add_items = 2;
+  repeated OrderedItem remove_items = 3;
 
   oneof action {
     Canceled canceled = 4;
@@ -178,7 +176,7 @@ message UpdateOrder {
     CommitItems commit = 7;
     PaymentDetails payment_details = 8;
     OrderPaid paid = 9;
-  };
+  }
 
   // Created by a customer when they are ready to purchase an order
   // This is followed by a PaymentDetails message

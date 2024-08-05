@@ -34,10 +34,9 @@ syntax = "proto3";
 
 package market.mass;
 
-import "google/protobuf/any.proto";
-
 import "base_types.proto";
 import "error.proto";
+import "google/protobuf/any.proto";
 
 // ====================
 // Event syncronization
@@ -64,11 +63,11 @@ message EventWriteResponse {
   oneof response {
     Error error = 2;
     Success success = 3;
-  };
+  }
 
   message Success {
     Hash state_root = 1;
-  };
+  }
 }
 
 // Sent by the relay to signal the number of unpushed events.
@@ -83,6 +82,10 @@ message SyncStatusResponse {
 // Sent by the relay to check for the clients liveness.
 // The client needs to respond with a PingResponse.
 // The relay will close the connection if the client doesn't respond 3 times.
-message PingRequest {}
+message PingRequest {
+  // empty
+}
 
-message PingResponse {}
+message PingResponse {
+  // empty
+}
