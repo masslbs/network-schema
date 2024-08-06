@@ -8,6 +8,7 @@ import binascii
 import json
 import pprint
 import random
+
 random.seed("mass-market-test-vectors")
 
 from protobuf_to_dict import protobuf_to_dict
@@ -17,21 +18,27 @@ from massmarket_hash_event import hash_event, shop_pb2, shop_events_pb2
 from web3 import Account
 
 from eth_keys import keys
+
+
 def public_key_from_account(account):
     k = keys.PrivateKey(account.key)
     return k.public_key
 
+
 def debug(message):
-  if os.getenv('DEBUG') != None:
-    sys.stderr.write(message + '\n')
+    if os.getenv("DEBUG") != None:
+        sys.stderr.write(message + "\n")
+
 
 def hex(b):
-  return "0x"+binascii.hexlify(b).decode('utf-8')
+    return "0x" + binascii.hexlify(b).decode("utf-8")
+
 
 def unhex(a):
     if a.startswith("0x"):
         a = a[2:]
     return binascii.a2b_hex(a)
+
 
 kc1 = Account.from_key(random.randbytes(32))
 debug(f"kc1: {kc1.address}")
@@ -139,7 +146,9 @@ events.append(changePrice)
 notPublishedItem = shop_events_pb2.CreateItem()
 notPublishedItem.event_id = random.randbytes(32)
 notPublishedItem.price = "13.12"
-notPublishedItem.metadata = b'{"title":"not yet published", "image":"https://masslbs.xyz/shoes.jpg"}'
+notPublishedItem.metadata = (
+    b'{"title":"not yet published", "image":"https://masslbs.xyz/shoes.jpg"}'
+)
 events.append(notPublishedItem)
 
 publishItem2 = shop_events_pb2.UpdateTag()
@@ -160,7 +169,9 @@ unpublishItem.tag_id = newTag2.event_id
 unpublishItem.add_item_id = notPublishedItem.event_id
 events.append(unpublishItem)
 
-changeStock = shop_events_pb2.ChangeStock(item_ids = [newItem.event_id, notPublishedItem.event_id], diffs = [100, 123] )
+changeStock = shop_events_pb2.ChangeStock(
+    item_ids=[newItem.event_id, notPublishedItem.event_id], diffs=[100, 123]
+)
 changeStock.event_id = random.randbytes(32)
 events.append(changeStock)
 
@@ -200,10 +211,10 @@ commit_order.payment_id = random.randbytes(32)
 commit_order.currency_addr = random.randbytes(20)
 commit_order.order_hash = random.randbytes(32)
 commit_order.shop_signature = random.randbytes(64)
-commit_order.sub_total = "1764.00" # 42*42
-commit_order.sales_tax = "88.20"   # 5%
+commit_order.sub_total = "1764.00"  # 42*42
+commit_order.sales_tax = "88.20"  # 5%
 commit_order.total = "1852.20"
-commit_order.total_in_crypto = int(185220).to_bytes(32, 'big')
+commit_order.total_in_crypto = int(185220).to_bytes(32, "big")
 update_order = shop_events_pb2.UpdateOrder(items_finalized=commit_order)
 update_order.event_id = random.randbytes(32)
 update_order.order_id = order2.event_id
@@ -297,132 +308,119 @@ events.append(update_order4)
 
 wrapped_events = []
 for idx, evt in enumerate(events):
-  type_name = evt.__class__.__name__
+    type_name = evt.__class__.__name__
 
-  debug(f"\nEvent idx={idx} type={type_name}\n{evt}")
+    debug(f"\nEvent idx={idx} type={type_name}\n{evt}")
 
-  wrapped = None
-  if type_name == "ShopManifest":
-    wrapped = shop_events_pb2.ShopEvent(shop_manifest=evt)
-  elif type_name == "UpdateShopManifest":
-    wrapped = shop_events_pb2.ShopEvent(update_shop_manifest=evt)
-  elif type_name == "CreateItem":
-    wrapped = shop_events_pb2.ShopEvent(create_item=evt)
-  elif type_name == "UpdateItem":
-    wrapped = shop_events_pb2.ShopEvent(update_item=evt)
-  elif type_name == "CreateTag":
-    wrapped = shop_events_pb2.ShopEvent(create_tag=evt)
-  elif type_name == "UpdateTag":
-    wrapped = shop_events_pb2.ShopEvent(update_tag=evt)
-  elif type_name == "NewKeyCard":
-    wrapped = shop_events_pb2.ShopEvent(new_key_card=evt)
-  elif type_name == "ChangeStock":
-    wrapped = shop_events_pb2.ShopEvent(change_stock=evt)
-  elif type_name == "CreateOrder":
-    wrapped = shop_events_pb2.ShopEvent(create_order=evt)
-  elif type_name == "UpdateOrder":
-    wrapped = shop_events_pb2.ShopEvent(update_order=evt)
-  else:
-    raise Exception(f"Unknown event type: {type_name}")
+    wrapped = None
+    if type_name == "ShopManifest":
+        wrapped = shop_events_pb2.ShopEvent(shop_manifest=evt)
+    elif type_name == "UpdateShopManifest":
+        wrapped = shop_events_pb2.ShopEvent(update_shop_manifest=evt)
+    elif type_name == "CreateItem":
+        wrapped = shop_events_pb2.ShopEvent(create_item=evt)
+    elif type_name == "UpdateItem":
+        wrapped = shop_events_pb2.ShopEvent(update_item=evt)
+    elif type_name == "CreateTag":
+        wrapped = shop_events_pb2.ShopEvent(create_tag=evt)
+    elif type_name == "UpdateTag":
+        wrapped = shop_events_pb2.ShopEvent(update_tag=evt)
+    elif type_name == "NewKeyCard":
+        wrapped = shop_events_pb2.ShopEvent(new_key_card=evt)
+    elif type_name == "ChangeStock":
+        wrapped = shop_events_pb2.ShopEvent(change_stock=evt)
+    elif type_name == "CreateOrder":
+        wrapped = shop_events_pb2.ShopEvent(create_order=evt)
+    elif type_name == "UpdateOrder":
+        wrapped = shop_events_pb2.ShopEvent(update_order=evt)
+    else:
+        raise Exception(f"Unknown event type: {type_name}")
 
-  h = hash_event(wrapped)
-  msg = kc1.sign_message(h)
-  #pprint.pprint(msg)
+    h = hash_event(wrapped)
+    msg = kc1.sign_message(h)
+    # pprint.pprint(msg)
 
-  debug(pprint.pformat(wrapped))
-  bin = wrapped.SerializeToString()
-  debug(f"binary: {bin}")
+    debug(pprint.pformat(wrapped))
+    bin = wrapped.SerializeToString()
+    debug(f"binary: {bin}")
 
-  wrapped_events.append({
-    "type": type_name,
-    "object": protobuf_to_dict(evt),
-    "signature": hex(msg.signature),
-    "hash": hex(msg.messageHash),
-    "encoded": hex(bin)
-  })
+    wrapped_events.append(
+        {
+            "type": type_name,
+            "object": protobuf_to_dict(evt),
+            "signature": hex(msg.signature),
+            "hash": hex(msg.messageHash),
+            "encoded": hex(bin),
+        }
+    )
 
 output = {
-  "signatures": {
-    "signer_address": kc1.address,
-  },
-  "events": wrapped_events,
-  "reduced": {
-    "manifest": {
-      "shop_token_id": hex(manifest.shop_token_id),
-      "name": updateMeta1.name,
-      "description": updateMeta1.description,
-      "profile_picture_url": updateMeta2.profile_picture_url,
-      "domain": update2.domain,
-      "published_tag": hex(newTag1.event_id),
-      "accepted_currencies": [
-          {"chain": 1, "addr": hex(zero_addr)},
-          {"chain": 23, "addr": hex(erc20_two)},
-      ],
-      "base_currency": {"chain": 1, "addr": hex(zero_addr)},
+    "signatures": {
+        "signer_address": kc1.address,
     },
-    "keycards": {
-      hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),
-      hex(newKc2.card_public_key): hex(newKc2.user_wallet_addr),
-    },
-    "items": {
-      hex(newItem.event_id): {
-        "price": changePrice.price,
-        "metadata": newItem.metadata.decode('utf-8'),
-        "tag_id" : [hex(newTag1.event_id)],
-        "stock_qty": 58
-
-      },
-      hex(notPublishedItem.event_id): {
-        "price": notPublishedItem.price,
-        "metadata": notPublishedItem.metadata.decode('utf-8'),
-        "tag_id":[hex(newTag2.event_id)],
-        "stock_qty": 123
-      }
-    },
-    "tags":{
-      hex(newTag1.event_id):{
-        'name':newTag1.name
-      },
-      hex(newTag2.event_id):{
-        'name':newTag2.name
-      }
-    },
-
-    # an array of items published
-    "published_items": [hex(publishItem.add_item_id)],
-
-    "inventory": {
-      hex(newItem.event_id): 58,
-      hex(notPublishedItem.event_id): 123
-    },
-
-    "orders": {
-        "open": {
-            hex(order1.event_id): {
-                hex(newItem.event_id): 23
-            }
+    "events": wrapped_events,
+    "reduced": {
+        "manifest": {
+            "shop_token_id": hex(manifest.shop_token_id),
+            "name": updateMeta1.name,
+            "description": updateMeta1.description,
+            "profile_picture_url": updateMeta2.profile_picture_url,
+            "domain": update2.domain,
+            "published_tag": hex(newTag1.event_id),
+            "accepted_currencies": [
+                {"chain": 1, "addr": hex(zero_addr)},
+                {"chain": 23, "addr": hex(erc20_two)},
+            ],
+            "base_currency": {"chain": 1, "addr": hex(zero_addr)},
         },
-
-        "items_finalized": {
-            hex(order4.event_id): {
-                "payment_id": hex(commit_order4.payment_id),
-                "items": {
-                    hex(newItem.event_id): 4
-                },
-                "total": "176.40"
+        "keycards": {
+            hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),
+            hex(newKc2.card_public_key): hex(newKc2.user_wallet_addr),
+        },
+        "items": {
+            hex(newItem.event_id): {
+                "price": changePrice.price,
+                "metadata": newItem.metadata.decode("utf-8"),
+                "tag_id": [hex(newTag1.event_id)],
+                "stock_qty": 58,
+            },
+            hex(notPublishedItem.event_id): {
+                "price": notPublishedItem.price,
+                "metadata": notPublishedItem.metadata.decode("utf-8"),
+                "tag_id": [hex(newTag2.event_id)],
+                "stock_qty": 123,
             },
         },
-
-        "payed": [{
-            "order_id": hex(order2.event_id),
-            "tx_hash": hex(payedOrder.tx_hash),
-        }],
-
-        "abandoned": [
-            hex(order3.event_id),
-        ],
+        "tags": {
+            hex(newTag1.event_id): {"name": newTag1.name},
+            hex(newTag2.event_id): {"name": newTag2.name},
+        },
+        # an array of items published
+        "published_items": [hex(publishItem.add_item_id)],
+        "inventory": {hex(newItem.event_id): 58, hex(notPublishedItem.event_id): 123},
+        "orders": {
+            "open": [
+                {"order_id": hex(order1.event_id), "items": {hex(newItem.event_id): 23}}
+            ],
+            "committed": [
+                {
+                    "order_id": hex(order4.event_id),
+                    "payment_id": hex(commit_order4.payment_id),
+                    "items": {hex(newItem.event_id): 4},
+                    "total": "176.40",
+                }
+            ],
+            "payed": [
+                {
+                    "order_id": hex(order2.event_id),
+                    "tx_hash": hex(payedOrder.tx_hash),
+                }
+            ],
+            "abandoned": [
+                {"order_id": hex(order3.event_id)},
+            ],
+        },
     },
-  }
 }
 
 with open("testVectors.json", "w") as file:
