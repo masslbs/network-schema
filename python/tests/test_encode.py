@@ -4,22 +4,30 @@
 
 import binascii
 import random
+
 random.seed("massmarket-testing")
 
-from massmarket_hash_event import shop_events_pb2
+from massmarket_hash_event import shop_events_pb2 as mevents, base_types_pb2 as mtypes
+
 
 def hex(b: bytes) -> str:
-  return binascii.hexlify(b).decode('utf-8')
+    return binascii.hexlify(b).decode("utf-8")
+
 
 def test_encode_event():
-  manifest = shop_events_pb2.ShopManifest()
-  manifest.event_id = random.randbytes(32)
-  assert hex(manifest.event_id) == "bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a"
-  manifest.shop_token_id = random.randbytes(32)
-  manifest.published_tag_id = random.randbytes(32)
-  manifest.domain = "shop.mass.market"
-  data = manifest.SerializeToString()
-  assert hex(data) == "0a20bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a122087e7f0ff4b672cbbf634364fde123b58402da96fc46df0414f4952d85ffc9f6f1a20b026c43b2358eed1f57233c2e8300c3dba995cd8b0377216fca829e211e6805c3a1073686f702e6d6173732e6d61726b6574"
-  event = shop_events_pb2.ShopEvent(shop_manifest=manifest)
-  data = event.SerializeToString()
-  assert hex(data) == "12780a20bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a122087e7f0ff4b672cbbf634364fde123b58402da96fc46df0414f4952d85ffc9f6f1a20b026c43b2358eed1f57233c2e8300c3dba995cd8b0377216fca829e211e6805c3a1073686f702e6d6173732e6d61726b6574"
+    manifest = mevents.Manifest(token_id=mtypes.Uint256(raw=random.randbytes(32)))
+    assert (
+        hex(manifest.token_id.raw)
+        == "bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a"
+    )
+    data = manifest.SerializeToString()
+    assert (
+        hex(data)
+        == "0a220a20bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a"
+    )
+    event = mevents.ShopEvent(manifest=manifest)
+    data = event.SerializeToString()
+    assert (
+        hex(data)
+        == "22240a220a20bdb2914879b87165be2f3f51555499d06df7c08c77b7511b4efcaeadbf1f566a"
+    )

@@ -10,27 +10,24 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
+from massmarket_hash_event import base_types_pb2 as base__types__pb2
 
 
-from massmarket_hash_event import error_pb2 as error__pb2
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x61uthentication.proto\x12\x0bmarket.mass\x1a\x0b\x65rror.proto\"=\n\x13\x41uthenticateRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12\x12\n\npublic_key\x18\x02 \x01(\x0c\"`\n\x14\x41uthenticateResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Error\x12\x11\n\tchallenge\x18\x03 \x01(\x0c\"?\n\x16\x43hallengeSolvedRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"P\n\x17\x43hallengeSolvedResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\x0c\x12!\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.Errorb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x14\x61uthentication.proto\x12\x0bmarket.mass\x1a\x10\x62\x61se_types.proto"A\n\x13\x41uthenticateRequest\x12*\n\npublic_key\x18\x02 \x01(\x0b\x32\x16.market.mass.PublicKey"C\n\x16\x43hallengeSolvedRequest\x12)\n\tsignature\x18\x02 \x01(\x0b\x32\x16.market.mass.Signatureb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'authentication_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "authentication_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  DESCRIPTOR._options = None
-  _globals['_AUTHENTICATEREQUEST']._serialized_start=50
-  _globals['_AUTHENTICATEREQUEST']._serialized_end=111
-  _globals['_AUTHENTICATERESPONSE']._serialized_start=113
-  _globals['_AUTHENTICATERESPONSE']._serialized_end=209
-  _globals['_CHALLENGESOLVEDREQUEST']._serialized_start=211
-  _globals['_CHALLENGESOLVEDREQUEST']._serialized_end=274
-  _globals['_CHALLENGESOLVEDRESPONSE']._serialized_start=276
-  _globals['_CHALLENGESOLVEDRESPONSE']._serialized_end=356
+    DESCRIPTOR._options = None
+    _globals["_AUTHENTICATEREQUEST"]._serialized_start = 55
+    _globals["_AUTHENTICATEREQUEST"]._serialized_end = 120
+    _globals["_CHALLENGESOLVEDREQUEST"]._serialized_start = 122
+    _globals["_CHALLENGESOLVEDREQUEST"]._serialized_end = 189
 # @@protoc_insertion_point(module_scope)

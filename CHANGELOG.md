@@ -4,6 +4,12 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V3 (2024-xx-yy) DRAFT
+
+- Deprecates V2
+- remove need for manual encoding.txt
+- Introduce even subscriptions
+
 # V2 (2024-07-17) EthCC '24 relase, guest testing checkout
 
 - Deprecates V1
