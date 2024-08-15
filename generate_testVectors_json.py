@@ -374,8 +374,8 @@ output = {
             "base_currency": {"chain": 1, "addr": hex(zero_addr)},
         },
         "keycards": {
-            hex(newKc1.card_public_key): hex(newKc1.user_wallet_addr),
-            hex(newKc2.card_public_key): hex(newKc2.user_wallet_addr),
+            hex(newKc1.user_wallet_addr):[hex(newKc1.card_public_key)],
+            hex(newKc2.user_wallet_addr):[hex(newKc2.card_public_key)],
         },
         "items": {
             hex(newItem.event_id): {
