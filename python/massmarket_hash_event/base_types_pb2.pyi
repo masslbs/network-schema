@@ -57,6 +57,12 @@ class EthereumAddress(_message.Message):
     raw: bytes
     def __init__(self, raw: _Optional[bytes] = ...) -> None: ...
 
+class IPFSAddress(_message.Message):
+    __slots__ = ["cid"]
+    CID_FIELD_NUMBER: _ClassVar[int]
+    cid: str
+    def __init__(self, cid: _Optional[str] = ...) -> None: ...
+
 class Uint256(_message.Message):
     __slots__ = ["raw"]
     RAW_FIELD_NUMBER: _ClassVar[int]
@@ -201,22 +207,22 @@ class AddressDetails(_message.Message):
     ) -> None: ...
 
 class PaymentDetails(_message.Message):
-    __slots__ = ["payment_id", "total", "item_hashes", "ttl", "shop_signature"]
+    __slots__ = ["payment_id", "total", "listing_hashes", "ttl", "shop_signature"]
     PAYMENT_ID_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
-    ITEM_HASHES_FIELD_NUMBER: _ClassVar[int]
+    LISTING_HASHES_FIELD_NUMBER: _ClassVar[int]
     TTL_FIELD_NUMBER: _ClassVar[int]
     SHOP_SIGNATURE_FIELD_NUMBER: _ClassVar[int]
     payment_id: Hash
     total: Uint256
-    item_hashes: _containers.RepeatedCompositeFieldContainer[Hash]
+    listing_hashes: _containers.RepeatedCompositeFieldContainer[IPFSAddress]
     ttl: str
     shop_signature: Signature
     def __init__(
         self,
         payment_id: _Optional[_Union[Hash, _Mapping]] = ...,
         total: _Optional[_Union[Uint256, _Mapping]] = ...,
-        item_hashes: _Optional[_Iterable[_Union[Hash, _Mapping]]] = ...,
+        listing_hashes: _Optional[_Iterable[_Union[IPFSAddress, _Mapping]]] = ...,
         ttl: _Optional[str] = ...,
         shop_signature: _Optional[_Union[Signature, _Mapping]] = ...,
     ) -> None: ...

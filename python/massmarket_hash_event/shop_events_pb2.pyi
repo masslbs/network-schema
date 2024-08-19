@@ -377,15 +377,32 @@ class CreateOrder(_message.Message):
 class UpdateOrder(_message.Message):
     __slots__ = [
         "id",
-        "add_items",
-        "remove_items",
         "canceled",
+        "change_items",
         "invoice_address",
         "shipping_address",
         "commit",
         "payment_details",
         "paid",
     ]
+
+    class ChangeItems(_message.Message):
+        __slots__ = ["adds", "removes"]
+        ADDS_FIELD_NUMBER: _ClassVar[int]
+        REMOVES_FIELD_NUMBER: _ClassVar[int]
+        adds: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.OrderedItem]
+        removes: _containers.RepeatedCompositeFieldContainer[
+            _base_types_pb2.OrderedItem
+        ]
+        def __init__(
+            self,
+            adds: _Optional[
+                _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
+            ] = ...,
+            removes: _Optional[
+                _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
+            ] = ...,
+        ) -> None: ...
 
     class CommitItems(_message.Message):
         __slots__ = ["currency", "payee", "commited_at"]
@@ -412,20 +429,16 @@ class UpdateOrder(_message.Message):
         ) -> None: ...
 
     ID_FIELD_NUMBER: _ClassVar[int]
-    ADD_ITEMS_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     CANCELED_FIELD_NUMBER: _ClassVar[int]
+    CHANGE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     INVOICE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     SHIPPING_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     COMMIT_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
     PAID_FIELD_NUMBER: _ClassVar[int]
     id: int
-    add_items: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.OrderedItem]
-    remove_items: _containers.RepeatedCompositeFieldContainer[
-        _base_types_pb2.OrderedItem
-    ]
     canceled: UpdateOrder.Canceled
+    change_items: UpdateOrder.ChangeItems
     invoice_address: _base_types_pb2.AddressDetails
     shipping_address: _base_types_pb2.AddressDetails
     commit: UpdateOrder.CommitItems
@@ -434,13 +447,8 @@ class UpdateOrder(_message.Message):
     def __init__(
         self,
         id: _Optional[int] = ...,
-        add_items: _Optional[
-            _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
-        ] = ...,
-        remove_items: _Optional[
-            _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
-        ] = ...,
         canceled: _Optional[_Union[UpdateOrder.Canceled, _Mapping]] = ...,
+        change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ...,
         invoice_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,

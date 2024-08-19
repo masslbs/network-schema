@@ -163,19 +163,22 @@ message CreateOrder {
 message UpdateOrder {
   uint64 id = 1;
 
-  // only valid before items were commited to the order
-  repeated OrderedItem add_items = 2;
-  repeated OrderedItem remove_items = 3;
-
   oneof action {
-    Canceled canceled = 4;
-    AddressDetails invoice_address = 5;
+    Canceled canceled = 2;
+    ChangeItems change_items = 3;
+    AddressDetails invoice_address = 4;
     // no shipping addr assumes invoice addr
-    AddressDetails shipping_address = 6;
+    AddressDetails shipping_address = 5;
     // invoice address needs to be filled in before it can be commited
-    CommitItems commit = 7;
-    PaymentDetails payment_details = 8;
-    OrderPaid paid = 9;
+    CommitItems commit = 6;
+    PaymentDetails payment_details = 7;
+    OrderPaid paid = 8;
+  }
+
+  // only valid before items were commited to the order
+  message ChangeItems {
+    repeated OrderedItem adds = 1;
+    repeated OrderedItem removes = 2;
   }
 
   // Created by a customer when they are ready to purchase an order

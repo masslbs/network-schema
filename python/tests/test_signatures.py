@@ -126,7 +126,7 @@ def test_optional_fields():
                     id=test_id, canceled=mevents.UpdateOrder.Canceled()
                 )
             ),
-            "670045c5508875928a0f24f9a4a002ed0939e744530f99934c8403b1a892033d",
+            "ffab3e2dff3062a5bb9838ad0d0367e0521ade085f611dda439be7574b451007",
         ),
         (
             mevents.ShopEvent(

@@ -472,7 +472,9 @@ order_open_item = mtypes.OrderedItem(
 )
 add_to_order_open = mevents.UpdateOrder(
     id=order_open.id,
-    add_items=[order_open_item],
+    change_items=mevents.UpdateOrder.ChangeItems(
+        adds=[order_open_item],
+    ),
 )
 events.append(add_to_order_open)
 
@@ -487,7 +489,9 @@ order_paid_item = mtypes.OrderedItem(
 )
 add_to_order_paid = mevents.UpdateOrder(
     id=order_paid.id,
-    add_items=[order_paid_item],
+    change_items=mevents.UpdateOrder.ChangeItems(
+        adds=[order_paid_item],
+    ),
 )
 events.append(add_to_order_paid)
 
@@ -507,7 +511,7 @@ commit_order_paid = mevents.UpdateOrder(
 events.append(commit_order_paid)
 
 # created by the relay on receiving the commit
-listing_simple_hash = mtypes.Hash(raw=random.randbytes(32))
+listing_simple_hash = mtypes.IPFSAddress(cid="/ipfs/foobar")
 order_open_payment_details = mtypes.PaymentDetails(
     ttl="1",
     total=mtypes.Uint256(
@@ -515,7 +519,7 @@ order_open_payment_details = mtypes.PaymentDetails(
     ),
     # TODO: hash the actual value
     payment_id=mtypes.Hash(raw=random.randbytes(32)),
-    item_hashes=[listing_simple_hash],
+    listing_hashes=[listing_simple_hash],
     shop_signature=mtypes.Signature(raw=random.randbytes(64)),
 )
 finalized_order = mevents.UpdateOrder(
@@ -554,7 +558,9 @@ order_canceled_item = mtypes.OrderedItem(
 
 add_to_order_canceled = mevents.UpdateOrder(
     id=order_canceled.id,
-    add_items=[order_canceled_item],
+    change_items=mevents.UpdateOrder.ChangeItems(
+        adds=[order_canceled_item],
+    ),
 )
 events.append(add_to_order_canceled)
 
@@ -578,7 +584,7 @@ payment_details3 = mtypes.PaymentDetails(
     ttl="2",
     shop_signature=mtypes.Signature(raw=random.randbytes(65)),
     total=mtypes.Uint256(raw=int(1400).to_bytes(32, "big")),
-    item_hashes=[listing_simple_hash],
+    listing_hashes=[listing_simple_hash],
 )
 update_order_paid = mevents.UpdateOrder(
     id=order_canceled.id,
@@ -616,7 +622,9 @@ change4_2 = mtypes.OrderedItem(
 )
 add_to_order4 = mevents.UpdateOrder(
     id=order4.id,
-    add_items=[change4_1, change4_2],
+    change_items=mevents.UpdateOrder.ChangeItems(
+        adds=[change4_1, change4_2],
+    ),
 )
 events.append(add_to_order4)
 
@@ -640,7 +648,7 @@ commit_order4 = mtypes.PaymentDetails(
     ttl="3",
     shop_signature=mtypes.Signature(raw=random.randbytes(65)),
     total=mtypes.Uint256(raw=int(16800).to_bytes(32, "big")),
-    item_hashes=[listing_simple_hash],
+    listing_hashes=[listing_simple_hash],
 )
 update_order4 = mevents.UpdateOrder(
     id=order4.id,

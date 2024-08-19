@@ -32,6 +32,10 @@ message EthereumAddress {
   bytes raw = 1;
 }
 
+message IPFSAddress {
+  string cid = 1;
+}
+
 message Uint256 {
   bytes raw = 1;
 }
@@ -126,10 +130,8 @@ message PaymentDetails {
   // start of PaymentRequest data
   // (rest can be determained by other order fields)
   Uint256 total = 2;
-  // the list of the hash of all the items being purchased
-  // TODO: we cannot just refer to them by their id anymore since
-  // since the order is locked to a particler version
-  repeated Hash item_hashes = 3;
+  // content-addressable hashes of the listing(s) being purchased
+  repeated IPFSAddress listing_hashes = 3;
   // PaymentRequest fields that are not obvious to the caller
   string ttl = 4;
   Signature shop_signature = 5;

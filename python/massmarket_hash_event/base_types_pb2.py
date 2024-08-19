@@ -20,7 +20,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x10\x62\x61se_types.proto\x12\x0bmarket.mass\x1a\x1fgoogle/protobuf/timestamp.proto"\x18\n\tRequestId\x12\x0b\n\x03raw\x18\x01 \x01(\x12"\x18\n\tSignature\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x18\n\tPublicKey\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x13\n\x04Hash\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x1e\n\x0f\x45thereumAddress\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x16\n\x07Uint256\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"O\n\x0cShopCurrency\x12\x10\n\x08\x63hain_id\x18\x01 \x01(\x04\x12-\n\x07\x61\x64\x64ress\x18\x02 \x01(\x0b\x32\x1c.market.mass.EthereumAddress"p\n\x05Payee\x12\x0c\n\x04name\x18\x01 \x01(\t\x12-\n\x07\x61\x64\x64ress\x18\x02 \x01(\x0b\x32\x1c.market.mass.EthereumAddress\x12\x10\n\x08\x63hain_id\x18\x03 \x01(\x04\x12\x18\n\x10\x63\x61ll_as_contract\x18\x04 \x01(\x08"E\n\x0fListingMetadata\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t"]\n\rListingOption\x12\n\n\x02id\x18\x01 \x01(\x04\x12\r\n\x05title\x18\x02 \x01(\t\x12\x31\n\nvariations\x18\x03 \x03(\x0b\x32\x1d.market.mass.ListingVariation"\xa4\x01\n\x10ListingVariation\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x34\n\x0evariation_info\x18\x02 \x01(\x0b\x32\x1c.market.mass.ListingMetadata\x12\x17\n\x0fprice_diff_sign\x18\x03 \x01(\x08\x12(\n\nprice_diff\x18\x04 \x01(\x0b\x32\x14.market.mass.Uint256\x12\x0b\n\x03sku\x18\x05 \x01(\t"\x85\x01\n\x12ListingStockStatus\x12\x15\n\rvariation_ids\x18\x01 \x03(\x04\x12\x12\n\x08in_stock\x18\x02 \x01(\x08H\x00\x12:\n\x14\x65xpected_in_stock_by\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x00\x42\x08\n\x06status"\xb9\x01\n\x0e\x41\x64\x64ressDetails\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08\x61\x64\x64ress1\x18\x02 \x01(\t\x12\x10\n\x08\x61\x64\x64ress2\x18\x03 \x01(\t\x12\x0c\n\x04\x63ity\x18\x04 \x01(\t\x12\x13\n\x0bpostal_code\x18\x05 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x06 \x01(\t\x12\x15\n\remail_address\x18\x07 \x01(\t\x12\x19\n\x0cphone_number\x18\x08 \x01(\tH\x00\x88\x01\x01\x42\x0f\n\r_phone_number"\xc1\x01\n\x0ePaymentDetails\x12%\n\npayment_id\x18\x01 \x01(\x0b\x32\x11.market.mass.Hash\x12#\n\x05total\x18\x02 \x01(\x0b\x32\x14.market.mass.Uint256\x12&\n\x0bitem_hashes\x18\x03 \x03(\x0b\x32\x11.market.mass.Hash\x12\x0b\n\x03ttl\x18\x04 \x01(\t\x12.\n\x0eshop_signature\x18\x05 \x01(\x0b\x32\x16.market.mass.Signature"V\n\tOrderPaid\x12"\n\x07tx_hash\x18\x01 \x01(\x0b\x32\x11.market.mass.Hash\x12%\n\nblock_hash\x18\x02 \x01(\x0b\x32\x11.market.mass.Hash"J\n\x0bOrderedItem\x12\x12\n\nlisting_id\x18\x01 \x01(\x04\x12\x15\n\rvariation_ids\x18\x02 \x03(\x04\x12\x10\n\x08quantity\x18\x03 \x01(\r*x\n\x10ListingViewState\x12"\n\x1eLISTING_VIEW_STATE_UNSPECIFIED\x10\x00\x12 \n\x1cLISTING_VIEW_STATE_PUBLISHED\x10\x01\x12\x1e\n\x1aLISTING_VIEW_STATE_DELETED\x10\x02\x62\x06proto3'
+    b'\n\x10\x62\x61se_types.proto\x12\x0bmarket.mass\x1a\x1fgoogle/protobuf/timestamp.proto"\x18\n\tRequestId\x12\x0b\n\x03raw\x18\x01 \x01(\x12"\x18\n\tSignature\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x18\n\tPublicKey\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x13\n\x04Hash\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x1e\n\x0f\x45thereumAddress\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"\x1a\n\x0bIPFSAddress\x12\x0b\n\x03\x63id\x18\x01 \x01(\t"\x16\n\x07Uint256\x12\x0b\n\x03raw\x18\x01 \x01(\x0c"O\n\x0cShopCurrency\x12\x10\n\x08\x63hain_id\x18\x01 \x01(\x04\x12-\n\x07\x61\x64\x64ress\x18\x02 \x01(\x0b\x32\x1c.market.mass.EthereumAddress"p\n\x05Payee\x12\x0c\n\x04name\x18\x01 \x01(\t\x12-\n\x07\x61\x64\x64ress\x18\x02 \x01(\x0b\x32\x1c.market.mass.EthereumAddress\x12\x10\n\x08\x63hain_id\x18\x03 \x01(\x04\x12\x18\n\x10\x63\x61ll_as_contract\x18\x04 \x01(\x08"E\n\x0fListingMetadata\x12\r\n\x05title\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0e\n\x06images\x18\x03 \x03(\t"]\n\rListingOption\x12\n\n\x02id\x18\x01 \x01(\x04\x12\r\n\x05title\x18\x02 \x01(\t\x12\x31\n\nvariations\x18\x03 \x03(\x0b\x32\x1d.market.mass.ListingVariation"\xa4\x01\n\x10ListingVariation\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x34\n\x0evariation_info\x18\x02 \x01(\x0b\x32\x1c.market.mass.ListingMetadata\x12\x17\n\x0fprice_diff_sign\x18\x03 \x01(\x08\x12(\n\nprice_diff\x18\x04 \x01(\x0b\x32\x14.market.mass.Uint256\x12\x0b\n\x03sku\x18\x05 \x01(\t"\x85\x01\n\x12ListingStockStatus\x12\x15\n\rvariation_ids\x18\x01 \x03(\x04\x12\x12\n\x08in_stock\x18\x02 \x01(\x08H\x00\x12:\n\x14\x65xpected_in_stock_by\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x00\x42\x08\n\x06status"\xb9\x01\n\x0e\x41\x64\x64ressDetails\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08\x61\x64\x64ress1\x18\x02 \x01(\t\x12\x10\n\x08\x61\x64\x64ress2\x18\x03 \x01(\t\x12\x0c\n\x04\x63ity\x18\x04 \x01(\t\x12\x13\n\x0bpostal_code\x18\x05 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x06 \x01(\t\x12\x15\n\remail_address\x18\x07 \x01(\t\x12\x19\n\x0cphone_number\x18\x08 \x01(\tH\x00\x88\x01\x01\x42\x0f\n\r_phone_number"\xcb\x01\n\x0ePaymentDetails\x12%\n\npayment_id\x18\x01 \x01(\x0b\x32\x11.market.mass.Hash\x12#\n\x05total\x18\x02 \x01(\x0b\x32\x14.market.mass.Uint256\x12\x30\n\x0elisting_hashes\x18\x03 \x03(\x0b\x32\x18.market.mass.IPFSAddress\x12\x0b\n\x03ttl\x18\x04 \x01(\t\x12.\n\x0eshop_signature\x18\x05 \x01(\x0b\x32\x16.market.mass.Signature"V\n\tOrderPaid\x12"\n\x07tx_hash\x18\x01 \x01(\x0b\x32\x11.market.mass.Hash\x12%\n\nblock_hash\x18\x02 \x01(\x0b\x32\x11.market.mass.Hash"J\n\x0bOrderedItem\x12\x12\n\nlisting_id\x18\x01 \x01(\x04\x12\x15\n\rvariation_ids\x18\x02 \x03(\x04\x12\x10\n\x08quantity\x18\x03 \x01(\r*x\n\x10ListingViewState\x12"\n\x1eLISTING_VIEW_STATE_UNSPECIFIED\x10\x00\x12 \n\x1cLISTING_VIEW_STATE_PUBLISHED\x10\x01\x12\x1e\n\x1aLISTING_VIEW_STATE_DELETED\x10\x02\x62\x06proto3'
 )
 
 _globals = globals()
@@ -28,8 +28,8 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "base_types_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
-    _globals["_LISTINGVIEWSTATE"]._serialized_start = 1433
-    _globals["_LISTINGVIEWSTATE"]._serialized_end = 1553
+    _globals["_LISTINGVIEWSTATE"]._serialized_start = 1471
+    _globals["_LISTINGVIEWSTATE"]._serialized_end = 1591
     _globals["_REQUESTID"]._serialized_start = 66
     _globals["_REQUESTID"]._serialized_end = 90
     _globals["_SIGNATURE"]._serialized_start = 92
@@ -40,26 +40,28 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _globals["_HASH"]._serialized_end = 163
     _globals["_ETHEREUMADDRESS"]._serialized_start = 165
     _globals["_ETHEREUMADDRESS"]._serialized_end = 195
-    _globals["_UINT256"]._serialized_start = 197
-    _globals["_UINT256"]._serialized_end = 219
-    _globals["_SHOPCURRENCY"]._serialized_start = 221
-    _globals["_SHOPCURRENCY"]._serialized_end = 300
-    _globals["_PAYEE"]._serialized_start = 302
-    _globals["_PAYEE"]._serialized_end = 414
-    _globals["_LISTINGMETADATA"]._serialized_start = 416
-    _globals["_LISTINGMETADATA"]._serialized_end = 485
-    _globals["_LISTINGOPTION"]._serialized_start = 487
-    _globals["_LISTINGOPTION"]._serialized_end = 580
-    _globals["_LISTINGVARIATION"]._serialized_start = 583
-    _globals["_LISTINGVARIATION"]._serialized_end = 747
-    _globals["_LISTINGSTOCKSTATUS"]._serialized_start = 750
-    _globals["_LISTINGSTOCKSTATUS"]._serialized_end = 883
-    _globals["_ADDRESSDETAILS"]._serialized_start = 886
-    _globals["_ADDRESSDETAILS"]._serialized_end = 1071
-    _globals["_PAYMENTDETAILS"]._serialized_start = 1074
-    _globals["_PAYMENTDETAILS"]._serialized_end = 1267
-    _globals["_ORDERPAID"]._serialized_start = 1269
-    _globals["_ORDERPAID"]._serialized_end = 1355
-    _globals["_ORDEREDITEM"]._serialized_start = 1357
-    _globals["_ORDEREDITEM"]._serialized_end = 1431
+    _globals["_IPFSADDRESS"]._serialized_start = 197
+    _globals["_IPFSADDRESS"]._serialized_end = 223
+    _globals["_UINT256"]._serialized_start = 225
+    _globals["_UINT256"]._serialized_end = 247
+    _globals["_SHOPCURRENCY"]._serialized_start = 249
+    _globals["_SHOPCURRENCY"]._serialized_end = 328
+    _globals["_PAYEE"]._serialized_start = 330
+    _globals["_PAYEE"]._serialized_end = 442
+    _globals["_LISTINGMETADATA"]._serialized_start = 444
+    _globals["_LISTINGMETADATA"]._serialized_end = 513
+    _globals["_LISTINGOPTION"]._serialized_start = 515
+    _globals["_LISTINGOPTION"]._serialized_end = 608
+    _globals["_LISTINGVARIATION"]._serialized_start = 611
+    _globals["_LISTINGVARIATION"]._serialized_end = 775
+    _globals["_LISTINGSTOCKSTATUS"]._serialized_start = 778
+    _globals["_LISTINGSTOCKSTATUS"]._serialized_end = 911
+    _globals["_ADDRESSDETAILS"]._serialized_start = 914
+    _globals["_ADDRESSDETAILS"]._serialized_end = 1099
+    _globals["_PAYMENTDETAILS"]._serialized_start = 1102
+    _globals["_PAYMENTDETAILS"]._serialized_end = 1305
+    _globals["_ORDERPAID"]._serialized_start = 1307
+    _globals["_ORDERPAID"]._serialized_end = 1393
+    _globals["_ORDEREDITEM"]._serialized_start = 1395
+    _globals["_ORDEREDITEM"]._serialized_end = 1469
 # @@protoc_insertion_point(module_scope)
