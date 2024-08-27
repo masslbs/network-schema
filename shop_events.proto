@@ -53,10 +53,6 @@ message Account {
   // Binds the keycard to a wallet address of the user
   message KeyCardEnroll {
     PublicKey keycard_pubkey = 1;
-    // TODO: move to docs
-    // What to do about checkouts of guest keycards?
-    // - set to zero address
-    // - expose  secret key during checkout for recovering access to order
     EthereumAddress user_wallet = 2;
   }
 }
@@ -154,6 +150,8 @@ message Order {
 
   // set once payment was witnessed
   optional OrderPaid paid = 10;
+
+  optional Signature guest_signature = 11;
 }
 
 message CreateOrder {
@@ -165,14 +163,24 @@ message UpdateOrder {
 
   oneof action {
     Canceled canceled = 2;
+
     ChangeItems change_items = 3;
-    AddressDetails invoice_address = 4;
+
+    // fixes the items to the order and starts payment timeout
+    CommitItems commit = 4;
+
+    AddressDetails invoice_address = 5;
     // no shipping addr assumes invoice addr
-    AddressDetails shipping_address = 5;
-    // invoice address needs to be filled in before it can be commited
-    CommitItems commit = 6;
-    PaymentDetails payment_details = 7;
-    OrderPaid paid = 8;
+    AddressDetails shipping_address = 6;
+
+    ChoosePayment choose_payment = 7;
+    PaymentDetails payment_details = 8;
+
+    OrderPaid paid = 9;
+  }
+
+  message CommitItems {
+    // emtpy
   }
 
   // only valid before items were commited to the order
@@ -183,7 +191,7 @@ message UpdateOrder {
 
   // Created by a customer when they are ready to purchase an order
   // This is followed by a PaymentDetails message
-  message CommitItems {
+  message ChoosePayment {
     // has to be an accepted currency on the manifest
     ShopCurrency currency = 1;
     Payee payee = 2;

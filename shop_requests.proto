@@ -6,7 +6,9 @@ syntax = "proto3";
 
 package market.mass;
 
-import "error.proto";
+import "base_types.proto";
+import "google/protobuf/any.proto";
+import "shop_events.proto";
 
 // Get an URL to upload a blob to.
 // This exists for future-proofing the protocol
@@ -15,11 +17,40 @@ message GetBlobUploadURLRequest {
   // empty
 }
 
-// Returns a single-use URL to upload a blob to.
-// The HTTP response will contain the blob's IPFS path.
-message GetBlobUploadURLResponse {
-  oneof result {
-    Error error = 2;
-    string url = 3;
+// Returns a nonce as response payload to sign over with their guest id
+message GuestStartOrderRequest {
+  uint64 order_id = 1;
+}
+
+// Used by an external user (ie not a keycard holder) to facilitate a purchase.
+// this locks the items of this order.
+// TODO: could expose secret key during checkout for recovering access to order
+message GuestStartCheckoutRequest {
+  // TODO: any to make signature verification a tad simpler. just a crutch
+  google.protobuf.Any signed_order = 1;
+  Signature guest_signature = 2;
+
+  message SignedOrder {
+    // order.id needs to be order_id from GuestStartCheckout
+    // state needs to be commited.
+    // unset: paid, payment_details and canceled_at.
+    Order order = 1;
+    bytes nonce = 2;
+  }
+}
+
+message GuestChoosePaymentRequest {
+  // See TODO above
+  google.protobuf.Any complete_checkout = 1;
+  Signature guest_signature = 2;
+
+  message CompleteCheckout {
+    AddressDetails invoice_address = 1;
+    // no shipping addr assumes invoice_address for shipping
+    AddressDetails shipping_address = 2;
+    ShopCurrency currency = 3;
+    Payee payee = 4;
+
+    bytes nonce = 5;
   }
 }
