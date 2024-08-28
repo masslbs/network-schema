@@ -44,11 +44,11 @@ class SubscriptionRequest(_message.Message):
         OBJECT_TYPE_FIELD_NUMBER: _ClassVar[int]
         OBJECT_ID_FIELD_NUMBER: _ClassVar[int]
         object_type: ObjectType
-        object_id: bytes
+        object_id: int
         def __init__(
             self,
             object_type: _Optional[_Union[ObjectType, str]] = ...,
-            object_id: _Optional[bytes] = ...,
+            object_id: _Optional[int] = ...,
         ) -> None: ...
 
     START_SHOP_SEQ_NO_FIELD_NUMBER: _ClassVar[int]
@@ -67,12 +67,30 @@ class SubscriptionRequest(_message.Message):
     ) -> None: ...
 
 class SubscriptionPushRequest(_message.Message):
-    __slots__ = ["events"]
+    __slots__ = ["subscription_id", "events"]
+
+    class SequencedEvent(_message.Message):
+        __slots__ = ["event", "seq_no"]
+        EVENT_FIELD_NUMBER: _ClassVar[int]
+        SEQ_NO_FIELD_NUMBER: _ClassVar[int]
+        event: _transport_pb2.SignedEvent
+        seq_no: int
+        def __init__(
+            self,
+            event: _Optional[_Union[_transport_pb2.SignedEvent, _Mapping]] = ...,
+            seq_no: _Optional[int] = ...,
+        ) -> None: ...
+
+    SUBSCRIPTION_ID_FIELD_NUMBER: _ClassVar[int]
     EVENTS_FIELD_NUMBER: _ClassVar[int]
-    events: _containers.RepeatedCompositeFieldContainer[_transport_pb2.SignedEvent]
+    subscription_id: bytes
+    events: _containers.RepeatedCompositeFieldContainer[
+        SubscriptionPushRequest.SequencedEvent
+    ]
     def __init__(
         self,
+        subscription_id: _Optional[bytes] = ...,
         events: _Optional[
-            _Iterable[_Union[_transport_pb2.SignedEvent, _Mapping]]
+            _Iterable[_Union[SubscriptionPushRequest.SequencedEvent, _Mapping]]
         ] = ...,
     ) -> None: ...

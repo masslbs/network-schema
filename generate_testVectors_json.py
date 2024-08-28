@@ -501,14 +501,21 @@ order_paid_add_addr = mevents.UpdateOrder(
 )
 events.append(order_paid_add_addr)
 
+
 commit_order_paid = mevents.UpdateOrder(
     id=order_paid.id,
-    commit=mevents.UpdateOrder.CommitItems(
+    commit_items=mevents.UpdateOrder.CommitItems(),
+)
+events.append(commit_order_paid)
+
+choose_payment = mevents.UpdateOrder(
+    id=order_paid.id,
+    choose_payment=mevents.UpdateOrder.ChoosePaymentMethod(
         currency=c_two,
         payee=payee,
     ),
 )
-events.append(commit_order_paid)
+events.append(choose_payment)
 
 # created by the relay on receiving the commit
 listing_simple_hash = mtypes.IPFSAddress(cid="/ipfs/foobar")
@@ -572,12 +579,19 @@ events.append(order_canceled_add_addr)
 
 commit_order_canceled = mevents.UpdateOrder(
     id=order_canceled.id,
-    commit=mevents.UpdateOrder.CommitItems(
+    commit_items=mevents.UpdateOrder.CommitItems(),
+)
+events.append(commit_order_canceled)
+
+chose_payment_order_canceled = mevents.UpdateOrder(
+    id=order_canceled.id,
+    choose_payment=mevents.UpdateOrder.ChoosePaymentMethod(
         currency=c_two,
         payee=payee,
     ),
 )
-events.append(commit_order_canceled)
+events.append(chose_payment_order_canceled)
+
 
 payment_details3 = mtypes.PaymentDetails(
     payment_id=mtypes.Hash(raw=random.randbytes(32)),
@@ -630,12 +644,19 @@ events.append(add_to_order4)
 
 commit_order4 = mevents.UpdateOrder(
     id=order4.id,
-    commit=mevents.UpdateOrder.CommitItems(
+    commit_items=mevents.UpdateOrder.CommitItems(),
+)
+events.append(commit_order4)
+
+payment_order4 = mevents.UpdateOrder(
+    id=order4.id,
+    choose_payment=mevents.UpdateOrder.ChoosePaymentMethod(
         currency=c_two,
         payee=payee,
     ),
 )
-events.append(commit_order4)
+events.append(payment_order4)
+
 
 order4_add_addr = mevents.UpdateOrder(
     id=order4.id,

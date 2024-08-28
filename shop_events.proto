@@ -166,13 +166,19 @@ message UpdateOrder {
   oneof action {
     Canceled canceled = 2;
     ChangeItems change_items = 3;
-    AddressDetails invoice_address = 4;
-    // no shipping addr assumes invoice addr
-    AddressDetails shipping_address = 5;
-    // invoice address needs to be filled in before it can be commited
-    CommitItems commit = 6;
-    PaymentDetails payment_details = 7;
-    OrderPaid paid = 8;
+
+    // starting checkout, items locked, payment timer running
+    CommitItems commit_items = 4;
+
+    AddressDetails invoice_address = 5;
+    // no shipping addr assumes invoice addrq
+    AddressDetails shipping_address = 6;
+
+    // invoice address needs to be filled in before it can be payed
+    ChoosePaymentMethod choose_payment = 7;
+    PaymentDetails payment_details = 8;
+
+    OrderPaid paid = 9;
   }
 
   // only valid before items were commited to the order
@@ -181,9 +187,13 @@ message UpdateOrder {
     repeated OrderedItem removes = 2;
   }
 
+  message CommitItems {
+    // empty
+  }
+
   // Created by a customer when they are ready to purchase an order
   // This is followed by a PaymentDetails message
-  message CommitItems {
+  message ChoosePaymentMethod {
     // has to be an accepted currency on the manifest
     ShopCurrency currency = 1;
     Payee payee = 2;
