@@ -379,9 +379,10 @@ class UpdateOrder(_message.Message):
         "id",
         "canceled",
         "change_items",
+        "commit_items",
         "invoice_address",
         "shipping_address",
-        "commit",
+        "choose_payment",
         "payment_details",
         "paid",
     ]
@@ -405,6 +406,10 @@ class UpdateOrder(_message.Message):
         ) -> None: ...
 
     class CommitItems(_message.Message):
+        __slots__ = []
+        def __init__(self) -> None: ...
+
+    class ChoosePaymentMethod(_message.Message):
         __slots__ = ["currency", "payee", "commited_at"]
         CURRENCY_FIELD_NUMBER: _ClassVar[int]
         PAYEE_FIELD_NUMBER: _ClassVar[int]
@@ -431,17 +436,19 @@ class UpdateOrder(_message.Message):
     ID_FIELD_NUMBER: _ClassVar[int]
     CANCELED_FIELD_NUMBER: _ClassVar[int]
     CHANGE_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    COMMIT_ITEMS_FIELD_NUMBER: _ClassVar[int]
     INVOICE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     SHIPPING_ADDRESS_FIELD_NUMBER: _ClassVar[int]
-    COMMIT_FIELD_NUMBER: _ClassVar[int]
+    CHOOSE_PAYMENT_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
     PAID_FIELD_NUMBER: _ClassVar[int]
     id: int
     canceled: UpdateOrder.Canceled
     change_items: UpdateOrder.ChangeItems
+    commit_items: UpdateOrder.CommitItems
     invoice_address: _base_types_pb2.AddressDetails
     shipping_address: _base_types_pb2.AddressDetails
-    commit: UpdateOrder.CommitItems
+    choose_payment: UpdateOrder.ChoosePaymentMethod
     payment_details: _base_types_pb2.PaymentDetails
     paid: _base_types_pb2.OrderPaid
     def __init__(
@@ -449,13 +456,16 @@ class UpdateOrder(_message.Message):
         id: _Optional[int] = ...,
         canceled: _Optional[_Union[UpdateOrder.Canceled, _Mapping]] = ...,
         change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ...,
+        commit_items: _Optional[_Union[UpdateOrder.CommitItems, _Mapping]] = ...,
         invoice_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
         shipping_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
-        commit: _Optional[_Union[UpdateOrder.CommitItems, _Mapping]] = ...,
+        choose_payment: _Optional[
+            _Union[UpdateOrder.ChoosePaymentMethod, _Mapping]
+        ] = ...,
         payment_details: _Optional[
             _Union[_base_types_pb2.PaymentDetails, _Mapping]
         ] = ...,

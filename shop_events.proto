@@ -167,15 +167,15 @@ message UpdateOrder {
     Canceled canceled = 2;
     ChangeItems change_items = 3;
 
-    // starting checkout, items frozen, payment timer running
-    CommitItems commit = 4;
+    // starting checkout, items locked, payment timer running
+    CommitItems commit_items = 4;
 
     AddressDetails invoice_address = 5;
-    // no shipping addr assumes invoice addr
+    // no shipping addr assumes invoice addrq
     AddressDetails shipping_address = 6;
 
     // invoice address needs to be filled in before it can be payed
-    ChoosePayment choose_payment = 7;
+    ChoosePaymentMethod choose_payment = 7;
     PaymentDetails payment_details = 8;
 
     OrderPaid paid = 9;
@@ -193,7 +193,7 @@ message UpdateOrder {
 
   // Created by a customer when they are ready to purchase an order
   // This is followed by a PaymentDetails message
-  message ChoosePayment {
+  message ChoosePaymentMethod {
     // has to be an accepted currency on the manifest
     ShopCurrency currency = 1;
     Payee payee = 2;
