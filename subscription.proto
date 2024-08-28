@@ -25,8 +25,7 @@ enum ObjectType {
 
 // Used by the client to subscribe to a subset of event from the store
 //
-// reponse via GenericResponse
-// which notifies the client wether the subscription was succseful
+// on success reponds with a subscription_id in the payload of GenericResponse
 message SubscriptionRequest {
   // The relay will send events from the shop log starting from this
   // sequence number.
@@ -48,7 +47,7 @@ message SubscriptionRequest {
     // Optional subscribe to only events that modify a single item.
     // We assume object_id is only unique for a given object_type, so
     // object_type is required.
-    optional bytes object_id = 4;
+    optional uint64 object_id = 4;
   }
 }
 
@@ -58,5 +57,10 @@ message SubscriptionRequest {
 // Client sends a GenericResponse without an error to acknowledge recepetion.
 // To close a subscription, respond with ERROR_CODES_CLOSE_SUBSCRIPTION
 message SubscriptionPushRequest {
-  repeated SignedEvent events = 1;
+  bytes subscription_id = 1;
+  repeated SequencedEvent events = 2;
+  message SequencedEvent {
+    SignedEvent event = 1;
+    uint64 seq_no = 2;
+  }
 }
