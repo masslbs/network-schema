@@ -94,3 +94,9 @@ class SubscriptionPushRequest(_message.Message):
             _Iterable[_Union[SubscriptionPushRequest.SequencedEvent, _Mapping]]
         ] = ...,
     ) -> None: ...
+
+class SubscriptionCancelRequest(_message.Message):
+    __slots__ = ["subscription_id"]
+    SUBSCRIPTION_ID_FIELD_NUMBER: _ClassVar[int]
+    subscription_id: bytes
+    def __init__(self, subscription_id: _Optional[bytes] = ...) -> None: ...

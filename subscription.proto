@@ -64,3 +64,8 @@ message SubscriptionPushRequest {
     uint64 seq_no = 2;
   }
 }
+
+// Used by a client to stop sending more events for an subscription
+message SubscriptionCancelRequest {
+  bytes subscription_id = 1;
+}
