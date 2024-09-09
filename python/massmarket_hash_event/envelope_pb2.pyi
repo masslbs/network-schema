@@ -25,6 +25,7 @@ class Envelope(_message.Message):
         "response",
         "event_write_request",
         "subscription_request",
+        "subscription_cancel_request",
         "subscription_push_request",
         "sync_status_request",
         "ping_request",
@@ -49,6 +50,7 @@ class Envelope(_message.Message):
     RESPONSE_FIELD_NUMBER: _ClassVar[int]
     EVENT_WRITE_REQUEST_FIELD_NUMBER: _ClassVar[int]
     SUBSCRIPTION_REQUEST_FIELD_NUMBER: _ClassVar[int]
+    SUBSCRIPTION_CANCEL_REQUEST_FIELD_NUMBER: _ClassVar[int]
     SUBSCRIPTION_PUSH_REQUEST_FIELD_NUMBER: _ClassVar[int]
     SYNC_STATUS_REQUEST_FIELD_NUMBER: _ClassVar[int]
     PING_REQUEST_FIELD_NUMBER: _ClassVar[int]
@@ -59,6 +61,7 @@ class Envelope(_message.Message):
     response: Envelope.GenericResponse
     event_write_request: _transport_pb2.EventWriteRequest
     subscription_request: _subscription_pb2.SubscriptionRequest
+    subscription_cancel_request: _subscription_pb2.SubscriptionCancelRequest
     subscription_push_request: _subscription_pb2.SubscriptionPushRequest
     sync_status_request: _transport_pb2.SyncStatusRequest
     ping_request: _transport_pb2.PingRequest
@@ -74,6 +77,9 @@ class Envelope(_message.Message):
         ] = ...,
         subscription_request: _Optional[
             _Union[_subscription_pb2.SubscriptionRequest, _Mapping]
+        ] = ...,
+        subscription_cancel_request: _Optional[
+            _Union[_subscription_pb2.SubscriptionCancelRequest, _Mapping]
         ] = ...,
         subscription_push_request: _Optional[
             _Union[_subscription_pb2.SubscriptionPushRequest, _Mapping]

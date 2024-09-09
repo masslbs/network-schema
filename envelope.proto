@@ -46,19 +46,19 @@ message Envelope {
 
     // subscriptions
     SubscriptionRequest subscription_request = 4;
-
-    SubscriptionPushRequest subscription_push_request = 5;
+    SubscriptionCancelRequest subscription_cancel_request = 5;
+    SubscriptionPushRequest subscription_push_request = 6;
 
     // sync state information
-    SyncStatusRequest sync_status_request = 6;
-    PingRequest ping_request = 7;
+    SyncStatusRequest sync_status_request = 7;
+    PingRequest ping_request = 8;
 
     // shop requests
-    GetBlobUploadURLRequest get_blob_upload_url_request = 8;
+    GetBlobUploadURLRequest get_blob_upload_url_request = 9;
 
     // authentification messages
-    AuthenticateRequest auth_request = 9;
-    ChallengeSolvedRequest challenge_solution_request = 10;
+    AuthenticateRequest auth_request = 10;
+    ChallengeSolvedRequest challenge_solution_request = 11;
   }
 
   message GenericResponse {
