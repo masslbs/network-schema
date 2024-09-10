@@ -110,7 +110,9 @@ def test_optional_fields():
     events = [
         (
             mevents.ShopEvent(
-                update_manifest=mevents.UpdateManifest(set_base_currency=test_currency)
+                update_manifest=mevents.UpdateManifest(
+                    set_pricing_currency=test_currency
+                )
             ),
             "d1d3cf16b228fa92e53516dcf593b87144aab079933b494f7de98219d9c0e783",
         ),

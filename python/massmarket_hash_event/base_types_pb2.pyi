@@ -99,6 +99,58 @@ class Payee(_message.Message):
         call_as_contract: bool = ...,
     ) -> None: ...
 
+class ShippingRegion(_message.Message):
+    __slots__ = ["name", "country", "postal_code", "city", "order_price_modifier_ids"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_FIELD_NUMBER: _ClassVar[int]
+    POSTAL_CODE_FIELD_NUMBER: _ClassVar[int]
+    CITY_FIELD_NUMBER: _ClassVar[int]
+    ORDER_PRICE_MODIFIER_IDS_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    country: str
+    postal_code: str
+    city: str
+    order_price_modifier_ids: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(
+        self,
+        name: _Optional[str] = ...,
+        country: _Optional[str] = ...,
+        postal_code: _Optional[str] = ...,
+        city: _Optional[str] = ...,
+        order_price_modifier_ids: _Optional[_Iterable[int]] = ...,
+    ) -> None: ...
+
+class OrderPriceModifier(_message.Message):
+    __slots__ = ["id", "title", "percentage", "absolute"]
+
+    class Absolute(_message.Message):
+        __slots__ = ["plus_sign", "diff"]
+        PLUS_SIGN_FIELD_NUMBER: _ClassVar[int]
+        DIFF_FIELD_NUMBER: _ClassVar[int]
+        plus_sign: bool
+        diff: Uint256
+        def __init__(
+            self,
+            plus_sign: bool = ...,
+            diff: _Optional[_Union[Uint256, _Mapping]] = ...,
+        ) -> None: ...
+
+    ID_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    PERCENTAGE_FIELD_NUMBER: _ClassVar[int]
+    ABSOLUTE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    title: str
+    percentage: Uint256
+    absolute: OrderPriceModifier.Absolute
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        title: _Optional[str] = ...,
+        percentage: _Optional[_Union[Uint256, _Mapping]] = ...,
+        absolute: _Optional[_Union[OrderPriceModifier.Absolute, _Mapping]] = ...,
+    ) -> None: ...
+
 class ListingMetadata(_message.Message):
     __slots__ = ["title", "description", "images"]
     TITLE_FIELD_NUMBER: _ClassVar[int]

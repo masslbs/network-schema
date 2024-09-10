@@ -19,7 +19,12 @@ message Manifest {
   // currency managment
   repeated Payee payees = 2;
   repeated ShopCurrency accepted_currencies = 3;
-  ShopCurrency base_currency = 4;
+
+  // the currency listings are priced in
+  ShopCurrency pricing_currency = 4;
+
+  repeated ShippingRegion shipping_regions = 5;
+  repeated OrderPriceModifier order_price_modifiers = 6;
 }
 
 // State transition for the manifest
@@ -28,7 +33,11 @@ message UpdateManifest {
   optional Payee remove_payee = 3;
   repeated ShopCurrency add_accepted_currencies = 4;
   repeated ShopCurrency remove_accepted_currencies = 5;
-  optional ShopCurrency set_base_currency = 6;
+  optional ShopCurrency set_pricing_currency = 6;
+  repeated OrderPriceModifier add_order_price_modifiers = 9;
+  repeated uint64 remove_order_price_modifiers = 10;
+  repeated ShippingRegion add_shipping_regions = 7;
+  repeated string remove_shipping_regions = 8;
 }
 
 message Account {

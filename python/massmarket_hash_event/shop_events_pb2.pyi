@@ -19,17 +19,32 @@ from typing import (
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Manifest(_message.Message):
-    __slots__ = ["token_id", "payees", "accepted_currencies", "base_currency"]
+    __slots__ = [
+        "token_id",
+        "payees",
+        "accepted_currencies",
+        "pricing_currency",
+        "shipping_regions",
+        "order_price_modifiers",
+    ]
     TOKEN_ID_FIELD_NUMBER: _ClassVar[int]
     PAYEES_FIELD_NUMBER: _ClassVar[int]
     ACCEPTED_CURRENCIES_FIELD_NUMBER: _ClassVar[int]
-    BASE_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    PRICING_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    SHIPPING_REGIONS_FIELD_NUMBER: _ClassVar[int]
+    ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
     token_id: _base_types_pb2.Uint256
     payees: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.Payee]
     accepted_currencies: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ShopCurrency
     ]
-    base_currency: _base_types_pb2.ShopCurrency
+    pricing_currency: _base_types_pb2.ShopCurrency
+    shipping_regions: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ShippingRegion
+    ]
+    order_price_modifiers: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.OrderPriceModifier
+    ]
     def __init__(
         self,
         token_id: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
@@ -37,7 +52,15 @@ class Manifest(_message.Message):
         accepted_currencies: _Optional[
             _Iterable[_Union[_base_types_pb2.ShopCurrency, _Mapping]]
         ] = ...,
-        base_currency: _Optional[_Union[_base_types_pb2.ShopCurrency, _Mapping]] = ...,
+        pricing_currency: _Optional[
+            _Union[_base_types_pb2.ShopCurrency, _Mapping]
+        ] = ...,
+        shipping_regions: _Optional[
+            _Iterable[_Union[_base_types_pb2.ShippingRegion, _Mapping]]
+        ] = ...,
+        order_price_modifiers: _Optional[
+            _Iterable[_Union[_base_types_pb2.OrderPriceModifier, _Mapping]]
+        ] = ...,
     ) -> None: ...
 
 class UpdateManifest(_message.Message):
@@ -46,13 +69,21 @@ class UpdateManifest(_message.Message):
         "remove_payee",
         "add_accepted_currencies",
         "remove_accepted_currencies",
-        "set_base_currency",
+        "set_pricing_currency",
+        "add_order_price_modifiers",
+        "remove_order_price_modifiers",
+        "add_shipping_regions",
+        "remove_shipping_regions",
     ]
     ADD_PAYEE_FIELD_NUMBER: _ClassVar[int]
     REMOVE_PAYEE_FIELD_NUMBER: _ClassVar[int]
     ADD_ACCEPTED_CURRENCIES_FIELD_NUMBER: _ClassVar[int]
     REMOVE_ACCEPTED_CURRENCIES_FIELD_NUMBER: _ClassVar[int]
-    SET_BASE_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    SET_PRICING_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    ADD_ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
+    ADD_SHIPPING_REGIONS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_SHIPPING_REGIONS_FIELD_NUMBER: _ClassVar[int]
     add_payee: _base_types_pb2.Payee
     remove_payee: _base_types_pb2.Payee
     add_accepted_currencies: _containers.RepeatedCompositeFieldContainer[
@@ -61,7 +92,15 @@ class UpdateManifest(_message.Message):
     remove_accepted_currencies: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ShopCurrency
     ]
-    set_base_currency: _base_types_pb2.ShopCurrency
+    set_pricing_currency: _base_types_pb2.ShopCurrency
+    add_order_price_modifiers: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.OrderPriceModifier
+    ]
+    remove_order_price_modifiers: _containers.RepeatedScalarFieldContainer[int]
+    add_shipping_regions: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ShippingRegion
+    ]
+    remove_shipping_regions: _containers.RepeatedScalarFieldContainer[str]
     def __init__(
         self,
         add_payee: _Optional[_Union[_base_types_pb2.Payee, _Mapping]] = ...,
@@ -72,9 +111,17 @@ class UpdateManifest(_message.Message):
         remove_accepted_currencies: _Optional[
             _Iterable[_Union[_base_types_pb2.ShopCurrency, _Mapping]]
         ] = ...,
-        set_base_currency: _Optional[
+        set_pricing_currency: _Optional[
             _Union[_base_types_pb2.ShopCurrency, _Mapping]
         ] = ...,
+        add_order_price_modifiers: _Optional[
+            _Iterable[_Union[_base_types_pb2.OrderPriceModifier, _Mapping]]
+        ] = ...,
+        remove_order_price_modifiers: _Optional[_Iterable[int]] = ...,
+        add_shipping_regions: _Optional[
+            _Iterable[_Union[_base_types_pb2.ShippingRegion, _Mapping]]
+        ] = ...,
+        remove_shipping_regions: _Optional[_Iterable[str]] = ...,
     ) -> None: ...
 
 class Account(_message.Message):

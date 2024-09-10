@@ -67,12 +67,55 @@ events = []
 ## Manifest ##
 ##############
 
+mod_eu_vat = mtypes.OrderPriceModifier(
+    id=19,
+    title="EU VAT",
+    percentage=mtypes.Uint256(raw=int(19).to_bytes(32, "big")),
+)
+
+mod_dhl_local = mtypes.OrderPriceModifier(
+    id=rand_uint64(),
+    title="DHL Local",
+    absolute=mtypes.OrderPriceModifier.Absolute(
+        plus_sign=True,
+        # TODO: assuming 2 decimals for now
+        diff=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
+    ),
+)
+
+mod_dhl_international = mtypes.OrderPriceModifier(
+    id=rand_uint64(),
+    title="DHL International",
+    absolute=mtypes.OrderPriceModifier.Absolute(
+        plus_sign=True,
+        # TODO: assuming 2 decimals for now
+        diff=mtypes.Uint256(raw=int(4200).to_bytes(32, "big")),
+    ),
+)
+
+region_local = mtypes.ShippingRegion(
+    name="domestic",
+    country="germany",
+    order_price_modifier_ids=[19, mod_dhl_local.id],
+)
+
+region_other = mtypes.ShippingRegion(
+    name="other",
+    order_price_modifier_ids=[mod_dhl_international.id],
+)
+
 payee23 = mtypes.Payee(
     name="L23",
     address=user1Addr,
     chain_id=23,
 )
-manifest = mevents.Manifest(token_id=shop_id, payees=[payee23])
+
+manifest = mevents.Manifest(
+    token_id=shop_id,
+    payees=[payee23],
+    shipping_regions=[region_local, region_other],
+    order_price_modifiers=[mod_eu_vat, mod_dhl_local, mod_dhl_international],
+)
 events.append(manifest)
 ##############
 ## Accounts ##
@@ -121,7 +164,7 @@ vanilla_eth = mtypes.ShopCurrency(
 addEth = mevents.UpdateManifest(
     add_payee=payee,
     add_accepted_currencies=[vanilla_eth],
-    set_base_currency=vanilla_eth,
+    set_pricing_currency=vanilla_eth,
 )
 events.append(addEth)
 
@@ -753,7 +796,7 @@ current_manifest = mevents.Manifest(
         vanilla_eth,
         c_two,
     ],
-    base_currency=vanilla_eth,
+    pricing_currency=vanilla_eth,
 )
 
 current_order_open = mevents.Order(

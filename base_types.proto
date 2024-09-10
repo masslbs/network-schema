@@ -63,6 +63,44 @@ message Payee {
   bool call_as_contract = 4;
 }
 
+message ShippingRegion {
+  // user-focused identifier for the region
+  string name = 1;
+
+  /* the location
+
+     the region for an order is picked by successivly matching fields.
+     empty-string values are ignored during matching.
+
+     therefore this can be used to say "only on this city" for pickups,
+     or anywhere in the US / world, etc.
+
+     TODO: need a country map and dropdowns for matching to work
+  */
+  string country = 2;
+  string postal_code = 3;
+  string city = 4;
+
+  repeated uint64 order_price_modifier_ids = 5;
+}
+
+message OrderPriceModifier {
+  uint64 id = 1;
+  // the title of the option (like VAT Tax, Premium Shipping.)
+  string title = 2;
+
+  oneof modification {
+    // this is multiplied with the sub-total before being divided by 100.
+    Uint256 percentage = 3;
+    Absolute absolute = 4;
+  }
+
+  message Absolute {
+    bool plus_sign = 1; // true for + / false for -
+    Uint256 diff = 2;
+  }
+}
+
 // listing related messages
 // ========================
 
