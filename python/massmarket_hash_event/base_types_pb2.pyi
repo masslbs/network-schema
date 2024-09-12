@@ -250,17 +250,26 @@ class AddressDetails(_message.Message):
     ) -> None: ...
 
 class PaymentDetails(_message.Message):
-    __slots__ = ["payment_id", "total", "listing_hashes", "ttl", "shop_signature"]
+    __slots__ = [
+        "payment_id",
+        "total",
+        "listing_hashes",
+        "ttl",
+        "shop_signature",
+        "shipping_region",
+    ]
     PAYMENT_ID_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
     LISTING_HASHES_FIELD_NUMBER: _ClassVar[int]
     TTL_FIELD_NUMBER: _ClassVar[int]
     SHOP_SIGNATURE_FIELD_NUMBER: _ClassVar[int]
+    SHIPPING_REGION_FIELD_NUMBER: _ClassVar[int]
     payment_id: Hash
     total: Uint256
     listing_hashes: _containers.RepeatedCompositeFieldContainer[IPFSAddress]
     ttl: str
     shop_signature: Signature
+    shipping_region: ShippingRegion
     def __init__(
         self,
         payment_id: _Optional[_Union[Hash, _Mapping]] = ...,
@@ -268,6 +277,7 @@ class PaymentDetails(_message.Message):
         listing_hashes: _Optional[_Iterable[_Union[IPFSAddress, _Mapping]]] = ...,
         ttl: _Optional[str] = ...,
         shop_signature: _Optional[_Union[Signature, _Mapping]] = ...,
+        shipping_region: _Optional[_Union[ShippingRegion, _Mapping]] = ...,
     ) -> None: ...
 
 class OrderPaid(_message.Message):

@@ -566,12 +566,13 @@ events.append(choose_payment)
 # created by the relay on receiving the commit
 listing_simple_hash = mtypes.IPFSAddress(cid="/ipfs/foobar")
 order_open_payment_details = mtypes.PaymentDetails(
+    # TODO: hash the actual value
+    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    shipping_region=region_other,
     ttl="1",
     total=mtypes.Uint256(
         raw=int(123400 * order_paid_item.quantity).to_bytes(32, "big"),
     ),
-    # TODO: hash the actual value
-    payment_id=mtypes.Hash(raw=random.randbytes(32)),
     listing_hashes=[listing_simple_hash],
     shop_signature=mtypes.Signature(raw=random.randbytes(64)),
 )
@@ -638,12 +639,12 @@ chose_payment_order_canceled = mevents.UpdateOrder(
 )
 events.append(chose_payment_order_canceled)
 
-
 payment_details3 = mtypes.PaymentDetails(
     payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    shipping_region=region_local,
     ttl="2",
     shop_signature=mtypes.Signature(raw=random.randbytes(65)),
-    total=mtypes.Uint256(raw=int(1400).to_bytes(32, "big")),
+    total=mtypes.Uint256(raw=int(1400 * 1.19 + 500).to_bytes(32, "big")),
     listing_hashes=[listing_simple_hash],
 )
 update_order_paid = mevents.UpdateOrder(

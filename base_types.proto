@@ -173,6 +173,8 @@ message PaymentDetails {
   string ttl = 4;
   Signature shop_signature = 5;
   // end of PaymentRequest data
+
+  ShippingRegion shipping_region = 6;
 }
 
 // generate by the relay to notify that the oder has been paid for
