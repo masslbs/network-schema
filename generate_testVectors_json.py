@@ -215,7 +215,7 @@ events.append(tag_clothes)
 # no options
 listing_simple = mevents.Listing(
     id=rand_uint64(),
-    base_price=mtypes.Uint256(raw=random.randbytes(32)),
+    price=mtypes.Uint256(raw=random.randbytes(32)),
     base_info=mtypes.ListingMetadata(
         title="the pen",
         description="great pen",
@@ -235,7 +235,7 @@ change_price = mevents.UpdateListing(
     base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
 )
 events.append(change_price)
-listing_simple.base_price.CopyFrom(change_price.base_price)
+listing_simple.price.CopyFrom(change_price.base_price)
 
 change_inventory = mevents.ChangeInventory(
     id=listing_simple.id,
@@ -259,7 +259,7 @@ l1_large = rand_uint64()
 
 listing_w_sizes = mevents.Listing(
     id=rand_uint64(),
-    base_price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
+    price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
     base_info=mtypes.ListingMetadata(
         title="The Painting (print)",
         description="Beautiful, in all sizes",
@@ -344,7 +344,7 @@ l2_color_blue = rand_uint64()
 
 listing_color_and_size = mevents.Listing(
     id=rand_uint64(),
-    base_price=mtypes.Uint256(raw=int(10000).to_bytes(32, "big")),
+    price=mtypes.Uint256(raw=int(10000).to_bytes(32, "big")),
     options=[
         mtypes.ListingOption(
             id=l2_opt_size,

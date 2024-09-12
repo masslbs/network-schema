@@ -74,7 +74,7 @@ message Account {
 // as well as repersent the latest value after some updates
 message Listing {
   uint64 id = 1;
-  Uint256 base_price = 2;
+  Uint256 price = 2;
   ListingMetadata base_info = 3;
   ListingViewState view_state = 4;
   repeated ListingOption options = 5;
