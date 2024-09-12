@@ -122,19 +122,6 @@ class ShippingRegion(_message.Message):
 
 class OrderPriceModifier(_message.Message):
     __slots__ = ["id", "title", "percentage", "absolute"]
-
-    class Absolute(_message.Message):
-        __slots__ = ["plus_sign", "diff"]
-        PLUS_SIGN_FIELD_NUMBER: _ClassVar[int]
-        DIFF_FIELD_NUMBER: _ClassVar[int]
-        plus_sign: bool
-        diff: Uint256
-        def __init__(
-            self,
-            plus_sign: bool = ...,
-            diff: _Optional[_Union[Uint256, _Mapping]] = ...,
-        ) -> None: ...
-
     ID_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     PERCENTAGE_FIELD_NUMBER: _ClassVar[int]
@@ -142,13 +129,23 @@ class OrderPriceModifier(_message.Message):
     id: int
     title: str
     percentage: Uint256
-    absolute: OrderPriceModifier.Absolute
+    absolute: PlusMinus
     def __init__(
         self,
         id: _Optional[int] = ...,
         title: _Optional[str] = ...,
         percentage: _Optional[_Union[Uint256, _Mapping]] = ...,
-        absolute: _Optional[_Union[OrderPriceModifier.Absolute, _Mapping]] = ...,
+        absolute: _Optional[_Union[PlusMinus, _Mapping]] = ...,
+    ) -> None: ...
+
+class PlusMinus(_message.Message):
+    __slots__ = ["plus_sign", "diff"]
+    PLUS_SIGN_FIELD_NUMBER: _ClassVar[int]
+    DIFF_FIELD_NUMBER: _ClassVar[int]
+    plus_sign: bool
+    diff: Uint256
+    def __init__(
+        self, plus_sign: bool = ..., diff: _Optional[_Union[Uint256, _Mapping]] = ...
     ) -> None: ...
 
 class ListingMetadata(_message.Message):
@@ -182,24 +179,18 @@ class ListingOption(_message.Message):
     ) -> None: ...
 
 class ListingVariation(_message.Message):
-    __slots__ = ["id", "variation_info", "price_diff_sign", "price_diff", "sku"]
+    __slots__ = ["id", "variation_info", "diff"]
     ID_FIELD_NUMBER: _ClassVar[int]
     VARIATION_INFO_FIELD_NUMBER: _ClassVar[int]
-    PRICE_DIFF_SIGN_FIELD_NUMBER: _ClassVar[int]
-    PRICE_DIFF_FIELD_NUMBER: _ClassVar[int]
-    SKU_FIELD_NUMBER: _ClassVar[int]
+    DIFF_FIELD_NUMBER: _ClassVar[int]
     id: int
     variation_info: ListingMetadata
-    price_diff_sign: bool
-    price_diff: Uint256
-    sku: str
+    diff: PlusMinus
     def __init__(
         self,
         id: _Optional[int] = ...,
         variation_info: _Optional[_Union[ListingMetadata, _Mapping]] = ...,
-        price_diff_sign: bool = ...,
-        price_diff: _Optional[_Union[Uint256, _Mapping]] = ...,
-        sku: _Optional[str] = ...,
+        diff: _Optional[_Union[PlusMinus, _Mapping]] = ...,
     ) -> None: ...
 
 class ListingStockStatus(_message.Message):

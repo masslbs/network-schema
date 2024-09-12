@@ -76,7 +76,7 @@ mod_eu_vat = mtypes.OrderPriceModifier(
 mod_dhl_local = mtypes.OrderPriceModifier(
     id=rand_uint64(),
     title="DHL Local",
-    absolute=mtypes.OrderPriceModifier.Absolute(
+    absolute=mtypes.PlusMinus(
         plus_sign=True,
         # TODO: assuming 2 decimals for now
         diff=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
@@ -86,7 +86,7 @@ mod_dhl_local = mtypes.OrderPriceModifier(
 mod_dhl_international = mtypes.OrderPriceModifier(
     id=rand_uint64(),
     title="DHL International",
-    absolute=mtypes.OrderPriceModifier.Absolute(
+    absolute=mtypes.PlusMinus(
         plus_sign=True,
         # TODO: assuming 2 decimals for now
         diff=mtypes.Uint256(raw=int(4200).to_bytes(32, "big")),
@@ -216,7 +216,7 @@ events.append(tag_clothes)
 listing_simple = mevents.Listing(
     id=rand_uint64(),
     price=mtypes.Uint256(raw=random.randbytes(32)),
-    base_info=mtypes.ListingMetadata(
+    metadata=mtypes.ListingMetadata(
         title="the pen",
         description="great pen",
         images=["https://masslbs.xyz/pen.jpg"],
@@ -260,7 +260,7 @@ l1_large = rand_uint64()
 listing_w_sizes = mevents.Listing(
     id=rand_uint64(),
     price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
-    base_info=mtypes.ListingMetadata(
+    metadata=mtypes.ListingMetadata(
         title="The Painting (print)",
         description="Beautiful, in all sizes",
         images=["https://masslbs.xyz/painting.jpg"],
@@ -284,8 +284,10 @@ listing_w_sizes = mevents.Listing(
                         title="Medium",
                         description="600x450",
                     ),
-                    price_diff_sign=True,
-                    price_diff=mtypes.Uint256(raw=int(200).to_bytes(32, "big")),
+                    diff=mtypes.PlusMinus(
+                        plus_sign=True,
+                        diff=mtypes.Uint256(raw=int(200).to_bytes(32, "big")),
+                    ),
                 ),
                 mtypes.ListingVariation(
                     id=l1_large,
@@ -293,8 +295,10 @@ listing_w_sizes = mevents.Listing(
                         title="Large",
                         description="800x600",
                     ),
-                    price_diff_sign=True,
-                    price_diff=mtypes.Uint256(raw=int(400).to_bytes(32, "big")),
+                    diff=mtypes.PlusMinus(
+                        plus_sign=True,
+                        diff=mtypes.Uint256(raw=int(400).to_bytes(32, "big")),
+                    ),
                 ),
             ],
         )

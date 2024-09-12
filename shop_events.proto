@@ -75,7 +75,7 @@ message Account {
 message Listing {
   uint64 id = 1;
   Uint256 price = 2;
-  ListingMetadata base_info = 3;
+  ListingMetadata metadata = 3;
   ListingViewState view_state = 4;
   repeated ListingOption options = 5;
   // one for each combination of variations
@@ -86,8 +86,8 @@ message Listing {
 message UpdateListing {
   uint64 id = 1;
 
-  optional Uint256 base_price = 2;
-  optional ListingMetadata base_info = 3;
+  optional Uint256 price = 2;
+  optional ListingMetadata metadata = 3;
   optional ListingViewState view_state = 4;
 
   repeated ListingOption add_options = 6;

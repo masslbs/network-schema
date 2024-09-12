@@ -174,16 +174,16 @@ class Account(_message.Message):
     ) -> None: ...
 
 class Listing(_message.Message):
-    __slots__ = ["id", "price", "base_info", "view_state", "options", "stock_statuses"]
+    __slots__ = ["id", "price", "metadata", "view_state", "options", "stock_statuses"]
     ID_FIELD_NUMBER: _ClassVar[int]
     PRICE_FIELD_NUMBER: _ClassVar[int]
-    BASE_INFO_FIELD_NUMBER: _ClassVar[int]
+    METADATA_FIELD_NUMBER: _ClassVar[int]
     VIEW_STATE_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
     STOCK_STATUSES_FIELD_NUMBER: _ClassVar[int]
     id: int
     price: _base_types_pb2.Uint256
-    base_info: _base_types_pb2.ListingMetadata
+    metadata: _base_types_pb2.ListingMetadata
     view_state: _base_types_pb2.ListingViewState
     options: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.ListingOption]
     stock_statuses: _containers.RepeatedCompositeFieldContainer[
@@ -193,7 +193,7 @@ class Listing(_message.Message):
         self,
         id: _Optional[int] = ...,
         price: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
-        base_info: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
+        metadata: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
         view_state: _Optional[_Union[_base_types_pb2.ListingViewState, str]] = ...,
         options: _Optional[
             _Iterable[_Union[_base_types_pb2.ListingOption, _Mapping]]
@@ -206,8 +206,8 @@ class Listing(_message.Message):
 class UpdateListing(_message.Message):
     __slots__ = [
         "id",
-        "base_price",
-        "base_info",
+        "price",
+        "metadata",
         "view_state",
         "add_options",
         "remove_options",
@@ -232,8 +232,8 @@ class UpdateListing(_message.Message):
         ) -> None: ...
 
     ID_FIELD_NUMBER: _ClassVar[int]
-    BASE_PRICE_FIELD_NUMBER: _ClassVar[int]
-    BASE_INFO_FIELD_NUMBER: _ClassVar[int]
+    PRICE_FIELD_NUMBER: _ClassVar[int]
+    METADATA_FIELD_NUMBER: _ClassVar[int]
     VIEW_STATE_FIELD_NUMBER: _ClassVar[int]
     ADD_OPTIONS_FIELD_NUMBER: _ClassVar[int]
     REMOVE_OPTIONS_FIELD_NUMBER: _ClassVar[int]
@@ -242,8 +242,8 @@ class UpdateListing(_message.Message):
     UPDATE_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
     STOCK_UPDATES_FIELD_NUMBER: _ClassVar[int]
     id: int
-    base_price: _base_types_pb2.Uint256
-    base_info: _base_types_pb2.ListingMetadata
+    price: _base_types_pb2.Uint256
+    metadata: _base_types_pb2.ListingMetadata
     view_state: _base_types_pb2.ListingViewState
     add_options: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ListingOption
@@ -262,8 +262,8 @@ class UpdateListing(_message.Message):
     def __init__(
         self,
         id: _Optional[int] = ...,
-        base_price: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
-        base_info: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
+        price: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
+        metadata: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
         view_state: _Optional[_Union[_base_types_pb2.ListingViewState, str]] = ...,
         add_options: _Optional[
             _Iterable[_Union[_base_types_pb2.ListingOption, _Mapping]]

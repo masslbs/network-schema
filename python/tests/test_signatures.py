@@ -118,7 +118,7 @@ def test_optional_fields():
         ),
         (
             mevents.ShopEvent(
-                update_listing=mevents.UpdateListing(id=test_id, base_price=test_price)
+                update_listing=mevents.UpdateListing(id=test_id, price=test_price)
             ),
             "9f96e73818875daff93b09172ee453cb7d7b6426769b28f0be35fe10ab8b094d",
         ),

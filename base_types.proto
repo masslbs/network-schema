@@ -92,13 +92,14 @@ message OrderPriceModifier {
   oneof modification {
     // this is multiplied with the sub-total before being divided by 100.
     Uint256 percentage = 3;
-    Absolute absolute = 4;
+    PlusMinus absolute = 4;
   }
+}
 
-  message Absolute {
-    bool plus_sign = 1; // true for + / false for -
-    Uint256 diff = 2;
-  }
+// + or - some value
+message PlusMinus {
+  bool plus_sign = 1; // true for + / false for -
+  Uint256 diff = 2;
 }
 
 // listing related messages
@@ -122,10 +123,8 @@ message ListingVariation {
   // the metadata of the variation: for example if the option is Color
   // then the title might be "Red"
   ListingMetadata variation_info = 2;
-  // this alters the base price
-  bool price_diff_sign = 3; // true for + / false for -
-  Uint256 price_diff = 4;
-  string sku = 5;
+  // this alters the price
+  PlusMinus diff = 3;
 }
 
 // Wether a listing sould be published or not
