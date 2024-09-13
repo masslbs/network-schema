@@ -215,7 +215,7 @@ events.append(tag_clothes)
 # no options
 listing_simple = mevents.Listing(
     id=rand_uint64(),
-    price=mtypes.Uint256(raw=random.randbytes(32)),
+    price=mtypes.Uint256(raw=int(100).to_bytes(32, "big")),
     metadata=mtypes.ListingMetadata(
         title="the pen",
         description="great pen",
@@ -232,10 +232,10 @@ events.append(sort_listing_simple)
 
 change_price = mevents.UpdateListing(
     id=listing_simple.id,
-    base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
+    price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
 )
 events.append(change_price)
-listing_simple.price.CopyFrom(change_price.base_price)
+listing_simple.price.CopyFrom(change_price.price)
 
 change_inventory = mevents.ChangeInventory(
     id=listing_simple.id,
@@ -565,13 +565,18 @@ events.append(choose_payment)
 
 # created by the relay on receiving the commit
 listing_simple_hash = mtypes.IPFSAddress(cid="/ipfs/foobar")
+total_price = int(
+    100 * order_paid_item.quantity
+    # region shipping
+    + 4200
+)
 order_open_payment_details = mtypes.PaymentDetails(
     # TODO: hash the actual value
     payment_id=mtypes.Hash(raw=random.randbytes(32)),
     shipping_region=region_other,
     ttl="1",
     total=mtypes.Uint256(
-        raw=int(123400 * order_paid_item.quantity).to_bytes(32, "big"),
+        raw=total_price.to_bytes(32, "big"),
     ),
     listing_hashes=[listing_simple_hash],
     shop_signature=mtypes.Signature(raw=random.randbytes(64)),
