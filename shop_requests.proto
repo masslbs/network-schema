@@ -6,20 +6,11 @@ syntax = "proto3";
 
 package market.mass;
 
-import "error.proto";
-
 // Get an URL to upload a blob to.
 // This exists for future-proofing the protocol
 // and reduce stress on the websocket connection.
+// GenericResponse returns a single-use URL to upload a blob to.
+// The HTTP response will contain the blob's IPFS path.
 message GetBlobUploadURLRequest {
   // empty
-}
-
-// Returns a single-use URL to upload a blob to.
-// The HTTP response will contain the blob's IPFS path.
-message GetBlobUploadURLResponse {
-  oneof result {
-    Error error = 2;
-    string url = 3;
-  }
 }

@@ -14,11 +14,10 @@ from google.protobuf.internal import builder as _builder
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
-from massmarket_hash_event import error_pb2 as error__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x13shop_requests.proto\x12\x0bmarket.mass\x1a\x0b\x65rror.proto"\x19\n\x17GetBlobUploadURLRequest"X\n\x18GetBlobUploadURLResponse\x12#\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x12.market.mass.ErrorH\x00\x12\r\n\x03url\x18\x03 \x01(\tH\x00\x42\x08\n\x06resultb\x06proto3'
+    b'\n\x13shop_requests.proto\x12\x0bmarket.mass"\x19\n\x17GetBlobUploadURLRequestb\x06proto3'
 )
 
 _globals = globals()
@@ -26,8 +25,6 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "shop_requests_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
-    _globals["_GETBLOBUPLOADURLREQUEST"]._serialized_start = 49
-    _globals["_GETBLOBUPLOADURLREQUEST"]._serialized_end = 74
-    _globals["_GETBLOBUPLOADURLRESPONSE"]._serialized_start = 76
-    _globals["_GETBLOBUPLOADURLRESPONSE"]._serialized_end = 164
+    _globals["_GETBLOBUPLOADURLREQUEST"]._serialized_start = 36
+    _globals["_GETBLOBUPLOADURLREQUEST"]._serialized_end = 61
 # @@protoc_insertion_point(module_scope)
