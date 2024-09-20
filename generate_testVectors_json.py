@@ -804,9 +804,9 @@ output = {
     "reduced": {
         "manifest": protobuf_to_dict(current_manifest),
         "keycards": {
-            kc1.address: hex(newKc1.enroll_keycard.user_wallet.raw),
-            kc2.address: hex(newKc2.enroll_keycard.user_wallet.raw),
-            guestKeyPair.address: hex(zero_addr.raw),
+            hex(newKc1.enroll_keycard.user_wallet.raw):kc1.address,
+            hex(newKc2.enroll_keycard.user_wallet.raw):kc2.address,
+            hex(zero_addr.raw):guestKeyPair.address,
         },
         "listings": [
             protobuf_to_dict(listing_simple),
