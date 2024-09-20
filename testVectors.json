@@ -166,7 +166,7 @@
       "object": {
         "id": 1316030894146752875,
         "base_price": {
-          "raw": "0xd86df6fed6ab8ca7a5ed6f7a44face823127d54db09354057cdad21c30d02064"
+          "raw": "0x000000000000000000000000000000000000000000000000000000000001e208"
         },
         "base_info": {
           "title": "the pen",
@@ -176,9 +176,9 @@
           ]
         }
       },
-      "signature": "0x1f97a710674f3d3ff5db6934f20c0e1bc472f2b583d37917070e1bba03fe77142426f8bec4e49fc3e5d5ee3d64d86ff09804238666cb793eb61a5426917410d11b",
-      "hash": "0xa903caa6e508bd7b7c3e94fe592d712a2ef20f8888504f7a95fe3db225741b1c",
-      "encoded": "0x080912220a20d74c3d1f5740fbb19e4f7f8379f6992ec40c738833319c38db79205c32ffb7fc1a040890fd013a6108eba2bab882e4dea11212220a20d86df6fed6ab8ca7a5ed6f7a44face823127d54db09354057cdad21c30d020641a310a077468652070656e120967726561742070656e1a1b68747470733a2f2f6d6173736c62732e78797a2f70656e2e6a7067"
+      "signature": "0x9cb212f343660b5d27f441403801c1bba2b42e37256b04455bf0af5b61587a9515ebab24205261d91d04e235713e7c2b0cb538436c24424e8133d878182bc0001b",
+      "hash": "0xa594e0866a022e09cf772e2f67e6add7b084f1ee52f346b48884337f2f57378b",
+      "encoded": "0x080912220a20d74c3d1f5740fbb19e4f7f8379f6992ec40c738833319c38db79205c32ffb7fc1a040890fd013a6108eba2bab882e4dea11212220a20000000000000000000000000000000000000000000000000000000000001e2081a310a077468652070656e120967726561742070656e1a1b68747470733a2f2f6d6173736c62732e78797a2f70656e2e6a7067"
     },
     {
       "type": "UpdateTag",
@@ -298,7 +298,7 @@
             "variation_ids": [
               4399568019659142122
             ],
-            "expected_in_stock_by": "1970-04-27T00:46:39+00:00"
+            "expected_in_stock_by": "1970-04-26T16:46:39+00:00"
           }
         ]
       },
@@ -770,7 +770,7 @@
       "object": {
         "id": 11208004779028865902,
         "canceled": {
-          "canceld_at": "1970-01-01T08:00:23+00:00"
+          "canceld_at": "1969-12-31T23:00:23+00:00"
         }
       },
       "signature": "0x2dfbde14b72266e427732c4bbd878d3902eb36d0169cf8948e1d1cb89366810665a297ba1e9c541d60ac2500ecda71f417b697996985031238924a6bb38ea5321c",
@@ -936,16 +936,16 @@
         }
       }
     },
-    "keycards": {
-      "0x00297113f51be97cd733d72b3fd7e3a536461d5b": "0xB8b8985e55aBEa8E36C777c28C08ECBe0104a37d",
-      "0xdd7877dcf849251312ce0d634ac80fed51567875": "0xE6bA71C62863DA55baFBCb4EA2099e77C7014601",
-      "0x0000000000000000000000000000000000000000": "0x2E06D5C85Bd38e58E7d7a5FfDdc81552Ed79242f"
-    },
+    "keycards": [
+      "0xB8b8985e55aBEa8E36C777c28C08ECBe0104a37d",
+      "0xE6bA71C62863DA55baFBCb4EA2099e77C7014601",
+      "0x2E06D5C85Bd38e58E7d7a5FfDdc81552Ed79242f"
+    ],
     "listings": [
       {
         "id": 1316030894146752875,
         "base_price": {
-          "raw": "0xd86df6fed6ab8ca7a5ed6f7a44face823127d54db09354057cdad21c30d02064"
+          "raw": "0x000000000000000000000000000000000000000000000000000000000001e208"
         },
         "base_info": {
           "title": "the pen",
@@ -1022,7 +1022,7 @@
             "variation_ids": [
               4399568019659142122
             ],
-            "expected_in_stock_by": "1970-04-27T00:46:39+00:00"
+            "expected_in_stock_by": "1970-04-26T16:46:39+00:00"
           }
         ]
       },
@@ -1246,7 +1246,7 @@
           "email_address": "some1@no.where",
           "phone_number": "+0155512345"
         },
-        "canceled_at": "1970-01-01T08:00:23+00:00",
+        "canceled_at": "1969-12-31T23:00:23+00:00",
         "chosen_payee": {
           "name": "default",
           "address": {

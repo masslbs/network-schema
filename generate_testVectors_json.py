@@ -192,6 +192,7 @@ change_price = mevents.Listing(
     base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
 )
 events.append(change_price)
+listing_simple.base_price.CopyFrom(change_price.base_price)
 
 change_inventory = mevents.ChangeInventory(
     id=listing_simple.id,
@@ -803,11 +804,11 @@ output = {
     "events": wrapped_events,
     "reduced": {
         "manifest": protobuf_to_dict(current_manifest),
-        "keycards": {
-            hex(newKc1.enroll_keycard.user_wallet.raw):kc1.address,
-            hex(newKc2.enroll_keycard.user_wallet.raw):kc2.address,
-            hex(zero_addr.raw):guestKeyPair.address,
-        },
+        "keycards": [
+            kc1.address,
+            kc2.address,
+            guestKeyPair.address,
+        ],
         "listings": [
             protobuf_to_dict(listing_simple),
             protobuf_to_dict(listing_w_sizes),
