@@ -66,8 +66,12 @@ events = []
 ##############
 ## Manifest ##
 ##############
-
-manifest = mevents.Manifest(token_id=shop_id)
+payee23 = mtypes.Payee(
+    name="L23",
+    address=user1Addr,
+    chain_id=23,
+)
+manifest = mevents.Manifest(token_id=shop_id, payees=[payee23])
 events.append(manifest)
 
 ##############
@@ -133,12 +137,6 @@ addErc20One = mevents.UpdateManifest(
 )
 events.append(addErc20One)
 
-
-payee23 = mtypes.Payee(
-    name="L23",
-    address=user1Addr,
-    chain_id=23,
-)
 c_two = mtypes.ShopCurrency(
     chain_id=23,
     address=erc20_two,
