@@ -187,7 +187,7 @@ sort_listing_simple = mevents.UpdateTag(
 )
 events.append(sort_listing_simple)
 
-change_price = mevents.Listing(
+change_price = mevents.UpdateListing(
     id=listing_simple.id,
     base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
 )
