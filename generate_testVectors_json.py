@@ -73,7 +73,7 @@ payee23 = mtypes.Payee(
     chain_id=23,
 )
 manifest = mevents.Manifest(token_id=shop_id, payees=[payee23])
-
+events.append(manifest)
 ##############
 ## Accounts ##
 ##############
