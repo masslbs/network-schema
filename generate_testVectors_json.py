@@ -67,8 +67,12 @@ events = []
 ## Manifest ##
 ##############
 
-manifest = mevents.Manifest(token_id=shop_id)
-events.append(manifest)
+payee23 = mtypes.Payee(
+    name="L23",
+    address=user1Addr,
+    chain_id=23,
+)
+manifest = mevents.Manifest(token_id=shop_id, payees=[payee23])
 
 ##############
 ## Accounts ##
@@ -133,12 +137,6 @@ addErc20One = mevents.UpdateManifest(
 )
 events.append(addErc20One)
 
-
-payee23 = mtypes.Payee(
-    name="L23",
-    address=user1Addr,
-    chain_id=23,
-)
 c_two = mtypes.ShopCurrency(
     chain_id=23,
     address=erc20_two,
@@ -194,6 +192,7 @@ change_price = mevents.Listing(
     base_price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
 )
 events.append(change_price)
+listing_simple.base_price.CopyFrom(change_price.base_price)
 
 change_inventory = mevents.ChangeInventory(
     id=listing_simple.id,
@@ -784,11 +783,11 @@ output = {
     "events": wrapped_events,
     "reduced": {
         "manifest": protobuf_to_dict(current_manifest),
-        "keycards": {
-            kc1.address: hex(newKc1.enroll_keycard.user_wallet.raw),
-            kc2.address: hex(newKc2.enroll_keycard.user_wallet.raw),
-            guestKeyPair.address: hex(zero_addr.raw),
-        },
+        "keycards": [
+            kc1.address,
+            kc2.address,
+            guestKeyPair.address,
+        ],
         "listings": [
             protobuf_to_dict(listing_simple),
             protobuf_to_dict(listing_w_sizes),
