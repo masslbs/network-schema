@@ -219,11 +219,15 @@ message UpdateOrder {
 
 // ShopEvent is the transport wrapper for a single event in a shop.
 message ShopEvent {
-  // the nonce must be unique for each event per keycard
+  // The nonce must be unique for each event a keycard creates.
+  // The client may leave holes in the sequence but the values need to increase monotonicly.
+  // Since PB can't discern between 0 value and a missing field it should start with 1.
   uint64 nonce = 1;
+
   // Every signed event must be tied to a shop id. This allow the
   // event to processed outside the context of the currenct connection.
   Uint256 shop_id = 2;
+
   // the time when this event was created.
   // The relay should reject any events from the future
   google.protobuf.Timestamp timestamp = 3;
