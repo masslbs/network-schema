@@ -12,7 +12,9 @@ import random
 random.seed("mass-market-test-vectors")
 import math
 
-max_uint64 = int(math.pow(2, 64) - 1)
+## HACK to please javascript VMs (decoded json == protobuf values)
+# TODO: change back ID type to ByteArray
+max_uint64 = int(math.pow(2, 31) - 1)
 
 
 def rand_uint64():
