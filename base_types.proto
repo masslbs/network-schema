@@ -16,6 +16,11 @@ message RequestId {
   sint64 raw = 1;
 }
 
+message ObjectId {
+  // at least 8 bytes. used to references updates to their objects.
+  bytes raw = 1;
+}
+
 message Signature {
   bytes raw = 1;
 }
@@ -81,11 +86,11 @@ message ShippingRegion {
   string postal_code = 3;
   string city = 4;
 
-  repeated uint64 order_price_modifier_ids = 5;
+  repeated ObjectId order_price_modifier_ids = 5;
 }
 
 message OrderPriceModifier {
-  uint64 id = 1;
+  ObjectId id = 1;
   // the title of the option (like VAT Tax, Premium Shipping.)
   string title = 2;
 
@@ -112,14 +117,14 @@ message ListingMetadata {
 }
 
 message ListingOption {
-  uint64 id = 1;
+  ObjectId id = 1;
   // the title of the option (like Color, Size, etc.)
   string title = 2;
   repeated ListingVariation variations = 3;
 }
 
 message ListingVariation {
-  uint64 id = 1; // needs to be unique per listing
+  ObjectId id = 1; // needs to be unique per listing
   // the metadata of the variation: for example if the option is Color
   // then the title might be "Red"
   ListingMetadata variation_info = 2;
@@ -138,7 +143,7 @@ enum ListingViewState {
 // See ChangeStock for that
 message ListingStockStatus {
   // each variation must belong to a different option
-  repeated uint64 variation_ids = 1;
+  repeated ObjectId variation_ids = 1;
 
   oneof status {
     bool in_stock = 2;
@@ -187,7 +192,7 @@ message OrderPaid {
 
 // OrderedItems is used to add items to or remove items from an order.
 message OrderedItem {
-  uint64 listing_id = 1;
-  repeated uint64 variation_ids = 2;
+  ObjectId listing_id = 1;
+  repeated ObjectId variation_ids = 2;
   uint32 quantity = 3;
 }

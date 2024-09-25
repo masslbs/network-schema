@@ -33,6 +33,12 @@ class RequestId(_message.Message):
     raw: int
     def __init__(self, raw: _Optional[int] = ...) -> None: ...
 
+class ObjectId(_message.Message):
+    __slots__ = ["raw"]
+    RAW_FIELD_NUMBER: _ClassVar[int]
+    raw: bytes
+    def __init__(self, raw: _Optional[bytes] = ...) -> None: ...
+
 class Signature(_message.Message):
     __slots__ = ["raw"]
     RAW_FIELD_NUMBER: _ClassVar[int]
@@ -110,14 +116,16 @@ class ShippingRegion(_message.Message):
     country: str
     postal_code: str
     city: str
-    order_price_modifier_ids: _containers.RepeatedScalarFieldContainer[int]
+    order_price_modifier_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
     def __init__(
         self,
         name: _Optional[str] = ...,
         country: _Optional[str] = ...,
         postal_code: _Optional[str] = ...,
         city: _Optional[str] = ...,
-        order_price_modifier_ids: _Optional[_Iterable[int]] = ...,
+        order_price_modifier_ids: _Optional[
+            _Iterable[_Union[ObjectId, _Mapping]]
+        ] = ...,
     ) -> None: ...
 
 class OrderPriceModifier(_message.Message):
@@ -126,13 +134,13 @@ class OrderPriceModifier(_message.Message):
     TITLE_FIELD_NUMBER: _ClassVar[int]
     PERCENTAGE_FIELD_NUMBER: _ClassVar[int]
     ABSOLUTE_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: ObjectId
     title: str
     percentage: Uint256
     absolute: PlusMinus
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
         title: _Optional[str] = ...,
         percentage: _Optional[_Union[Uint256, _Mapping]] = ...,
         absolute: _Optional[_Union[PlusMinus, _Mapping]] = ...,
@@ -168,12 +176,12 @@ class ListingOption(_message.Message):
     ID_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     VARIATIONS_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: ObjectId
     title: str
     variations: _containers.RepeatedCompositeFieldContainer[ListingVariation]
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
         title: _Optional[str] = ...,
         variations: _Optional[_Iterable[_Union[ListingVariation, _Mapping]]] = ...,
     ) -> None: ...
@@ -183,12 +191,12 @@ class ListingVariation(_message.Message):
     ID_FIELD_NUMBER: _ClassVar[int]
     VARIATION_INFO_FIELD_NUMBER: _ClassVar[int]
     DIFF_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: ObjectId
     variation_info: ListingMetadata
     diff: PlusMinus
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
         variation_info: _Optional[_Union[ListingMetadata, _Mapping]] = ...,
         diff: _Optional[_Union[PlusMinus, _Mapping]] = ...,
     ) -> None: ...
@@ -198,12 +206,12 @@ class ListingStockStatus(_message.Message):
     VARIATION_IDS_FIELD_NUMBER: _ClassVar[int]
     IN_STOCK_FIELD_NUMBER: _ClassVar[int]
     EXPECTED_IN_STOCK_BY_FIELD_NUMBER: _ClassVar[int]
-    variation_ids: _containers.RepeatedScalarFieldContainer[int]
+    variation_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
     in_stock: bool
     expected_in_stock_by: _timestamp_pb2.Timestamp
     def __init__(
         self,
-        variation_ids: _Optional[_Iterable[int]] = ...,
+        variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ...,
         in_stock: bool = ...,
         expected_in_stock_by: _Optional[
             _Union[_timestamp_pb2.Timestamp, _Mapping]
@@ -297,12 +305,12 @@ class OrderedItem(_message.Message):
     LISTING_ID_FIELD_NUMBER: _ClassVar[int]
     VARIATION_IDS_FIELD_NUMBER: _ClassVar[int]
     QUANTITY_FIELD_NUMBER: _ClassVar[int]
-    listing_id: int
-    variation_ids: _containers.RepeatedScalarFieldContainer[int]
+    listing_id: ObjectId
+    variation_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
     quantity: int
     def __init__(
         self,
-        listing_id: _Optional[int] = ...,
-        variation_ids: _Optional[_Iterable[int]] = ...,
+        listing_id: _Optional[_Union[ObjectId, _Mapping]] = ...,
+        variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ...,
         quantity: _Optional[int] = ...,
     ) -> None: ...

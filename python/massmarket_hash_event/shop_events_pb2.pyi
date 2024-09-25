@@ -71,7 +71,7 @@ class UpdateManifest(_message.Message):
         "remove_accepted_currencies",
         "set_pricing_currency",
         "add_order_price_modifiers",
-        "remove_order_price_modifiers",
+        "remove_order_price_modifier_ids",
         "add_shipping_regions",
         "remove_shipping_regions",
     ]
@@ -81,7 +81,7 @@ class UpdateManifest(_message.Message):
     REMOVE_ACCEPTED_CURRENCIES_FIELD_NUMBER: _ClassVar[int]
     SET_PRICING_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     ADD_ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_ORDER_PRICE_MODIFIER_IDS_FIELD_NUMBER: _ClassVar[int]
     ADD_SHIPPING_REGIONS_FIELD_NUMBER: _ClassVar[int]
     REMOVE_SHIPPING_REGIONS_FIELD_NUMBER: _ClassVar[int]
     add_payee: _base_types_pb2.Payee
@@ -96,7 +96,9 @@ class UpdateManifest(_message.Message):
     add_order_price_modifiers: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.OrderPriceModifier
     ]
-    remove_order_price_modifiers: _containers.RepeatedScalarFieldContainer[int]
+    remove_order_price_modifier_ids: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ObjectId
+    ]
     add_shipping_regions: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ShippingRegion
     ]
@@ -117,7 +119,9 @@ class UpdateManifest(_message.Message):
         add_order_price_modifiers: _Optional[
             _Iterable[_Union[_base_types_pb2.OrderPriceModifier, _Mapping]]
         ] = ...,
-        remove_order_price_modifiers: _Optional[_Iterable[int]] = ...,
+        remove_order_price_modifier_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         add_shipping_regions: _Optional[
             _Iterable[_Union[_base_types_pb2.ShippingRegion, _Mapping]]
         ] = ...,
@@ -181,7 +185,7 @@ class Listing(_message.Message):
     VIEW_STATE_FIELD_NUMBER: _ClassVar[int]
     OPTIONS_FIELD_NUMBER: _ClassVar[int]
     STOCK_STATUSES_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     price: _base_types_pb2.Uint256
     metadata: _base_types_pb2.ListingMetadata
     view_state: _base_types_pb2.ListingViewState
@@ -191,7 +195,7 @@ class Listing(_message.Message):
     ]
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         price: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
         metadata: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
         view_state: _Optional[_Union[_base_types_pb2.ListingViewState, str]] = ...,
@@ -210,9 +214,9 @@ class UpdateListing(_message.Message):
         "metadata",
         "view_state",
         "add_options",
-        "remove_options",
+        "remove_option_ids",
         "add_variations",
-        "remove_variations",
+        "remove_variation_ids",
         "update_variations",
         "stock_updates",
     ]
@@ -221,11 +225,11 @@ class UpdateListing(_message.Message):
         __slots__ = ["option_id", "variation"]
         OPTION_ID_FIELD_NUMBER: _ClassVar[int]
         VARIATION_FIELD_NUMBER: _ClassVar[int]
-        option_id: int
+        option_id: _base_types_pb2.ObjectId
         variation: _base_types_pb2.ListingVariation
         def __init__(
             self,
-            option_id: _Optional[int] = ...,
+            option_id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
             variation: _Optional[
                 _Union[_base_types_pb2.ListingVariation, _Mapping]
             ] = ...,
@@ -236,23 +240,27 @@ class UpdateListing(_message.Message):
     METADATA_FIELD_NUMBER: _ClassVar[int]
     VIEW_STATE_FIELD_NUMBER: _ClassVar[int]
     ADD_OPTIONS_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_OPTIONS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_OPTION_IDS_FIELD_NUMBER: _ClassVar[int]
     ADD_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_VARIATION_IDS_FIELD_NUMBER: _ClassVar[int]
     UPDATE_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
     STOCK_UPDATES_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     price: _base_types_pb2.Uint256
     metadata: _base_types_pb2.ListingMetadata
     view_state: _base_types_pb2.ListingViewState
     add_options: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ListingOption
     ]
-    remove_options: _containers.RepeatedScalarFieldContainer[int]
+    remove_option_ids: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ObjectId
+    ]
     add_variations: _containers.RepeatedCompositeFieldContainer[
         UpdateListing.AddVariation
     ]
-    remove_variations: _containers.RepeatedScalarFieldContainer[int]
+    remove_variation_ids: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ObjectId
+    ]
     update_variations: _containers.RepeatedCompositeFieldContainer[
         UpdateListing.AddVariation
     ]
@@ -261,18 +269,22 @@ class UpdateListing(_message.Message):
     ]
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         price: _Optional[_Union[_base_types_pb2.Uint256, _Mapping]] = ...,
         metadata: _Optional[_Union[_base_types_pb2.ListingMetadata, _Mapping]] = ...,
         view_state: _Optional[_Union[_base_types_pb2.ListingViewState, str]] = ...,
         add_options: _Optional[
             _Iterable[_Union[_base_types_pb2.ListingOption, _Mapping]]
         ] = ...,
-        remove_options: _Optional[_Iterable[int]] = ...,
+        remove_option_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         add_variations: _Optional[
             _Iterable[_Union[UpdateListing.AddVariation, _Mapping]]
         ] = ...,
-        remove_variations: _Optional[_Iterable[int]] = ...,
+        remove_variation_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         update_variations: _Optional[
             _Iterable[_Union[UpdateListing.AddVariation, _Mapping]]
         ] = ...,
@@ -286,13 +298,15 @@ class ChangeInventory(_message.Message):
     ID_FIELD_NUMBER: _ClassVar[int]
     VARIATION_IDS_FIELD_NUMBER: _ClassVar[int]
     DIFF_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    variation_ids: _containers.RepeatedScalarFieldContainer[int]
+    id: _base_types_pb2.ObjectId
+    variation_ids: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.ObjectId]
     diff: int
     def __init__(
         self,
-        id: _Optional[int] = ...,
-        variation_ids: _Optional[_Iterable[int]] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
+        variation_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         diff: _Optional[int] = ...,
     ) -> None: ...
 
@@ -302,15 +316,17 @@ class Tag(_message.Message):
     NAME_FIELD_NUMBER: _ClassVar[int]
     LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
     DELETED_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     name: str
-    listing_ids: _containers.RepeatedScalarFieldContainer[int]
+    listing_ids: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.ObjectId]
     deleted: bool
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         name: _Optional[str] = ...,
-        listing_ids: _Optional[_Iterable[int]] = ...,
+        listing_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         deleted: bool = ...,
     ) -> None: ...
 
@@ -321,17 +337,25 @@ class UpdateTag(_message.Message):
     ADD_LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
     REMOVE_LISTING_IDS_FIELD_NUMBER: _ClassVar[int]
     DELETE_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     rename: str
-    add_listing_ids: _containers.RepeatedScalarFieldContainer[int]
-    remove_listing_ids: _containers.RepeatedScalarFieldContainer[int]
+    add_listing_ids: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ObjectId
+    ]
+    remove_listing_ids: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.ObjectId
+    ]
     delete: bool
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         rename: _Optional[str] = ...,
-        add_listing_ids: _Optional[_Iterable[int]] = ...,
-        remove_listing_ids: _Optional[_Iterable[int]] = ...,
+        add_listing_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
+        remove_listing_ids: _Optional[
+            _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
+        ] = ...,
         delete: bool = ...,
     ) -> None: ...
 
@@ -374,7 +398,7 @@ class Order(_message.Message):
     CHOSEN_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
     PAID_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     items: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.OrderedItem]
     state: Order.State
     invoice_address: _base_types_pb2.AddressDetails
@@ -386,7 +410,7 @@ class Order(_message.Message):
     paid: _base_types_pb2.OrderPaid
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         items: _Optional[
             _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
         ] = ...,
@@ -411,8 +435,10 @@ class Order(_message.Message):
 class CreateOrder(_message.Message):
     __slots__ = ["id"]
     ID_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    def __init__(self, id: _Optional[int] = ...) -> None: ...
+    id: _base_types_pb2.ObjectId
+    def __init__(
+        self, id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...
+    ) -> None: ...
 
 class UpdateOrder(_message.Message):
     __slots__ = [
@@ -482,7 +508,7 @@ class UpdateOrder(_message.Message):
     CHOOSE_PAYMENT_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
     PAID_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    id: _base_types_pb2.ObjectId
     canceled: UpdateOrder.Canceled
     change_items: UpdateOrder.ChangeItems
     commit_items: UpdateOrder.CommitItems
@@ -493,7 +519,7 @@ class UpdateOrder(_message.Message):
     paid: _base_types_pb2.OrderPaid
     def __init__(
         self,
-        id: _Optional[int] = ...,
+        id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         canceled: _Optional[_Union[UpdateOrder.Canceled, _Mapping]] = ...,
         change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ...,
         commit_items: _Optional[_Union[UpdateOrder.CommitItems, _Mapping]] = ...,

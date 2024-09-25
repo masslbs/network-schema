@@ -10,14 +10,6 @@ import pprint
 import random
 
 random.seed("mass-market-test-vectors")
-import math
-
-max_uint64 = int(math.pow(2, 64) - 1)
-
-
-def rand_uint64():
-    return random.randint(0, max_uint64)
-
 
 from google.protobuf import timestamp_pb2
 from web3 import Account
@@ -29,6 +21,13 @@ from massmarket_hash_event import (
     base_types_pb2 as mtypes,
     shop_events_pb2 as mevents,
 )
+
+from datetime import datetime, timezone
+from json import JSONEncoder
+
+
+def rand_obj_id():
+    return mtypes.ObjectId(raw=random.randbytes(8))
 
 
 def public_key_from_account(account):
@@ -45,10 +44,26 @@ def hex(b):
     return "0x" + binascii.hexlify(b).decode("utf-8")
 
 
+# TODO: might want to patch pb_to_dict to use this, too
+def id_to_hex(i: mtypes.ObjectId):
+    return hex(i.raw)
+
+
 def unhex(a):
     if a.startswith("0x"):
         a = a[2:]
     return binascii.a2b_hex(a)
+
+
+class HexEncoder(JSONEncoder):
+    def default(self, obj):
+        # fix rendering timestamps in json output
+        if isinstance(obj, datetime):
+            utc = obj.astimezone(timezone.utc)
+            return utc.isoformat()
+        if isinstance(obj, mtypes.ObjectId):
+            return id_to_hex(obj)
+        return super().default(obj)
 
 
 shop_id = mtypes.Uint256(raw=random.randbytes(32))
@@ -68,13 +83,13 @@ events = []
 ##############
 
 mod_eu_vat = mtypes.OrderPriceModifier(
-    id=19,
+    id=rand_obj_id(),
     title="EU VAT",
     percentage=mtypes.Uint256(raw=int(19).to_bytes(32, "big")),
 )
 
 mod_dhl_local = mtypes.OrderPriceModifier(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     title="DHL Local",
     absolute=mtypes.PlusMinus(
         plus_sign=True,
@@ -84,7 +99,7 @@ mod_dhl_local = mtypes.OrderPriceModifier(
 )
 
 mod_dhl_international = mtypes.OrderPriceModifier(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     title="DHL International",
     absolute=mtypes.PlusMinus(
         plus_sign=True,
@@ -96,7 +111,7 @@ mod_dhl_international = mtypes.OrderPriceModifier(
 region_local = mtypes.ShippingRegion(
     name="domestic",
     country="germany",
-    order_price_modifier_ids=[19, mod_dhl_local.id],
+    order_price_modifier_ids=[mod_eu_vat.id, mod_dhl_local.id],
 )
 
 region_other = mtypes.ShippingRegion(
@@ -197,13 +212,13 @@ events.append(addErc20Two)
 
 
 tag_stuff = mevents.Tag(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     name="Stuff",
 )
 events.append(tag_stuff)
 
 tag_clothes = mevents.Tag(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     name="Clothes",
 )
 events.append(tag_clothes)
@@ -214,7 +229,7 @@ events.append(tag_clothes)
 
 # no options
 listing_simple = mevents.Listing(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     price=mtypes.Uint256(raw=int(100).to_bytes(32, "big")),
     metadata=mtypes.ListingMetadata(
         title="the pen",
@@ -253,12 +268,12 @@ events.append(publish_simple)
 
 # one option
 # ==========
-l1_small = rand_uint64()
-l1_medium = rand_uint64()
-l1_large = rand_uint64()
+l1_small = rand_obj_id()
+l1_medium = rand_obj_id()
+l1_large = rand_obj_id()
 
 listing_w_sizes = mevents.Listing(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
     metadata=mtypes.ListingMetadata(
         title="The Painting (print)",
@@ -268,7 +283,7 @@ listing_w_sizes = mevents.Listing(
     view_state=mtypes.ListingViewState.LISTING_VIEW_STATE_PUBLISHED,
     options=[
         mtypes.ListingOption(
-            id=rand_uint64(),
+            id=rand_obj_id(),
             title="Size",
             variations=[
                 mtypes.ListingVariation(
@@ -336,18 +351,18 @@ events.append(change_inventory2_medium)
 
 # two options
 # ===========
-l2_opt_size = rand_uint64()
+l2_opt_size = rand_obj_id()
 
-l2_size10 = rand_uint64()
-l2_size11 = rand_uint64()
-l2_size12 = rand_uint64()
+l2_size10 = rand_obj_id()
+l2_size11 = rand_obj_id()
+l2_size12 = rand_obj_id()
 
-l2_color_red = rand_uint64()
-l2_color_green = rand_uint64()
-l2_color_blue = rand_uint64()
+l2_color_red = rand_obj_id()
+l2_color_green = rand_obj_id()
+l2_color_blue = rand_obj_id()
 
 listing_color_and_size = mevents.Listing(
-    id=rand_uint64(),
+    id=rand_obj_id(),
     price=mtypes.Uint256(raw=int(10000).to_bytes(32, "big")),
     options=[
         mtypes.ListingOption(
@@ -376,7 +391,7 @@ listing_color_and_size = mevents.Listing(
             ],
         ),
         mtypes.ListingOption(
-            id=rand_uint64(),
+            id=rand_obj_id(),
             title="Color",
             variations=[
                 mtypes.ListingVariation(
@@ -434,7 +449,7 @@ listing_color_and_size = mevents.Listing(
 events.append(listing_color_and_size)
 
 # add a variation to an option
-l2_size13 = rand_uint64()
+l2_size13 = rand_obj_id()
 add_size_var = mevents.UpdateListing.AddVariation(
     option_id=l2_opt_size,
     variation=mtypes.ListingVariation(
@@ -461,7 +476,7 @@ events.append(update_stock_evt)
 # remove a variation
 rm_combo_evt = mevents.UpdateListing(
     id=listing_color_and_size.id,
-    remove_variations=[
+    remove_variation_ids=[
         l2_color_red,
     ],
 )
@@ -509,7 +524,7 @@ addr.email_address = "some1@no.where"
 
 # open
 # ====
-order_open = mevents.CreateOrder(id=rand_uint64())
+order_open = mevents.CreateOrder(id=rand_obj_id())
 events.append(order_open)
 
 order_open_item = mtypes.OrderedItem(
@@ -526,7 +541,7 @@ events.append(add_to_order_open)
 
 # paid
 # ====
-order_paid = mevents.CreateOrder(id=rand_uint64())
+order_paid = mevents.CreateOrder(id=rand_obj_id())
 events.append(order_paid)
 
 order_paid_item = mtypes.OrderedItem(
@@ -605,7 +620,7 @@ events.append(order_is_paid)
 # this will be canceled
 # =====================
 order_canceled = mevents.CreateOrder(
-    id=rand_uint64(),
+    id=rand_obj_id(),
 )
 events.append(order_canceled)
 
@@ -672,7 +687,7 @@ events.append(update_order_canceled)
 # Finalized but not yet payed
 # ===========================
 order4 = mevents.CreateOrder(
-    id=rand_uint64(),
+    id=rand_obj_id(),
 )
 events.append(order4)
 
@@ -868,11 +883,11 @@ output = {
             protobuf_to_dict(listing_color_and_size),
         ],
         "tags": {
-            tag_stuff.id: {
+            id_to_hex(tag_stuff.id): {
                 "name": tag_stuff.name,
                 "item_ids": [listing_simple.id],
             },
-            tag_clothes.id: {
+            id_to_hex(tag_clothes.id): {
                 "name": tag_clothes.name,
                 "item_ids": [],
             },
@@ -913,18 +928,5 @@ output = {
     },
 }
 
-# fix rendering timestamps
-from datetime import datetime, timezone
-from json import JSONEncoder
-
-
-class DateTimeEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            utc = obj.astimezone(timezone.utc)
-            return utc.isoformat()
-        return super().default(obj)
-
-
 with open("testVectors.json", "w") as file:
-    json.dump(output, file, indent=2, cls=DateTimeEncoder)
+    json.dump(output, file, indent=2, cls=HexEncoder)

@@ -101,7 +101,7 @@ def test_optional_fields():
     pk = Account.from_key(
         "0x1234567890123456789012345678901234567890123456789012345678901234"
     )
-    test_id = 2342
+    test_id = mtypes.ObjectId(raw=b"23422342")
     test_addr = bytes(20)
     test_currency = mtypes.ShopCurrency(
         chain_id=42, address=mtypes.EthereumAddress(raw=test_addr)
@@ -120,7 +120,7 @@ def test_optional_fields():
             mevents.ShopEvent(
                 update_listing=mevents.UpdateListing(id=test_id, price=test_price)
             ),
-            "9f96e73818875daff93b09172ee453cb7d7b6426769b28f0be35fe10ab8b094d",
+            "2fb8b8f7fddaf8280dba9055cedd9c24d7bad4617b07332648b0ebd8023f4744",
         ),
         (
             mevents.ShopEvent(
@@ -128,25 +128,25 @@ def test_optional_fields():
                     id=test_id, canceled=mevents.UpdateOrder.Canceled()
                 )
             ),
-            "ffab3e2dff3062a5bb9838ad0d0367e0521ade085f611dda439be7574b451007",
+            "1eeb9b1fca623298ad036fb78cc1488bf002509154918c362c557ce4372bcb66",
         ),
         (
             mevents.ShopEvent(
                 change_inventory=mevents.ChangeInventory(id=test_id, diff=1)
             ),
-            "92cb832482f77592e8c1da65d2667fb270356d3491a9b00ebfe49e9265d7e784",
+            "adf752e682bb28d815ef680fb56993946f8abfe020cc56a2d70234263d2a7063",
         ),
         (
             mevents.ShopEvent(
                 change_inventory=mevents.ChangeInventory(
-                    id=test_id, diff=1, variation_ids=[1, 2, 3]
+                    id=test_id, diff=1, variation_ids=[test_id]
                 )
             ),
-            "28373b514955d2ee579fd567cbeed4adecf55c8e171fc38181ea5a2276ef5a04",
+            "46c29743faf9d07972f197cc242b6bb50ff7714df78a734e3d183c96ba544ad7",
         ),
     ]
     for idx, (evt, expected) in enumerate(events):
         data = hash_event(evt)
         signed_message = pk.sign_message(data)
         msg_hash = signed_message.messageHash.hex()
-        assert msg_hash == expected, f"Failed on event {idx}"
+        assert msg_hash == expected, f"Failed on event idx:{idx}"

@@ -44,11 +44,11 @@ class SubscriptionRequest(_message.Message):
         OBJECT_TYPE_FIELD_NUMBER: _ClassVar[int]
         OBJECT_ID_FIELD_NUMBER: _ClassVar[int]
         object_type: ObjectType
-        object_id: int
+        object_id: _base_types_pb2.ObjectId
         def __init__(
             self,
             object_type: _Optional[_Union[ObjectType, str]] = ...,
-            object_id: _Optional[int] = ...,
+            object_id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         ) -> None: ...
 
     START_SHOP_SEQ_NO_FIELD_NUMBER: _ClassVar[int]

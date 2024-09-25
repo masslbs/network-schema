@@ -47,7 +47,7 @@ message SubscriptionRequest {
     // Optional subscribe to only events that modify a single item.
     // We assume object_id is only unique for a given object_type, so
     // object_type is required.
-    optional uint64 object_id = 4;
+    optional ObjectId object_id = 4;
   }
 }
 

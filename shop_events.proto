@@ -35,7 +35,7 @@ message UpdateManifest {
   repeated ShopCurrency remove_accepted_currencies = 5;
   optional ShopCurrency set_pricing_currency = 6;
   repeated OrderPriceModifier add_order_price_modifiers = 9;
-  repeated uint64 remove_order_price_modifiers = 10;
+  repeated ObjectId remove_order_price_modifier_ids = 10;
   repeated ShippingRegion add_shipping_regions = 7;
   repeated string remove_shipping_regions = 8;
 }
@@ -73,7 +73,7 @@ message Account {
 // Used to create a listing
 // as well as repersent the latest value after some updates
 message Listing {
-  uint64 id = 1;
+  ObjectId id = 1;
   Uint256 price = 2;
   ListingMetadata metadata = 3;
   ListingViewState view_state = 4;
@@ -84,21 +84,21 @@ message Listing {
 
 // State transition of a listing
 message UpdateListing {
-  uint64 id = 1;
+  ObjectId id = 1;
 
   optional Uint256 price = 2;
   optional ListingMetadata metadata = 3;
   optional ListingViewState view_state = 4;
 
   repeated ListingOption add_options = 6;
-  repeated uint64 remove_options = 7;
+  repeated ObjectId remove_option_ids = 7;
   repeated AddVariation add_variations = 9;
-  repeated uint64 remove_variations = 8;
+  repeated ObjectId remove_variation_ids = 8;
   repeated AddVariation update_variations = 10;
   repeated ListingStockStatus stock_updates = 11;
 
   message AddVariation {
-    uint64 option_id = 1;
+    ObjectId option_id = 1;
     ListingVariation variation = 2;
   }
 }
@@ -106,27 +106,27 @@ message UpdateListing {
 // the inventory number to add or subtract from a listing
 // Seprated from listing, since this is private
 message ChangeInventory {
-  uint64 id = 1;
+  ObjectId id = 1;
   // each variation must belong to a different option
-  repeated uint64 variation_ids = 2;
+  repeated ObjectId variation_ids = 2;
   sint32 diff = 3;
 }
 
 // Creates a tag in the shop
 // also used to represent the current value
 message Tag {
-  uint64 id = 1;
+  ObjectId id = 1;
   string name = 2;
-  repeated uint64 listing_ids = 3;
+  repeated ObjectId listing_ids = 3;
   bool deleted = 4;
 }
 
 // These can be used to group items into categories.
 message UpdateTag {
-  uint64 id = 1;
+  ObjectId id = 1;
   optional string rename = 2;
-  repeated uint64 add_listing_ids = 3;
-  repeated uint64 remove_listing_ids = 4;
+  repeated ObjectId add_listing_ids = 3;
+  repeated ObjectId remove_listing_ids = 4;
   optional bool delete = 5;
 }
 
@@ -136,7 +136,7 @@ message UpdateTag {
 // current state of an order.
 // not transmitted over the event stream
 message Order {
-  uint64 id = 1;
+  ObjectId id = 1;
   repeated OrderedItem items = 2;
   State state = 3;
 
@@ -166,11 +166,11 @@ message Order {
 }
 
 message CreateOrder {
-  uint64 id = 1;
+  ObjectId id = 1;
 }
 
 message UpdateOrder {
-  uint64 id = 1;
+  ObjectId id = 1;
 
   oneof action {
     Canceled canceled = 2;
@@ -220,8 +220,9 @@ message UpdateOrder {
 // ShopEvent is the transport wrapper for a single event in a shop.
 message ShopEvent {
   // The nonce must be unique for each event a keycard creates.
-  // The client may leave holes in the sequence but the values need to increase monotonicly.
-  // Since PB can't discern between 0 value and a missing field it should start with 1.
+  // The sequence values need to increase monotonicly.
+  // Since PB can't discern between the 0 value and
+  // a missing field it should start with 1.
   uint64 nonce = 1;
 
   // Every signed event must be tied to a shop id. This allow the
