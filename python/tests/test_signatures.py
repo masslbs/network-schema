@@ -125,7 +125,7 @@ def test_optional_fields():
         (
             mevents.ShopEvent(
                 update_order=mevents.UpdateOrder(
-                    id=test_id, canceled=mevents.UpdateOrder.Canceled()
+                    id=test_id, cancel=mevents.UpdateOrder.Cancel()
                 )
             ),
             "1eeb9b1fca623298ad036fb78cc1488bf002509154918c362c557ce4372bcb66",

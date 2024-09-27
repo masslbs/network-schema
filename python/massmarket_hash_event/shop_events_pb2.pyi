@@ -5,7 +5,6 @@
 from massmarket_hash_event import base_types_pb2 as _base_types_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
-from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from typing import (
@@ -217,7 +216,6 @@ class UpdateListing(_message.Message):
         "remove_option_ids",
         "add_variations",
         "remove_variation_ids",
-        "update_variations",
         "stock_updates",
     ]
 
@@ -243,7 +241,6 @@ class UpdateListing(_message.Message):
     REMOVE_OPTION_IDS_FIELD_NUMBER: _ClassVar[int]
     ADD_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
     REMOVE_VARIATION_IDS_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_VARIATIONS_FIELD_NUMBER: _ClassVar[int]
     STOCK_UPDATES_FIELD_NUMBER: _ClassVar[int]
     id: _base_types_pb2.ObjectId
     price: _base_types_pb2.Uint256
@@ -260,9 +257,6 @@ class UpdateListing(_message.Message):
     ]
     remove_variation_ids: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ObjectId
-    ]
-    update_variations: _containers.RepeatedCompositeFieldContainer[
-        UpdateListing.AddVariation
     ]
     stock_updates: _containers.RepeatedCompositeFieldContainer[
         _base_types_pb2.ListingStockStatus
@@ -284,9 +278,6 @@ class UpdateListing(_message.Message):
         ] = ...,
         remove_variation_ids: _Optional[
             _Iterable[_Union[_base_types_pb2.ObjectId, _Mapping]]
-        ] = ...,
-        update_variations: _Optional[
-            _Iterable[_Union[UpdateListing.AddVariation, _Mapping]]
         ] = ...,
         stock_updates: _Optional[
             _Iterable[_Union[_base_types_pb2.ListingStockStatus, _Mapping]]
@@ -363,65 +354,62 @@ class Order(_message.Message):
     __slots__ = [
         "id",
         "items",
-        "state",
+        "merchant_notes",
+        "canceled_at",
+        "commited_at",
         "invoice_address",
         "shipping_address",
-        "canceled_at",
+        "address_updated_at",
         "chosen_payee",
         "chosen_currency",
         "payment_details",
-        "paid",
+        "payment_details_created_at",
+        "wittnessed_transactions",
     ]
-
-    class State(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-        __slots__ = []
-        STATE_UNSPECIFIED: _ClassVar[Order.State]
-        STATE_OPEN: _ClassVar[Order.State]
-        STATE_CANCELED: _ClassVar[Order.State]
-        STATE_COMMITED: _ClassVar[Order.State]
-        STATE_UNPAID: _ClassVar[Order.State]
-        STATE_PAID: _ClassVar[Order.State]
-
-    STATE_UNSPECIFIED: Order.State
-    STATE_OPEN: Order.State
-    STATE_CANCELED: Order.State
-    STATE_COMMITED: Order.State
-    STATE_UNPAID: Order.State
-    STATE_PAID: Order.State
     ID_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FIELD_NUMBER: _ClassVar[int]
-    STATE_FIELD_NUMBER: _ClassVar[int]
+    MERCHANT_NOTES_FIELD_NUMBER: _ClassVar[int]
+    CANCELED_AT_FIELD_NUMBER: _ClassVar[int]
+    COMMITED_AT_FIELD_NUMBER: _ClassVar[int]
     INVOICE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     SHIPPING_ADDRESS_FIELD_NUMBER: _ClassVar[int]
-    CANCELED_AT_FIELD_NUMBER: _ClassVar[int]
+    ADDRESS_UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
     CHOSEN_PAYEE_FIELD_NUMBER: _ClassVar[int]
     CHOSEN_CURRENCY_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
-    PAID_FIELD_NUMBER: _ClassVar[int]
+    PAYMENT_DETAILS_CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    WITTNESSED_TRANSACTIONS_FIELD_NUMBER: _ClassVar[int]
     id: _base_types_pb2.ObjectId
     items: _containers.RepeatedCompositeFieldContainer[_base_types_pb2.OrderedItem]
-    state: Order.State
+    merchant_notes: str
+    canceled_at: _timestamp_pb2.Timestamp
+    commited_at: _timestamp_pb2.Timestamp
     invoice_address: _base_types_pb2.AddressDetails
     shipping_address: _base_types_pb2.AddressDetails
-    canceled_at: _timestamp_pb2.Timestamp
+    address_updated_at: _timestamp_pb2.Timestamp
     chosen_payee: _base_types_pb2.Payee
     chosen_currency: _base_types_pb2.ShopCurrency
     payment_details: _base_types_pb2.PaymentDetails
-    paid: _base_types_pb2.OrderPaid
+    payment_details_created_at: _timestamp_pb2.Timestamp
+    wittnessed_transactions: _containers.RepeatedCompositeFieldContainer[
+        _base_types_pb2.OrderTransaction
+    ]
     def __init__(
         self,
         id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
         items: _Optional[
             _Iterable[_Union[_base_types_pb2.OrderedItem, _Mapping]]
         ] = ...,
-        state: _Optional[_Union[Order.State, str]] = ...,
+        merchant_notes: _Optional[str] = ...,
+        canceled_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+        commited_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
         invoice_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
         shipping_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
-        canceled_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+        address_updated_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
         chosen_payee: _Optional[_Union[_base_types_pb2.Payee, _Mapping]] = ...,
         chosen_currency: _Optional[
             _Union[_base_types_pb2.ShopCurrency, _Mapping]
@@ -429,7 +417,12 @@ class Order(_message.Message):
         payment_details: _Optional[
             _Union[_base_types_pb2.PaymentDetails, _Mapping]
         ] = ...,
-        paid: _Optional[_Union[_base_types_pb2.OrderPaid, _Mapping]] = ...,
+        payment_details_created_at: _Optional[
+            _Union[_timestamp_pb2.Timestamp, _Mapping]
+        ] = ...,
+        wittnessed_transactions: _Optional[
+            _Iterable[_Union[_base_types_pb2.OrderTransaction, _Mapping]]
+        ] = ...,
     ) -> None: ...
 
 class CreateOrder(_message.Message):
@@ -443,15 +436,20 @@ class CreateOrder(_message.Message):
 class UpdateOrder(_message.Message):
     __slots__ = [
         "id",
-        "canceled",
+        "cancel",
         "change_items",
         "commit_items",
-        "invoice_address",
-        "shipping_address",
+        "set_invoice_address",
+        "set_shipping_address",
         "choose_payment",
-        "payment_details",
-        "paid",
+        "set_payment_details",
+        "add_wittnessed_tx",
+        "set_merchant_notes",
     ]
+
+    class Cancel(_message.Message):
+        __slots__ = []
+        def __init__(self) -> None: ...
 
     class ChangeItems(_message.Message):
         __slots__ = ["adds", "removes"]
@@ -476,66 +474,59 @@ class UpdateOrder(_message.Message):
         def __init__(self) -> None: ...
 
     class ChoosePaymentMethod(_message.Message):
-        __slots__ = ["currency", "payee", "commited_at"]
+        __slots__ = ["currency", "payee"]
         CURRENCY_FIELD_NUMBER: _ClassVar[int]
         PAYEE_FIELD_NUMBER: _ClassVar[int]
-        COMMITED_AT_FIELD_NUMBER: _ClassVar[int]
         currency: _base_types_pb2.ShopCurrency
         payee: _base_types_pb2.Payee
-        commited_at: _timestamp_pb2.Timestamp
         def __init__(
             self,
             currency: _Optional[_Union[_base_types_pb2.ShopCurrency, _Mapping]] = ...,
             payee: _Optional[_Union[_base_types_pb2.Payee, _Mapping]] = ...,
-            commited_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
-        ) -> None: ...
-
-    class Canceled(_message.Message):
-        __slots__ = ["canceld_at"]
-        CANCELD_AT_FIELD_NUMBER: _ClassVar[int]
-        canceld_at: _timestamp_pb2.Timestamp
-        def __init__(
-            self,
-            canceld_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
         ) -> None: ...
 
     ID_FIELD_NUMBER: _ClassVar[int]
-    CANCELED_FIELD_NUMBER: _ClassVar[int]
+    CANCEL_FIELD_NUMBER: _ClassVar[int]
     CHANGE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     COMMIT_ITEMS_FIELD_NUMBER: _ClassVar[int]
-    INVOICE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
-    SHIPPING_ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    SET_INVOICE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    SET_SHIPPING_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     CHOOSE_PAYMENT_FIELD_NUMBER: _ClassVar[int]
-    PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
-    PAID_FIELD_NUMBER: _ClassVar[int]
+    SET_PAYMENT_DETAILS_FIELD_NUMBER: _ClassVar[int]
+    ADD_WITTNESSED_TX_FIELD_NUMBER: _ClassVar[int]
+    SET_MERCHANT_NOTES_FIELD_NUMBER: _ClassVar[int]
     id: _base_types_pb2.ObjectId
-    canceled: UpdateOrder.Canceled
+    cancel: UpdateOrder.Cancel
     change_items: UpdateOrder.ChangeItems
     commit_items: UpdateOrder.CommitItems
-    invoice_address: _base_types_pb2.AddressDetails
-    shipping_address: _base_types_pb2.AddressDetails
+    set_invoice_address: _base_types_pb2.AddressDetails
+    set_shipping_address: _base_types_pb2.AddressDetails
     choose_payment: UpdateOrder.ChoosePaymentMethod
-    payment_details: _base_types_pb2.PaymentDetails
-    paid: _base_types_pb2.OrderPaid
+    set_payment_details: _base_types_pb2.PaymentDetails
+    add_wittnessed_tx: _base_types_pb2.OrderTransaction
+    set_merchant_notes: str
     def __init__(
         self,
         id: _Optional[_Union[_base_types_pb2.ObjectId, _Mapping]] = ...,
-        canceled: _Optional[_Union[UpdateOrder.Canceled, _Mapping]] = ...,
+        cancel: _Optional[_Union[UpdateOrder.Cancel, _Mapping]] = ...,
         change_items: _Optional[_Union[UpdateOrder.ChangeItems, _Mapping]] = ...,
         commit_items: _Optional[_Union[UpdateOrder.CommitItems, _Mapping]] = ...,
-        invoice_address: _Optional[
+        set_invoice_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
-        shipping_address: _Optional[
+        set_shipping_address: _Optional[
             _Union[_base_types_pb2.AddressDetails, _Mapping]
         ] = ...,
         choose_payment: _Optional[
             _Union[UpdateOrder.ChoosePaymentMethod, _Mapping]
         ] = ...,
-        payment_details: _Optional[
+        set_payment_details: _Optional[
             _Union[_base_types_pb2.PaymentDetails, _Mapping]
         ] = ...,
-        paid: _Optional[_Union[_base_types_pb2.OrderPaid, _Mapping]] = ...,
+        add_wittnessed_tx: _Optional[
+            _Union[_base_types_pb2.OrderTransaction, _Mapping]
+        ] = ...,
+        set_merchant_notes: _Optional[str] = ...,
     ) -> None: ...
 
 class ShopEvent(_message.Message):

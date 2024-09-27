@@ -183,10 +183,9 @@ message PaymentDetails {
 }
 
 // generate by the relay to notify that the oder has been paid for
-message OrderPaid {
+message OrderTransaction {
+  // might not have a tx hash in case of an internal transaction
   Hash tx_hash = 1;
-  // in case of an internal transaction, we might have a hard
-  // time finding the tx_hash
   Hash block_hash = 2;
 }
 

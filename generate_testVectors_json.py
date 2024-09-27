@@ -569,7 +569,7 @@ events.append(add_to_order_paid)
 
 order_paid_add_addr = mevents.UpdateOrder(
     id=order_paid.id,
-    invoice_address=addr,
+    set_invoice_address=addr,
 )
 events.append(order_paid_add_addr)
 
@@ -609,7 +609,7 @@ order_open_payment_details = mtypes.PaymentDetails(
 )
 finalized_order = mevents.UpdateOrder(
     id=order_paid.id,
-    payment_details=order_open_payment_details,
+    set_payment_details=order_open_payment_details,
 )
 events.append(finalized_order)
 
@@ -622,8 +622,9 @@ events.append(paid_stock_change)
 
 order_is_paid = mevents.UpdateOrder(
     id=order_paid.id,
-    paid=mtypes.OrderPaid(
+    add_wittnessed_tx=mtypes.OrderTransaction(
         tx_hash=random_hash(),
+        block_hash=random_hash(),
     ),
 )
 events.append(order_is_paid)
@@ -651,7 +652,7 @@ events.append(add_to_order_canceled)
 
 order_canceled_add_addr = mevents.UpdateOrder(
     id=order_canceled.id,
-    invoice_address=addr,
+    set_invoice_address=addr,
 )
 events.append(order_canceled_add_addr)
 
@@ -680,17 +681,14 @@ payment_details3 = mtypes.PaymentDetails(
 )
 update_order_paid = mevents.UpdateOrder(
     id=order_canceled.id,
-    payment_details=payment_details3,
+    set_payment_details=payment_details3,
 )
 events.append(update_order_paid)
 
 # 24hrs pass and the sale times out
-cancel = mevents.UpdateOrder.Canceled(
-    canceld_at=timestamp_pb2.Timestamp(seconds=23),
-)
+canceld_at = timestamp_pb2.Timestamp(seconds=23)
 update_order_canceled = mevents.UpdateOrder(
-    id=order_canceled.id,
-    canceled=cancel,
+    id=order_canceled.id, cancel=mevents.UpdateOrder.Cancel()
 )
 events.append(update_order_canceled)
 
@@ -738,7 +736,7 @@ events.append(payment_order4)
 
 order4_add_addr = mevents.UpdateOrder(
     id=order4.id,
-    invoice_address=addr,
+    set_invoice_address=addr,
 )
 events.append(order4_add_addr)
 
@@ -751,7 +749,7 @@ commit_order4 = mtypes.PaymentDetails(
 )
 update_order4 = mevents.UpdateOrder(
     id=order4.id,
-    payment_details=commit_order4,
+    set_payment_details=commit_order4,
 )
 events.append(update_order4)
 
@@ -837,14 +835,12 @@ current_manifest = mevents.Manifest(
 
 current_order_open = mevents.Order(
     id=order_open.id,
-    state=mevents.Order.State.STATE_OPEN,
     items=[order_open_item],
     invoice_address=addr,
 )
 
 current_order_paid = mevents.Order(
     id=order_paid.id,
-    state=mevents.Order.State.STATE_PAID,
     items=[order_paid_item],
     invoice_address=addr,
     chosen_payee=payee,
@@ -854,8 +850,7 @@ current_order_paid = mevents.Order(
 
 current_order_canceled = mevents.Order(
     id=order_canceled.id,
-    state=mevents.Order.State.STATE_CANCELED,
-    canceled_at=cancel.canceld_at,
+    canceled_at=canceld_at,
     items=[order_canceled_item],
     invoice_address=addr,
     chosen_payee=payee,
@@ -865,7 +860,6 @@ current_order_canceled = mevents.Order(
 
 current_order_unpaid = mevents.Order(
     id=order4.id,
-    state=mevents.Order.State.STATE_UNPAID,
     items=[change4_1, change4_2],
     invoice_address=addr,
     chosen_payee=payee,

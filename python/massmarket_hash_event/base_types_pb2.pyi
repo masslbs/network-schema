@@ -288,7 +288,7 @@ class PaymentDetails(_message.Message):
         shipping_region: _Optional[_Union[ShippingRegion, _Mapping]] = ...,
     ) -> None: ...
 
-class OrderPaid(_message.Message):
+class OrderTransaction(_message.Message):
     __slots__ = ["tx_hash", "block_hash"]
     TX_HASH_FIELD_NUMBER: _ClassVar[int]
     BLOCK_HASH_FIELD_NUMBER: _ClassVar[int]
