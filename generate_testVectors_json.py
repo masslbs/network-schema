@@ -30,6 +30,18 @@ def rand_obj_id():
     return mtypes.ObjectId(raw=random.randbytes(8))
 
 
+def random_ethereum_address():
+    return mtypes.EthereumAddress(raw=random.randbytes(20))
+
+
+def random_hash():
+    return mtypes.Hash(raw=random.randbytes(32))
+
+
+def new_uint256(value: int) -> mtypes.Uint256:
+    return mtypes.Uint256(raw=value.to_bytes(32, "big"))
+
+
 def public_key_from_account(account):
     k = keys.PrivateKey(account.key)
     return k.public_key
@@ -68,13 +80,17 @@ class HexEncoder(JSONEncoder):
 
 shop_id = mtypes.Uint256(raw=random.randbytes(32))
 
-user1Addr = mtypes.EthereumAddress(raw=random.randbytes(20))
+user1Addr = random_ethereum_address()
 kc1 = Account.from_key(random.randbytes(32))
 debug(f"kc1: {kc1.address}")
-user2Addr = mtypes.EthereumAddress(raw=random.randbytes(20))
+user2Addr = random_ethereum_address()
 kc2 = Account.from_key(random.randbytes(32))
 debug(f"kc2: {kc2.address}")
 guestKeyPair = Account.from_key(random.randbytes(32))
+
+zero_addr = mtypes.EthereumAddress(raw=bytes(20))
+erc20_one = random_ethereum_address()
+erc20_two = random_ethereum_address()
 
 events = []
 
@@ -85,16 +101,15 @@ events = []
 mod_eu_vat = mtypes.OrderPriceModifier(
     id=rand_obj_id(),
     title="EU VAT",
-    percentage=mtypes.Uint256(raw=int(19).to_bytes(32, "big")),
+    percentage=new_uint256(19),
 )
-
 mod_dhl_local = mtypes.OrderPriceModifier(
     id=rand_obj_id(),
     title="DHL Local",
     absolute=mtypes.PlusMinus(
         plus_sign=True,
         # TODO: assuming 2 decimals for now
-        diff=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
+        diff=new_uint256(500),
     ),
 )
 
@@ -104,7 +119,7 @@ mod_dhl_international = mtypes.OrderPriceModifier(
     absolute=mtypes.PlusMinus(
         plus_sign=True,
         # TODO: assuming 2 decimals for now
-        diff=mtypes.Uint256(raw=int(4200).to_bytes(32, "big")),
+        diff=new_uint256(4200),
     ),
 )
 
@@ -152,7 +167,6 @@ newKc2 = mevents.Account(
 )
 events.append(newKc2)
 
-zero_addr = mtypes.EthereumAddress(raw=bytes(20))
 guestKc = mevents.Account(
     enroll_keycard=mevents.Account.KeyCardEnroll(
         user_wallet=zero_addr,
@@ -182,9 +196,6 @@ addEth = mevents.UpdateManifest(
     set_pricing_currency=vanilla_eth,
 )
 events.append(addEth)
-
-erc20_one = mtypes.EthereumAddress(raw=random.randbytes(20))
-erc20_two = mtypes.EthereumAddress(raw=random.randbytes(20))
 
 c_one = mtypes.ShopCurrency(
     chain_id=1,
@@ -230,7 +241,7 @@ events.append(tag_clothes)
 # no options
 listing_simple = mevents.Listing(
     id=rand_obj_id(),
-    price=mtypes.Uint256(raw=int(100).to_bytes(32, "big")),
+    price=new_uint256(100),
     metadata=mtypes.ListingMetadata(
         title="the pen",
         description="great pen",
@@ -247,7 +258,7 @@ events.append(sort_listing_simple)
 
 change_price = mevents.UpdateListing(
     id=listing_simple.id,
-    price=mtypes.Uint256(raw=int(123400).to_bytes(32, "big")),
+    price=new_uint256(123400),
 )
 events.append(change_price)
 listing_simple.price.CopyFrom(change_price.price)
@@ -274,7 +285,7 @@ l1_large = rand_obj_id()
 
 listing_w_sizes = mevents.Listing(
     id=rand_obj_id(),
-    price=mtypes.Uint256(raw=int(500).to_bytes(32, "big")),
+    price=new_uint256(500),
     metadata=mtypes.ListingMetadata(
         title="The Painting (print)",
         description="Beautiful, in all sizes",
@@ -301,7 +312,7 @@ listing_w_sizes = mevents.Listing(
                     ),
                     diff=mtypes.PlusMinus(
                         plus_sign=True,
-                        diff=mtypes.Uint256(raw=int(200).to_bytes(32, "big")),
+                        diff=new_uint256(200),
                     ),
                 ),
                 mtypes.ListingVariation(
@@ -312,7 +323,7 @@ listing_w_sizes = mevents.Listing(
                     ),
                     diff=mtypes.PlusMinus(
                         plus_sign=True,
-                        diff=mtypes.Uint256(raw=int(400).to_bytes(32, "big")),
+                        diff=new_uint256(400),
                     ),
                 ),
             ],
@@ -363,7 +374,7 @@ l2_color_blue = rand_obj_id()
 
 listing_color_and_size = mevents.Listing(
     id=rand_obj_id(),
-    price=mtypes.Uint256(raw=int(10000).to_bytes(32, "big")),
+    price=new_uint256(10000),
     options=[
         mtypes.ListingOption(
             id=l2_opt_size,
@@ -587,7 +598,7 @@ total_price = int(
 )
 order_open_payment_details = mtypes.PaymentDetails(
     # TODO: hash the actual value
-    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    payment_id=random_hash(),
     shipping_region=region_other,
     ttl="1",
     total=mtypes.Uint256(
@@ -612,7 +623,7 @@ events.append(paid_stock_change)
 order_is_paid = mevents.UpdateOrder(
     id=order_paid.id,
     paid=mtypes.OrderPaid(
-        tx_hash=mtypes.Hash(raw=random.randbytes(32)),
+        tx_hash=random_hash(),
     ),
 )
 events.append(order_is_paid)
@@ -660,11 +671,11 @@ chose_payment_order_canceled = mevents.UpdateOrder(
 events.append(chose_payment_order_canceled)
 
 payment_details3 = mtypes.PaymentDetails(
-    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    payment_id=random_hash(),
     shipping_region=region_local,
     ttl="2",
     shop_signature=mtypes.Signature(raw=random.randbytes(65)),
-    total=mtypes.Uint256(raw=int(1400 * 1.19 + 500).to_bytes(32, "big")),
+    total=new_uint256(int(1400 * 1.19 + 500)),
     listing_hashes=[listing_simple_hash],
 )
 update_order_paid = mevents.UpdateOrder(
@@ -732,10 +743,10 @@ order4_add_addr = mevents.UpdateOrder(
 events.append(order4_add_addr)
 
 commit_order4 = mtypes.PaymentDetails(
-    payment_id=mtypes.Hash(raw=random.randbytes(32)),
+    payment_id=random_hash(),
     ttl="3",
     shop_signature=mtypes.Signature(raw=random.randbytes(65)),
-    total=mtypes.Uint256(raw=int(16800).to_bytes(32, "big")),
+    total=new_uint256(16800),
     listing_hashes=[listing_simple_hash],
 )
 update_order4 = mevents.UpdateOrder(
