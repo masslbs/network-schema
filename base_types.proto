@@ -75,10 +75,10 @@ message ShippingRegion {
   /* the location
 
      the region for an order is picked by successivly matching fields.
-     empty-string values are ignored during matching.
+     empty-string values match everything / act as catch-all's.
 
-     therefore this can be used to say "only on this city" for pickups,
-     or anywhere in the US / world, etc.
+     therefore this can be used to say "only on this city" for pickups.
+     Or, for an international region, all three fields should be empty.
 
      TODO: need a country map and dropdowns for matching to work
   */
@@ -86,18 +86,17 @@ message ShippingRegion {
   string postal_code = 3;
   string city = 4;
 
-  repeated ObjectId order_price_modifier_ids = 5;
+  repeated OrderPriceModifier order_price_modifiers = 5;
 }
 
 message OrderPriceModifier {
-  ObjectId id = 1;
   // the title of the option (like VAT Tax, Premium Shipping.)
-  string title = 2;
+  string title = 1;
 
   oneof modification {
     // this is multiplied with the sub-total before being divided by 100.
-    Uint256 percentage = 3;
-    PlusMinus absolute = 4;
+    Uint256 percentage = 2;
+    PlusMinus absolute = 3;
   }
 }
 

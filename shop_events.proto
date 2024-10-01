@@ -24,20 +24,20 @@ message Manifest {
   ShopCurrency pricing_currency = 4;
 
   repeated ShippingRegion shipping_regions = 5;
-  repeated OrderPriceModifier order_price_modifiers = 6;
 }
 
 // State transition for the manifest
 message UpdateManifest {
-  optional Payee add_payee = 2;
-  optional Payee remove_payee = 3;
-  repeated ShopCurrency add_accepted_currencies = 4;
-  repeated ShopCurrency remove_accepted_currencies = 5;
-  optional ShopCurrency set_pricing_currency = 6;
-  repeated OrderPriceModifier add_order_price_modifiers = 9;
-  repeated ObjectId remove_order_price_modifier_ids = 10;
-  repeated ShippingRegion add_shipping_regions = 7;
-  repeated string remove_shipping_regions = 8;
+  optional Payee add_payee = 1;
+  optional Payee remove_payee = 2;
+
+  repeated ShopCurrency add_accepted_currencies = 3;
+  repeated ShopCurrency remove_accepted_currencies = 4;
+
+  optional ShopCurrency set_pricing_currency = 5;
+
+  repeated ShippingRegion add_shipping_regions = 6;
+  repeated string remove_shipping_regions = 7; // by name
 }
 
 message Account {
@@ -54,6 +54,8 @@ message Account {
     PublicKey revoke_keycard = 4;
   }
 
+  // OnchainAction messages mirror the events emitted by
+  // the ShopReg smart-contract to the event log of a shop.
   message OnchainAction {
     EthereumAddress account_address = 1;
     Hash tx = 2; // the hash of the transaction that alterd the contract state
@@ -131,36 +133,6 @@ message UpdateTag {
   optional bool delete = 5;
 }
 
-// Account messages mirror the events emitted by the ShopReg smart-contract
-// to the event log of a shop.
-
-// current state of an order.
-// not transmitted over the event stream
-message Order {
-  ObjectId id = 1;
-  repeated OrderedItem items = 2;
-
-  // can be used for note keeping like delivery statuses and tracking codes
-  string merchant_notes = 3;
-
-  optional google.protobuf.Timestamp canceled_at = 4;
-
-  optional google.protobuf.Timestamp commited_at = 5;
-
-  optional AddressDetails invoice_address = 6;
-  // no shipping addr assumes invoice addr
-  optional AddressDetails shipping_address = 7;
-  optional google.protobuf.Timestamp address_updated_at = 8;
-
-  // mandatory if state was commited
-  optional Payee chosen_payee = 9;
-  optional ShopCurrency chosen_currency = 10;
-  optional PaymentDetails payment_details = 11;
-  optional google.protobuf.Timestamp payment_details_created_at = 12;
-
-  repeated OrderTransaction wittnessed_transactions = 13;
-}
-
 message CreateOrder {
   ObjectId id = 1;
 }
@@ -183,9 +155,9 @@ message UpdateOrder {
     ChoosePaymentMethod choose_payment = 7;
     PaymentDetails set_payment_details = 8;
 
-    OrderTransaction add_wittnessed_tx = 9;
+    OrderTransaction add_payment_tx = 9;
 
-    string set_merchant_notes = 10;
+    string set_shipping_status = 10;
   }
 
   // Either created by a relay for an order that hasn't been payed in time.

@@ -10,6 +10,7 @@ __all__ = [
     "shop_requests_pb2",
     "error_pb2",
     "shop_events_pb2",
+    "storage_pb2",
 ]
 
 import json

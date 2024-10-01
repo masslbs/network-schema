@@ -114,7 +114,7 @@ def test_optional_fields():
                     set_pricing_currency=test_currency
                 )
             ),
-            "d1d3cf16b228fa92e53516dcf593b87144aab079933b494f7de98219d9c0e783",
+            "aa77956d84209537832f8335521d113e90cbc2c27927efea6bdb0c312e4fa6df",
         ),
         (
             mevents.ShopEvent(

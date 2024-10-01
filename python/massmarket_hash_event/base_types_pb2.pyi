@@ -106,41 +106,40 @@ class Payee(_message.Message):
     ) -> None: ...
 
 class ShippingRegion(_message.Message):
-    __slots__ = ["name", "country", "postal_code", "city", "order_price_modifier_ids"]
+    __slots__ = ["name", "country", "postal_code", "city", "order_price_modifiers"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     COUNTRY_FIELD_NUMBER: _ClassVar[int]
     POSTAL_CODE_FIELD_NUMBER: _ClassVar[int]
     CITY_FIELD_NUMBER: _ClassVar[int]
-    ORDER_PRICE_MODIFIER_IDS_FIELD_NUMBER: _ClassVar[int]
+    ORDER_PRICE_MODIFIERS_FIELD_NUMBER: _ClassVar[int]
     name: str
     country: str
     postal_code: str
     city: str
-    order_price_modifier_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
+    order_price_modifiers: _containers.RepeatedCompositeFieldContainer[
+        OrderPriceModifier
+    ]
     def __init__(
         self,
         name: _Optional[str] = ...,
         country: _Optional[str] = ...,
         postal_code: _Optional[str] = ...,
         city: _Optional[str] = ...,
-        order_price_modifier_ids: _Optional[
-            _Iterable[_Union[ObjectId, _Mapping]]
+        order_price_modifiers: _Optional[
+            _Iterable[_Union[OrderPriceModifier, _Mapping]]
         ] = ...,
     ) -> None: ...
 
 class OrderPriceModifier(_message.Message):
-    __slots__ = ["id", "title", "percentage", "absolute"]
-    ID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["title", "percentage", "absolute"]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     PERCENTAGE_FIELD_NUMBER: _ClassVar[int]
     ABSOLUTE_FIELD_NUMBER: _ClassVar[int]
-    id: ObjectId
     title: str
     percentage: Uint256
     absolute: PlusMinus
     def __init__(
         self,
-        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
         title: _Optional[str] = ...,
         percentage: _Optional[_Union[Uint256, _Mapping]] = ...,
         absolute: _Optional[_Union[PlusMinus, _Mapping]] = ...,

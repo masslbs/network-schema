@@ -20,6 +20,7 @@ from massmarket_hash_event import (
     hash_event,
     base_types_pb2 as mtypes,
     shop_events_pb2 as mevents,
+    storage_pb2 as mstorage,
 )
 
 from datetime import datetime, timezone
@@ -99,12 +100,10 @@ events = []
 ##############
 
 mod_eu_vat = mtypes.OrderPriceModifier(
-    id=rand_obj_id(),
     title="EU VAT",
     percentage=new_uint256(19),
 )
 mod_dhl_local = mtypes.OrderPriceModifier(
-    id=rand_obj_id(),
     title="DHL Local",
     absolute=mtypes.PlusMinus(
         plus_sign=True,
@@ -114,7 +113,6 @@ mod_dhl_local = mtypes.OrderPriceModifier(
 )
 
 mod_dhl_international = mtypes.OrderPriceModifier(
-    id=rand_obj_id(),
     title="DHL International",
     absolute=mtypes.PlusMinus(
         plus_sign=True,
@@ -126,12 +124,12 @@ mod_dhl_international = mtypes.OrderPriceModifier(
 region_local = mtypes.ShippingRegion(
     name="domestic",
     country="germany",
-    order_price_modifier_ids=[mod_eu_vat.id, mod_dhl_local.id],
+    order_price_modifiers=[mod_eu_vat, mod_dhl_local],
 )
 
 region_other = mtypes.ShippingRegion(
     name="other",
-    order_price_modifier_ids=[mod_dhl_international.id],
+    order_price_modifiers=[mod_dhl_international],
 )
 
 payee23 = mtypes.Payee(
@@ -144,7 +142,6 @@ manifest = mevents.Manifest(
     token_id=shop_id,
     payees=[payee23],
     shipping_regions=[region_local, region_other],
-    order_price_modifiers=[mod_eu_vat, mod_dhl_local, mod_dhl_international],
 )
 events.append(manifest)
 ##############
@@ -622,7 +619,7 @@ events.append(paid_stock_change)
 
 order_is_paid = mevents.UpdateOrder(
     id=order_paid.id,
-    add_wittnessed_tx=mtypes.OrderTransaction(
+    add_payment_tx=mtypes.OrderTransaction(
         tx_hash=random_hash(),
         block_hash=random_hash(),
     ),
@@ -833,13 +830,13 @@ current_manifest = mevents.Manifest(
     pricing_currency=vanilla_eth,
 )
 
-current_order_open = mevents.Order(
+current_order_open = mstorage.Order(
     id=order_open.id,
     items=[order_open_item],
     invoice_address=addr,
 )
 
-current_order_paid = mevents.Order(
+current_order_paid = mstorage.Order(
     id=order_paid.id,
     items=[order_paid_item],
     invoice_address=addr,
@@ -848,7 +845,7 @@ current_order_paid = mevents.Order(
     payment_details=order_open_payment_details,
 )
 
-current_order_canceled = mevents.Order(
+current_order_canceled = mstorage.Order(
     id=order_canceled.id,
     canceled_at=canceld_at,
     items=[order_canceled_item],
@@ -858,7 +855,7 @@ current_order_canceled = mevents.Order(
     payment_details=payment_details3,
 )
 
-current_order_unpaid = mevents.Order(
+current_order_unpaid = mstorage.Order(
     id=order4.id,
     items=[change4_1, change4_2],
     invoice_address=addr,
