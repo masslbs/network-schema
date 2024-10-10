@@ -9,6 +9,7 @@ SPDX-License-Identifier: MIT
 - Deprecates V2
 - Remove need for manual encoding.txt / introduces envelope.proto
 - Introduces event subscriptions, no implicit push of events
+- Authentication is only necessary for clients that want to write events.
 - Introduces base_types.proto to differentiate various `bytes`
 - Rename _item_ to _listing_
 - Tags are only used for categories, introduce seperate view states for listings

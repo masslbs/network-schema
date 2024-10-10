@@ -46,17 +46,8 @@ message SignedEvent {
   Signature signature = 2; // EIP-191 of any.value
 }
 
-// Used by the Client to write events to the shop.
-// WriteRequests are ONLY authenticated by thier signature.
-// meaning an Authentication/req/res is not nessicary.
-// this allows for guest to create orders without authenticating.
-// If validation of one event fails, the whole write will fail.
-//
-// Response via GenericResponse
-//
-// Which might return an error if the event or its signature is invalid.
-// If no error is returned,
-// the new_shop_hash is the hash of the shop with the new event applied.
+// Used by authenticated clients to write events to the relay.
+// Requires prior successful authentication.
 message EventWriteRequest {
   repeated SignedEvent events = 1;
 }

@@ -95,6 +95,12 @@ erc20_two = random_ethereum_address()
 
 events = []
 
+
+def append_event(event):
+    events.append(event)
+    return event
+
+
 ##############
 ## Manifest ##
 ##############
@@ -143,7 +149,28 @@ manifest = mevents.Manifest(
     payees=[payee23],
     shipping_regions=[region_local, region_other],
 )
-events.append(manifest)
+append_event(manifest)
+
+remove_payee = mevents.UpdateManifest(
+    remove_payee=payee23,
+)
+append_event(remove_payee)
+
+
+region_test = mtypes.ShippingRegion(
+    name="test",
+)
+add_region_test = mevents.UpdateManifest(
+    add_shipping_regions=[region_test],
+)
+append_event(add_region_test)
+
+remove_shipping_region = mevents.UpdateManifest(
+    remove_shipping_regions=[region_test.name],
+)
+append_event(remove_shipping_region)
+
+
 ##############
 ## Accounts ##
 ##############
@@ -154,7 +181,7 @@ newKc1 = mevents.Account(
         keycard_pubkey=mtypes.PublicKey(raw=public_key_from_account(kc1).to_bytes()),
     )
 )
-events.append(newKc1)
+append_event(newKc1)
 
 newKc2 = mevents.Account(
     enroll_keycard=mevents.Account.KeyCardEnroll(
@@ -162,7 +189,7 @@ newKc2 = mevents.Account(
         keycard_pubkey=mtypes.PublicKey(raw=public_key_from_account(kc2).to_bytes()),
     )
 )
-events.append(newKc2)
+append_event(newKc2)
 
 guestKc = mevents.Account(
     enroll_keycard=mevents.Account.KeyCardEnroll(
@@ -172,7 +199,7 @@ guestKc = mevents.Account(
         ),
     )
 )
-events.append(guestKc)
+append_event(guestKc)
 
 ################
 ## Currencies ##
@@ -192,7 +219,7 @@ addEth = mevents.UpdateManifest(
     add_accepted_currencies=[vanilla_eth],
     set_pricing_currency=vanilla_eth,
 )
-events.append(addEth)
+append_event(addEth)
 
 c_one = mtypes.ShopCurrency(
     chain_id=1,
@@ -201,7 +228,7 @@ c_one = mtypes.ShopCurrency(
 addErc20One = mevents.UpdateManifest(
     add_accepted_currencies=[c_one],
 )
-events.append(addErc20One)
+append_event(addErc20One)
 
 c_two = mtypes.ShopCurrency(
     chain_id=23,
@@ -211,7 +238,7 @@ addErc20Two = mevents.UpdateManifest(
     add_accepted_currencies=[c_two],
     remove_accepted_currencies=[c_one],
 )
-events.append(addErc20Two)
+append_event(addErc20Two)
 
 
 ##########
@@ -223,13 +250,19 @@ tag_stuff = mevents.Tag(
     id=rand_obj_id(),
     name="Stuff",
 )
-events.append(tag_stuff)
+append_event(tag_stuff)
+
+update_tag = mevents.UpdateTag(
+    id=tag_stuff.id,
+    rename="Better Stuff",
+)
+append_event(update_tag)
 
 tag_clothes = mevents.Tag(
     id=rand_obj_id(),
     name="Clothes",
 )
-events.append(tag_clothes)
+append_event(tag_clothes)
 
 #######################
 ## listing managment ##
@@ -245,26 +278,38 @@ listing_simple = mevents.Listing(
         images=["https://masslbs.xyz/pen.jpg"],
     ),
 )
-events.append(listing_simple)
+append_event(listing_simple)
 
 sort_listing_simple = mevents.UpdateTag(
     id=tag_stuff.id,
     add_listing_ids=[listing_simple.id],
 )
-events.append(sort_listing_simple)
+
+# and and remove from tag
+err_add_tag = mevents.UpdateTag(
+    id=tag_clothes.id,
+    add_listing_ids=[listing_simple.id],
+)
+append_event(err_add_tag)
+
+err_remove_tag = mevents.UpdateTag(
+    id=tag_clothes.id,
+    remove_listing_ids=[listing_simple.id],
+)
+append_event(err_remove_tag)
 
 change_price = mevents.UpdateListing(
     id=listing_simple.id,
     price=new_uint256(123400),
 )
-events.append(change_price)
+append_event(change_price)
 listing_simple.price.CopyFrom(change_price.price)
 
 change_inventory = mevents.ChangeInventory(
     id=listing_simple.id,
     diff=100,
 )
-events.append(change_inventory)
+append_event(change_inventory)
 
 stock_status = mtypes.ListingStockStatus(in_stock=True)
 publish_simple = mevents.UpdateListing(
@@ -272,7 +317,17 @@ publish_simple = mevents.UpdateListing(
     view_state=mtypes.ListingViewState.LISTING_VIEW_STATE_PUBLISHED,
     stock_updates=[stock_status],
 )
-events.append(publish_simple)
+append_event(publish_simple)
+
+update_listing_metadata = mevents.UpdateListing(
+    id=listing_simple.id,
+    metadata=mtypes.ListingMetadata(
+        title="Updated Pen",
+        description="Even better pen now!",
+        images=["https://masslbs.xyz/updated_pen.jpg"],
+    ),
+)
+append_event(update_listing_metadata)
 
 # one option
 # ==========
@@ -341,7 +396,7 @@ listing_w_sizes = mevents.Listing(
         ),
     ],
 )
-events.append(listing_w_sizes)
+append_event(listing_w_sizes)
 
 # update stock/inventory of individual variations
 change_inventory2_small = mevents.ChangeInventory(
@@ -349,13 +404,13 @@ change_inventory2_small = mevents.ChangeInventory(
     variation_ids=[l1_small],
     diff=10,
 )
-events.append(change_inventory2_small)
+append_event(change_inventory2_small)
 change_inventory2_medium = mevents.ChangeInventory(
     id=listing_w_sizes.id,
     variation_ids=[l1_medium],
     diff=20,
 )
-events.append(change_inventory2_medium)
+append_event(change_inventory2_medium)
 
 # two options
 # ===========
@@ -372,6 +427,11 @@ l2_color_blue = rand_obj_id()
 listing_color_and_size = mevents.Listing(
     id=rand_obj_id(),
     price=new_uint256(10000),
+    metadata=mtypes.ListingMetadata(
+        title="The Shoes",
+        description="Beautiful, in all sizes",
+        images=["https://masslbs.xyz/shoes.jpg"],
+    ),
     options=[
         mtypes.ListingOption(
             id=l2_opt_size,
@@ -454,7 +514,7 @@ listing_color_and_size = mevents.Listing(
         ),
     ],
 )
-events.append(listing_color_and_size)
+append_event(listing_color_and_size)
 
 # add a variation to an option
 l2_size13 = rand_obj_id()
@@ -468,7 +528,7 @@ add_size_evt = mevents.UpdateListing(
     id=listing_color_and_size.id,
     add_variations=[add_size_var],
 )
-events.append(add_size_evt)
+append_event(add_size_evt)
 
 update_stock_evt = mevents.UpdateListing(
     id=listing_color_and_size.id,
@@ -479,7 +539,7 @@ update_stock_evt = mevents.UpdateListing(
         ),
     ],
 )
-events.append(update_stock_evt)
+append_event(update_stock_evt)
 
 # remove a variation
 rm_combo_evt = mevents.UpdateListing(
@@ -488,7 +548,7 @@ rm_combo_evt = mevents.UpdateListing(
         l2_color_red,
     ],
 )
-events.append(add_size_evt)
+append_event(add_size_evt)
 
 # manually apply update to listing
 current = listing_color_and_size.options[1]
@@ -508,13 +568,13 @@ change_inventory3_10green = mevents.ChangeInventory(
     variation_ids=[l2_size10, l2_color_green],
     diff=127,
 )
-events.append(change_inventory3_10green)
+append_event(change_inventory3_10green)
 change_inventory2_13blue = mevents.ChangeInventory(
     id=listing_color_and_size.id,
     variation_ids=[l2_size13, l2_color_blue],
     diff=171,
 )
-events.append(change_inventory2_13blue)
+append_event(change_inventory2_13blue)
 
 
 ############
@@ -533,7 +593,7 @@ addr.email_address = "some1@no.where"
 # open
 # ====
 order_open = mevents.CreateOrder(id=rand_obj_id())
-events.append(order_open)
+append_event(order_open)
 
 order_open_item = mtypes.OrderedItem(
     listing_id=listing_simple.id,
@@ -545,12 +605,12 @@ add_to_order_open = mevents.UpdateOrder(
         adds=[order_open_item],
     ),
 )
-events.append(add_to_order_open)
+append_event(add_to_order_open)
 
 # paid
 # ====
 order_paid = mevents.CreateOrder(id=rand_obj_id())
-events.append(order_paid)
+append_event(order_paid)
 
 order_paid_item = mtypes.OrderedItem(
     listing_id=listing_simple.id,
@@ -562,20 +622,20 @@ add_to_order_paid = mevents.UpdateOrder(
         adds=[order_paid_item],
     ),
 )
-events.append(add_to_order_paid)
+append_event(add_to_order_paid)
 
 order_paid_add_addr = mevents.UpdateOrder(
     id=order_paid.id,
     set_invoice_address=addr,
 )
-events.append(order_paid_add_addr)
+append_event(order_paid_add_addr)
 
 
 commit_order_paid = mevents.UpdateOrder(
     id=order_paid.id,
     commit_items=mevents.UpdateOrder.CommitItems(),
 )
-events.append(commit_order_paid)
+append_event(commit_order_paid)
 
 choose_payment = mevents.UpdateOrder(
     id=order_paid.id,
@@ -584,7 +644,7 @@ choose_payment = mevents.UpdateOrder(
         payee=payee,
     ),
 )
-events.append(choose_payment)
+append_event(choose_payment)
 
 # created by the relay on receiving the commit
 listing_simple_hash = mtypes.IPFSAddress(cid="/ipfs/foobar")
@@ -608,14 +668,14 @@ finalized_order = mevents.UpdateOrder(
     id=order_paid.id,
     set_payment_details=order_open_payment_details,
 )
-events.append(finalized_order)
+append_event(finalized_order)
 
 # would be created by the relay after payment is completed
 paid_stock_change = mevents.ChangeInventory(
     id=listing_simple.id,
     diff=-42,
 )
-events.append(paid_stock_change)
+append_event(paid_stock_change)
 
 order_is_paid = mevents.UpdateOrder(
     id=order_paid.id,
@@ -624,14 +684,14 @@ order_is_paid = mevents.UpdateOrder(
         block_hash=random_hash(),
     ),
 )
-events.append(order_is_paid)
+append_event(order_is_paid)
 
 # this will be canceled
 # =====================
 order_canceled = mevents.CreateOrder(
     id=rand_obj_id(),
 )
-events.append(order_canceled)
+append_event(order_canceled)
 
 order_canceled_item = mtypes.OrderedItem(
     listing_id=listing_w_sizes.id,
@@ -645,19 +705,19 @@ add_to_order_canceled = mevents.UpdateOrder(
         adds=[order_canceled_item],
     ),
 )
-events.append(add_to_order_canceled)
+append_event(add_to_order_canceled)
 
 order_canceled_add_addr = mevents.UpdateOrder(
     id=order_canceled.id,
     set_invoice_address=addr,
 )
-events.append(order_canceled_add_addr)
+append_event(order_canceled_add_addr)
 
 commit_order_canceled = mevents.UpdateOrder(
     id=order_canceled.id,
     commit_items=mevents.UpdateOrder.CommitItems(),
 )
-events.append(commit_order_canceled)
+append_event(commit_order_canceled)
 
 chose_payment_order_canceled = mevents.UpdateOrder(
     id=order_canceled.id,
@@ -666,7 +726,7 @@ chose_payment_order_canceled = mevents.UpdateOrder(
         payee=payee,
     ),
 )
-events.append(chose_payment_order_canceled)
+append_event(chose_payment_order_canceled)
 
 payment_details3 = mtypes.PaymentDetails(
     payment_id=random_hash(),
@@ -680,14 +740,14 @@ update_order_paid = mevents.UpdateOrder(
     id=order_canceled.id,
     set_payment_details=payment_details3,
 )
-events.append(update_order_paid)
+append_event(update_order_paid)
 
 # 24hrs pass and the sale times out
 canceld_at = timestamp_pb2.Timestamp(seconds=23)
 update_order_canceled = mevents.UpdateOrder(
     id=order_canceled.id, cancel=mevents.UpdateOrder.Cancel()
 )
-events.append(update_order_canceled)
+append_event(update_order_canceled)
 
 # order 4 is in limbo.
 # Finalized but not yet payed
@@ -695,7 +755,7 @@ events.append(update_order_canceled)
 order4 = mevents.CreateOrder(
     id=rand_obj_id(),
 )
-events.append(order4)
+append_event(order4)
 
 change4_1 = mtypes.OrderedItem(
     listing_id=listing_color_and_size.id,
@@ -713,13 +773,13 @@ add_to_order4 = mevents.UpdateOrder(
         adds=[change4_1, change4_2],
     ),
 )
-events.append(add_to_order4)
+append_event(add_to_order4)
 
 commit_order4 = mevents.UpdateOrder(
     id=order4.id,
     commit_items=mevents.UpdateOrder.CommitItems(),
 )
-events.append(commit_order4)
+append_event(commit_order4)
 
 payment_order4 = mevents.UpdateOrder(
     id=order4.id,
@@ -728,14 +788,14 @@ payment_order4 = mevents.UpdateOrder(
         payee=payee,
     ),
 )
-events.append(payment_order4)
+append_event(payment_order4)
 
 
 order4_add_addr = mevents.UpdateOrder(
     id=order4.id,
     set_invoice_address=addr,
 )
-events.append(order4_add_addr)
+append_event(order4_add_addr)
 
 commit_order4 = mtypes.PaymentDetails(
     payment_id=random_hash(),
@@ -748,7 +808,7 @@ update_order4 = mevents.UpdateOrder(
     id=order4.id,
     set_payment_details=commit_order4,
 )
-events.append(update_order4)
+append_event(update_order4)
 
 
 wrapped_events = []
@@ -821,7 +881,6 @@ current_manifest = mevents.Manifest(
     token_id=shop_id,
     payees=[
         payee,
-        payee23,
     ],
     accepted_currencies=[
         vanilla_eth,
@@ -869,7 +928,10 @@ current_order_unpaid = mstorage.Order(
 output = {
     "signatures": {
         "shop_id": hex(shop_id.raw),
-        "signer_address": kc1.address,
+        "signer": {
+            "address": kc1.address,
+            "key": hex(kc1.key),
+        },
     },
     "events": wrapped_events,
     "reduced": {
@@ -886,7 +948,7 @@ output = {
         ],
         "tags": {
             id_to_hex(tag_stuff.id): {
-                "name": tag_stuff.name,
+                "name": update_tag.rename,
                 "item_ids": [listing_simple.id],
             },
             id_to_hex(tag_clothes.id): {
@@ -929,6 +991,12 @@ output = {
         ],
     },
 }
+
+# Update listing_simple metadata in the reduced state
+for listing in output["reduced"]["listings"]:
+    if listing["id"] == id_to_hex(listing_simple.id):
+        listing["metadata"] = protobuf_to_dict(update_listing_metadata.metadata)
+        break
 
 with open("testVectors.json", "w") as file:
     json.dump(output, file, indent=2, cls=HexEncoder)
