@@ -328,6 +328,7 @@ update_listing_metadata = mevents.UpdateListing(
     ),
 )
 append_event(update_listing_metadata)
+listing_simple.metadata.CopyFrom(update_listing_metadata.metadata)
 
 # one option
 # ==========
