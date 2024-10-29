@@ -923,7 +923,10 @@ current_order_unpaid = mstorage.Order(
 output = {
     "signatures": {
         "shop_id": hex(shop_id.raw),
-        "signer_address": kc1.address,
+        "signer": {
+            "address": kc1.address,
+            "key": hex(kc1.key),
+        },
     },
     "events": wrapped_events,
     "reduced": {

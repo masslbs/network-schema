@@ -1,7 +1,10 @@
 {
   "signatures": {
     "shop_id": "0xd74c3d1f5740fbb19e4f7f8379f6992ec40c738833319c38db79205c32ffb7fc",
-    "signer_address": "0xB8b8985e55aBEa8E36C777c28C08ECBe0104a37d"
+    "signer": {
+      "address": "0xB8b8985e55aBEa8E36C777c28C08ECBe0104a37d",
+      "key": "0x6e96004865b31132bb6d40de3fc32f16f1d1333a8252ed96983a629a230f3cc2"
+    }
   },
   "events": [
     {
