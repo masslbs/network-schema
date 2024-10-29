@@ -427,6 +427,11 @@ l2_color_blue = rand_obj_id()
 listing_color_and_size = mevents.Listing(
     id=rand_obj_id(),
     price=new_uint256(10000),
+    metadata=mtypes.ListingMetadata(
+        title="The Shoes",
+        description="Beautiful, in all sizes",
+        images=["https://masslbs.xyz/shoes.jpg"],
+    ),
     options=[
         mtypes.ListingOption(
             id=l2_opt_size,
