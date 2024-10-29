@@ -266,16 +266,16 @@
           "raw": "0x000000000000000000000000000000000000000000000000000000000001e208"
         },
         "metadata": {
-          "title": "the pen",
-          "description": "great pen",
+          "title": "Updated Pen",
+          "description": "Even better pen now!",
           "images": [
-            "https://masslbs.xyz/pen.jpg"
+            "https://masslbs.xyz/updated_pen.jpg"
           ]
         }
       },
-      "signature": "0xd5c33b1a9e2885f09554d38749dfffbbffea6eefb1fce622ea768127085f5f2b51aeb0fe7645bcb7e4f29d32ffc287d2af6ba4ae8d825097cd4451351f9ebb031c",
-      "hash": "0xfeeb222d3b95a18fcdc94612b10566aa297a16fbd67c7d77d2bfd4fac47061f8",
-      "encoded": "0x080d12220a20d74c3d1f5740fbb19e4f7f8379f6992ec40c738833319c38db79205c32ffb7fc1a0408d0ed023a630a0a0a08d0aa0bca18b781f912220a20000000000000000000000000000000000000000000000000000000000001e2081a310a077468652070656e120967726561742070656e1a1b68747470733a2f2f6d6173736c62732e78797a2f70656e2e6a7067"
+      "signature": "0x88c38828c9addc92c453b4bba8de5293b0343180344ba96b359f260b45dbd9b22f682f808c2ab8d0cb933c8cab8489325fa0667adfa60d7f4961065deb309a591b",
+      "hash": "0xb1bb1f3e3a1490dabffd048c81f40d9b733741ba0456c09895e2e323f53a63dd",
+      "encoded": "0x080d12220a20d74c3d1f5740fbb19e4f7f8379f6992ec40c738833319c38db79205c32ffb7fc1a0408d0ed023a7a0a0a0a08d0aa0bca18b781f912220a20000000000000000000000000000000000000000000000000000000000001e2081a480a0b557064617465642050656e12144576656e206265747465722070656e206e6f77211a2368747470733a2f2f6d6173736c62732e78797a2f757064617465645f70656e2e6a7067"
     },
     {
       "type": "UpdateTag",
@@ -1283,10 +1283,10 @@
           "raw": "0x000000000000000000000000000000000000000000000000000000000001e208"
         },
         "metadata": {
-          "title": "the pen",
-          "description": "great pen",
+          "title": "Updated Pen",
+          "description": "Even better pen now!",
           "images": [
-            "https://masslbs.xyz/pen.jpg"
+            "https://masslbs.xyz/updated_pen.jpg"
           ]
         }
       },
