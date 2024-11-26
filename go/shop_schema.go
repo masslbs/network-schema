@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/fission-codes/go-car-mirror/ipld"
 )
 
@@ -24,7 +25,25 @@ type Hash [32]byte
 type EthereumAddress [20]byte
 
 // Uint256 represents a 256-bit unsigned integer
-type Uint256 big.Int
+type Uint256 struct{
+	big.Int
+}
+
+func (val Uint256) MarshalBinary() ([]byte, error) {
+	var fixed [32]byte
+	val.FillBytes(fixed[:])
+	return cbor.Marshal(fixed)
+}
+
+func (val *Uint256) UnmarshalBinary(data []byte) error {
+	var fixed [32]byte
+	err:=cbor.Unmarshal(data, &fixed)
+	if err!=nil {
+		return err
+	}
+	val.Int.SetBytes(fixed[:])
+	return nil
+}
 
 // An ethereum address with a chain ID attached
 type ChainAddress struct {
@@ -221,6 +240,6 @@ type OrderPaid struct {
 Tags schema
 */
 type Tag struct {
-	Name        string
+	Name       string
 	ListingIds []uint64
 }
