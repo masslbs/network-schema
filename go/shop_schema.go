@@ -2,13 +2,11 @@ package main
 
 import (
 	"encoding"
-	//	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/fission-codes/go-car-mirror/ipld"
-	"github.com/fxamacker/cbor/v2"
 )
 
 type ErrBytesTooShort struct {
@@ -78,25 +76,7 @@ func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 }
 
 // Uint256 represents a 256-bit unsigned integer
-type Uint256 struct {
-	big.Int
-}
-
-func (val Uint256) MarshalBinary() ([]byte, error) {
-	var fixed [32]byte
-	val.FillBytes(fixed[:])
-	return cbor.Marshal(fixed)
-}
-
-func (val *Uint256) UnmarshalBinary(data []byte) error {
-	var fixed [32]byte
-	err := cbor.Unmarshal(data, &fixed)
-	if err != nil {
-		return err
-	}
-	val.Int.SetBytes(fixed[:])
-	return nil
-}
+type Uint256 = big.Int
 
 // An ethereum address with a chain ID attached
 type ChainAddress struct {
@@ -217,9 +197,9 @@ type ListingVariation struct {
 type ListingViewState int
 
 const (
-	ListingViewStateUnspecified ListingViewState = 0
-	ListingViewStatePublished   ListingViewState = 1
-	ListingViewStateDeleted     ListingViewState = 2
+	ListingViewStateUnspecified ListingViewState = iota
+	ListingViewStatePublished
+	ListingViewStateDeleted
 )
 
 /*

@@ -33,3 +33,32 @@ func TestSignatureIncomplete(t *testing.T) {
 	r.Error(err)
 	r.IsType(ErrBytesTooShort{}, err)
 }
+
+func TestIncompleteField(t *testing.T) {
+	r := require.New(t)
+
+	// try missing metadata
+	var lis Listing
+	lis.Metadata.Title = "foo"
+	diag(lis)
+
+	type FakeListing struct {
+		Price Uint256
+		// looks like a listing but has no metadata
+		// Metadata  ListingMetadata
+		ViewState     ListingViewState
+		Options       []ListingOption
+		StockStatuses []ListingStockStatus
+	}
+	var fl FakeListing
+	twentythree := big.NewInt(230000)
+	fl.Price = *twentythree
+	fl.ViewState = ListingViewStateDeleted
+	diag(fl)
+	testData := dump(fl)
+
+	// TODO: shouldnt unmarshal with missing Metadata
+	err := cbor.Unmarshal(testData, &lis)
+	r.Error(err)
+	t.Log("got expected error:", err)
+}
