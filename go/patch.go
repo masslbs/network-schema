@@ -1,10 +1,12 @@
+package main
+
 type write struct {
-    patchs: []patch
+	patchs []patch
 }
 
 type patch struct {
-    op: string
-    path: string
-    // ?? 
-    value: map[string]interface{}
+	op   string
+	path string
+	// ??
+	value map[string]interface{}
 }

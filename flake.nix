@@ -73,6 +73,7 @@
       );
 
       buildInputs = with pkgs; [
+        go
         buf
         black
         reuse

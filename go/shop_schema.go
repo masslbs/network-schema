@@ -1,10 +1,10 @@
-package market
+package main
 
 import (
 	"math/big"
 	"time"
-	// trying to use CID from this package instaead of IPFSHash
-	// "github.com/fission-codes/go-car-mirror/ipld"
+
+	"github.com/fission-codes/go-car-mirror/ipld"
 )
 
 /*
@@ -207,7 +207,7 @@ type AddressDetails struct {
 type PaymentDetails struct {
 	PaymentID     Hash
 	Total         Uint256
-	ListingHashes []Cid
+	ListingHashes []ipld.Cid
 	TTL           uint64 // The time to live in block
 	ShopSignature Signature
 }
