@@ -53,7 +53,7 @@ func TestMissingField(t *testing.T) {
 
 	keys, err := MapKeys(fl)
 	r.NoError(err)
-	r.Len(keys, 4)
+	r.Len(keys, 2)
 	r.False(slices.Contains(keys, "Metadata"))
 
 	var lis Listing
