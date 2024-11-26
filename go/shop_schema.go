@@ -28,14 +28,14 @@ type Uint256 big.Int
 
 // An ethereum address with a chain ID attached
 type ChainAddress struct {
-	chainID uint64
+	ChainID uint64
 	// when repsenting an ERC20 the zero address is used native currency
-	address EthereumAddress
+	Address EthereumAddress
 }
 
 // Payee represents a payment recipient
 type Payee struct {
-	address ChainAddress
+	Address ChainAddress
 
 	// controls how the payment is reaches the payee.
 	// true:  forwarded via pay() method
@@ -44,18 +44,18 @@ type Payee struct {
 	// https://github.com/masslbs/contracts/
 	// commit: 377aba24796e029945696350db581ec1f65da657
 	// file: src/IPayments.sol#L90-L95.
-	callAsContract bool
+	CallAsContract bool
 }
 
 /*
 The Shop schema
 */
 type Shop struct {
-	manifest Manifest
-	listings []Listing
-	accounts map[EthereumAddress]Account
-	orders   []Order
-	tags     []Tag
+	Manifest Manifest
+	Listings []Listing
+	Accounts map[EthereumAddress]Account
+	Orders   []Order
+	Tags     []Tag
 }
 
 /*
@@ -63,14 +63,14 @@ The Manifest schema
 */
 type Manifest struct {
 	// shop metadata lives in the NFT
-	shopId Uint256
+	ShopId Uint256
 	// maps payee names to payee objects
-	payee map[string]Payee
+	Payee map[string]Payee
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	acceptedCurrencies []ChainAddress
+	AcceptedCurrencies []ChainAddress
 	// the currency listings are priced in
-	pricingCurrency ChainAddress
-	shippingRegions map[string]ShippingRegion
+	PricingCurrency ChainAddress
+	ShippingRegions map[string]ShippingRegion
 }
 
 type ShippingRegion struct {
@@ -84,30 +84,30 @@ type ShippingRegion struct {
 
 	   TODO: need a country map and dropdowns for matching to work
 	*/
-	country        string
-	postcode       string
-	city           string
-	priceModifiers map[string]OrderPriceModifier
+	Country        string
+	Postcode       string
+	City           string
+	PriceModifiers map[string]OrderPriceModifier
 }
 
 // ListingViewState represents the publication state of a listing
 type OrderPriceModifier struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
-	modificationPrecents Uint256 `cbor:",omitempty"`
-	modificationAbsolute Uint256 `cbor:",omitempty"`
+	ModificationPrecents Uint256 `cbor:",omitempty"`
+	ModificationAbsolute Uint256 `cbor:",omitempty"`
 }
 
 /*
 Listing schema
 */
 type Listing struct {
-	price     Uint256
-	metadata  ListingMetadata
-	viewState ListingViewState
-	options   []ListingOption
+	Price     Uint256
+	Metadata  ListingMetadata
+	ViewState ListingViewState
+	Options   []ListingOption
 	// one for each combination of variations
-	stockStatuses []ListingStockStatus
+	StockStatuses []ListingStockStatus
 }
 
 type ListingStockStatus struct {
@@ -154,8 +154,8 @@ const (
 Account schema
 */
 type Account struct {
-	keyCards []PublicKey
-	guest    bool
+	KeyCards []PublicKey
+	Guest    bool
 }
 
 /*
