@@ -221,6 +221,6 @@ type OrderPaid struct {
 Tags schema
 */
 type Tag struct {
-	name        string
-	listingsIds []uint64
+	Name        string
+	ListingIds []uint64
 }

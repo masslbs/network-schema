@@ -7,7 +7,7 @@ require github.com/fission-codes/go-car-mirror v0.0.0-20230316184453-ee0e00ba4a1
 require (
 	github.com/fission-codes/go-bitset v0.0.0-20221117212908-fdb519e34c69 // indirect
 	github.com/fission-codes/go-bloom v0.0.0-20221130203706-f6093fcbce27 // indirect
-	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/ipfs/go-block-format v0.0.3 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
