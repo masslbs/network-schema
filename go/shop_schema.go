@@ -34,6 +34,7 @@ func Decode[V MassEvent](v V, data []byte) error {
 	reqFields := v.Required()
 	var keys map[string]any
 
+	// TODO: we could use maxDepth1 here
 	dec := DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&keys)
 	if err != nil {
@@ -46,6 +47,7 @@ func Decode[V MassEvent](v V, data []byte) error {
 		}
 	}
 
+	// TODO: instead we could copy keys into v using reflection
 	dec = DefaultDecoder(bytes.NewReader(data))
 	return dec.Decode(&v)
 }

@@ -101,8 +101,7 @@ func TestCreateOp(t *testing.T) {
 	r.Equal("listing", rxOp.Path[0])
 	var rxLis Listing
 
-	decLis := DefaultDecoder(bytes.NewReader(rxOp.Value))
-	err = decLis.Decode(&rxLis)
+	err = Decode(&rxLis, rxOp.Value)
 	r.NoError(err)
 
 	t.Logf("listing received: %+v", rxLis)

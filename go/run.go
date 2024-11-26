@@ -36,7 +36,7 @@ func DefaultDecoder(rd io.Reader) cbor.Decoder {
 
 func DefaultEncoder(w io.Writer) cbor.Encoder {
 	opts := cbor.CanonicalEncOptions()
-	opts.BigIntConvert = cbor.BigIntConvertNone
+	opts.BigIntConvert = cbor.BigIntConvertShortest
 	mode, err := opts.EncModeWithTags(MassMarketTags())
 	check(err)
 	return *mode.NewEncoder(w)
