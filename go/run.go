@@ -13,15 +13,32 @@ func main() {
 	t.ListingIds = []uint64{1,2,3}
 	fmt.Printf("Simple Tag: %+v\n", t)
 
-	data, err := cbor.Marshal(t)
-	check(err)
+	dump(t)
+
+	// some simple checks
+	var sig Signature
+	var short = []byte{'x', 'x','x'}
+	err:=cbor.Unmarshal( short, &sig)
+	if err==nil {
+		panic("expected error")
+	}
+	fmt.Println("got expected error:", err)
+
+	copy(sig[:], []byte("foooo"))
+	dump(sig)
 	
-	fmt.Println("CBOR:")
-	fmt.Println(hex.Dump(data))
 }
 
 func check(err error) {
 	if err!=nil{
 		panic(err)
 	}
+}
+
+func dump(val interface{}) {
+	data, err := cbor.Marshal(val)
+	check(err)
+	
+	fmt.Println("CBOR:")
+	fmt.Println(hex.Dump(data))
 }
