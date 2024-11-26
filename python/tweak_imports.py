@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
+# SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import os
 import re
 
 # Directory containing the files to be modified
-directory = "massmarket_hash_event/"
+directory = "massmarket/"
 
 # Identify all pairs of .py and .pyi files in the directory
 files_to_modify = []
@@ -29,7 +29,7 @@ def update_imports(file_path):
 
     def replace_import(match):
         module, alias = match.groups()
-        return f"from massmarket_hash_event import {module} as {alias}"
+        return f"from massmarket import {module} as {alias}"
 
     # Update the content with the new import statements
     updated_content = pattern.sub(replace_import, content)

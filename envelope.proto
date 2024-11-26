@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Mass Labs
+// SPDX-FileCopyrightText: 2023 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +42,7 @@ message Envelope {
     GenericResponse response = 2;
 
     // write operation
-    EventWriteRequest event_write_request = 3;
+    PatchSetWriteRequest patch_set_write_request = 3;
 
     // subscriptions
     SubscriptionRequest subscription_request = 4;

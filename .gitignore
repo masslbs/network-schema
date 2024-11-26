@@ -1,8 +1,12 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
+# SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
 
-__pycache__
+result
+vectors
 .DS_Store
+.vscode
+.direnv
+__pycache__
 python/dist
-python/massmarket_hash_event.egg-info
+python/massmarket.egg-info

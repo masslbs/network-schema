@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
+# SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,9 +14,8 @@ random.seed("mass-market-test-vectors")
 from google.protobuf import timestamp_pb2
 from web3 import Account
 from eth_keys import keys
-from protobuf_to_dict import protobuf_to_dict
 
-from massmarket_hash_event import (
+from massmarket import (
     hash_event,
     base_types_pb2 as mtypes,
     shop_events_pb2 as mevents,
@@ -280,12 +279,7 @@ listing_simple = mevents.Listing(
 )
 append_event(listing_simple)
 
-sort_listing_simple = mevents.UpdateTag(
-    id=tag_stuff.id,
-    add_listing_ids=[listing_simple.id],
-)
-
-# and and remove from tag
+# add and remove from tag
 err_add_tag = mevents.UpdateTag(
     id=tag_clothes.id,
     add_listing_ids=[listing_simple.id],
