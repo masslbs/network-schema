@@ -4,9 +4,19 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"io"
 
 	"github.com/fxamacker/cbor/v2"
 )
+
+func DefaultDecoder(rd io.Reader) cbor.Decoder {
+	opts := cbor.DecOptions{
+		BinaryUnmarshaler: cbor.BinaryUnmarshalerByteString,
+	}
+	mode, err := opts.DecMode()
+	check(err)
+	return *mode.NewDecoder(rd)
+}
 
 func main() {
 	var t Tag

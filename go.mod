@@ -2,12 +2,16 @@ module github.com/masslbs/network-schema
 
 go 1.22.6
 
-require github.com/fission-codes/go-car-mirror v0.0.0-20230316184453-ee0e00ba4a18
+require (
+	github.com/fission-codes/go-car-mirror v0.0.0-20230316184453-ee0e00ba4a18
+	github.com/fxamacker/cbor/v2 v2.7.0
+	github.com/stretchr/testify v1.8.0
+)
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fission-codes/go-bitset v0.0.0-20221117212908-fdb519e34c69 // indirect
 	github.com/fission-codes/go-bloom v0.0.0-20221130203706-f6093fcbce27 // indirect
-	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/ipfs/go-block-format v0.0.3 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
@@ -23,6 +27,7 @@ require (
 	github.com/multiformats/go-multibase v0.1.1 // indirect
 	github.com/multiformats/go-multihash v0.2.1 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210219115102-f37d292932f2 // indirect
@@ -35,5 +40,6 @@ require (
 	golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )

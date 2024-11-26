@@ -74,6 +74,17 @@
 
       buildInputs = with pkgs; [
         go
+        go-outline
+        gopls
+        gopkgs
+        go-tools
+        delve
+        revive
+        errcheck
+        unconvert
+        godef
+        clang
+
         buf
         black
         reuse

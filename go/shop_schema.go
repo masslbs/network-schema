@@ -1,31 +1,84 @@
 package main
 
 import (
+	"encoding"
+	//	"encoding/hex"
+	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/fxamacker/cbor/v2"
 	"github.com/fission-codes/go-car-mirror/ipld"
+	"github.com/fxamacker/cbor/v2"
 )
+
+type ErrBytesTooShort struct {
+	Want, Got uint
+}
+
+func (err ErrBytesTooShort) Error() string {
+	return fmt.Sprintf("not enough bytes. Expected %d but got %d", err.Want, err.Got)
+}
 
 /*
 BASE TYPES
 */
 
 // Signature represents a cryptographic signature
-type Signature [64]byte
+const SignatureSize = 64
+
+type Signature [SignatureSize]byte
+
+func (val *Signature) UnmarshalBinary(data []byte) error {
+	if n := uint(len(data)); n != SignatureSize {
+		return ErrBytesTooShort{Want: SignatureSize, Got: n}
+	}
+	copy(val[:], data)
+	return nil
+}
+
+var _ encoding.BinaryUnmarshaler = (*Signature)(nil)
 
 // PublicKey represents a public key
-type PublicKey [32]byte
+const PublicKeySize = 32
+
+type PublicKey [PublicKeySize]byte
+
+func (val *PublicKey) UnmarshalBinary(data []byte) error {
+	if n := uint(len(data)); n != PublicKeySize {
+		return ErrBytesTooShort{Want: PublicKeySize, Got: n}
+	}
+	copy(val[:], data)
+	return nil
+}
 
 // Hash represents a cryptographic hash
-type Hash [32]byte
+const HashSize = 32
+
+type Hash [HashSize]byte
+
+func (val *Hash) UnmarshalBinary(data []byte) error {
+	if n := uint(len(data)); n != HashSize {
+		return ErrBytesTooShort{Want: HashSize, Got: n}
+	}
+	copy(val[:], data)
+	return nil
+}
 
 // EthereumAddress represents an Ethereum address
-type EthereumAddress [20]byte
+const EthereumAddressSize = 20
+
+type EthereumAddress [EthereumAddressSize]byte
+
+func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
+	if n := uint(len(data)); n != EthereumAddressSize {
+		return ErrBytesTooShort{Want: EthereumAddressSize, Got: n}
+	}
+	copy(val[:], data)
+	return nil
+}
 
 // Uint256 represents a 256-bit unsigned integer
-type Uint256 struct{
+type Uint256 struct {
 	big.Int
 }
 
@@ -37,8 +90,8 @@ func (val Uint256) MarshalBinary() ([]byte, error) {
 
 func (val *Uint256) UnmarshalBinary(data []byte) error {
 	var fixed [32]byte
-	err:=cbor.Unmarshal(data, &fixed)
-	if err!=nil {
+	err := cbor.Unmarshal(data, &fixed)
+	if err != nil {
 		return err
 	}
 	val.Int.SetBytes(fixed[:])
