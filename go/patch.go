@@ -7,18 +7,19 @@ This is a modified version of JSON Patch (rfc6902). We first constraint the oper
 
 package main
 
-type write struct {
-	patchs []patch
+type Write struct {
+	Patchs []Patch
 }
 
-type patch struct {
-	op   Opstring
-	path string
+type Patch struct {
+	Op   OpString
+	Path string
 	// ??
-	value map[string]interface{}
+	Value map[string]interface{}
 }
 
 type OpString string
+
 const (
     AddOp OpString = "add"
     ReplaceOp OpString = "replace"
