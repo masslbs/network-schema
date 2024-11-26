@@ -26,6 +26,7 @@ func (err ErrRequiredFieldMissing) Error() string {
 	return fmt.Sprintf("missing required field %s", err.Want)
 }
 
+// TODO: placeholder for getting the required fields via struct tags
 type MassEvent interface {
 	Required() []string
 }
