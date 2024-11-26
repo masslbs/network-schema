@@ -15,9 +15,9 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
-      - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v2
-      - name: Protobuf lint
+      - name: Lint
         run: nix develop -c bash -c "make lint"
       - name: Run pip package tests
         run: nix develop -c bash -c "cd python && pytest"
+      - name: Run go tests
+        run: nix develop -c bash -c "cd go && go test"

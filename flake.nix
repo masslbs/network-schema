@@ -69,10 +69,26 @@
           wheel
           build
           twine
+          cbor2
         ]
       );
 
       buildInputs = with pkgs; [
+        go
+        go-outline
+        gopls
+        gopkgs
+        go-tools
+        delve
+        revive
+        errcheck
+        unconvert
+        godef
+        clang
+        cbor-diag
+
+        deno
+
         buf
         black
         reuse

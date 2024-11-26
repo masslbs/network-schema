@@ -1,0 +1,1681 @@
+{
+  "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+  "Before": {
+    "ID": 1,
+    "Price": {},
+    "Metadata": {
+      "Title": "test Listing",
+      "Description": "short desc",
+      "Images": [
+        "https://http.cat/images/100.jpg"
+      ]
+    },
+    "ViewState": 1,
+    "Options": {
+      "color": {
+        "Title": "Color",
+        "Variations": {
+          "b": {
+            "VariationInfo": {
+              "Title": "Blue",
+              "Description": "Blue color",
+              "Images": null
+            },
+            "PriceModifier": {
+              "ModificationPrecents": null,
+              "ModificationAbsolute": null
+            },
+            "SKU": ""
+          },
+          "r": {
+            "VariationInfo": {
+              "Title": "Red",
+              "Description": "Red color",
+              "Images": null
+            },
+            "PriceModifier": {
+              "ModificationPrecents": null,
+              "ModificationAbsolute": null
+            },
+            "SKU": ""
+          }
+        }
+      }
+    },
+    "StockStatuses": [
+      {
+        "VariationIDs": [
+          "r"
+        ],
+        "InStock": true,
+        "ExpectedInStockBy": null
+      }
+    ]
+  },
+  "Hash": "Wyl9qrPx+Iv45388gokzsEPxDuDzIjsVky84n+TBDbY=",
+  "Patches": [
+    {
+      "Name": "TestPatchListing/create_full_listing",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1
+        ],
+        "Value": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "Wyl9qrPx+Iv45388gokzsEPxDuDzIjsVky84n+TBDbY="
+    },
+    {
+      "Name": "TestPatchListing/replace_price",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "price"
+        ],
+        "Value": "GgABBGo="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 66666,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UaAAEEamdPcHRpb25zoWVjb2xvcqJlVGl0bGVlQ29sb3JqVmFyaWF0aW9uc6JhYqFtVmFyaWF0aW9uSW5mb6JlVGl0bGVkQmx1ZWtEZXNjcmlwdGlvbmpCbHVlIGNvbG9yYXKhbVZhcmlhdGlvbkluZm+iZVRpdGxlY1JlZGtEZXNjcmlwdGlvbmlSZWQgY29sb3JoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "DiIcQ7Uh2ML53vqO71SqtSGom2h4L2SKxz33AaVvqOw="
+    },
+    {
+      "Name": "TestPatchListing/replace_description",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "metadata",
+          "description"
+        ],
+        "Value": "b25ldyBkZXNjcmlwdGlvbg=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "new description",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbm9uZXcgZGVzY3JpcHRpb25pVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "t2iKtrO3wYex6fDv86+AGYz1hnY7AH3ha78TZ9Z0G/8="
+    },
+    {
+      "Name": "TestPatchListing/replace_whole_metadata",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "metadata"
+        ],
+        "Value": "o2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNj"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "Wyl9qrPx+Iv45388gokzsEPxDuDzIjsVky84n+TBDbY="
+    },
+    {
+      "Name": "TestPatchListing/append_an_image",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "metadata",
+          "images",
+          "-"
+        ],
+        "Value": "eB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8yMDAuanBn"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg",
+            "https://http.cat/images/200.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgngfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ3gfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMjAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "wF6mTXCIH1jRKfT2BnBPtGh+bNLP13o9c/dWnUd0+5I="
+    },
+    {
+      "Name": "TestPatchListing/prepend_an_image",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "metadata",
+          "images",
+          "0"
+        ],
+        "Value": "eB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8yMDAuanBn"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/200.jpg",
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgngfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMjAwLmpwZ3gfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "cg/kZo7fIIVlu9I4QiSzuB9W9jfjAGMKZHdmHTxNseQ="
+    },
+    {
+      "Name": "TestPatchListing/replace_all_images",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "metadata",
+          "images"
+        ],
+        "Value": "gngfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMzAwLmpwZ3gfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvNDAwLmpwZw=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/300.jpg",
+            "https://http.cat/images/400.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgngfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMzAwLmpwZ3gfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvNDAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "/x55dTTB4sahkCrO18XUSGt+0yJEjyXi13ZIJz9ksJk="
+    },
+    {
+      "Name": "TestPatchListing/remove_an_image",
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "listing",
+          1,
+          "metadata",
+          "images",
+          "0"
+        ],
+        "Value": "9g=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": []
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRhomVUaXRsZWx0ZXN0IExpc3RpbmdrRGVzY3JpcHRpb25qc2hvcnQgZGVzY2lWaWV3U3RhdGXZA+gBbVN0b2NrU3RhdHVzZXOBomdJblN0b2Nr9WxWYXJpYXRpb25JRHOBYXI=",
+      "Hash": "3IMl4iJ2HNtrFLC5p1SZ+C4UY5F/mMQgS6HNohmH4Mg="
+    },
+    {
+      "Name": "TestPatchListing/replace_view_state",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "viewState"
+        ],
+        "Value": "2QPoAQ=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "Wyl9qrPx+Iv45388gokzsEPxDuDzIjsVky84n+TBDbY="
+    },
+    {
+      "Name": "TestPatchListing/append_a_stock_status",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "-"
+        ],
+        "Value": "omdJblN0b2Nr9WxWYXJpYXRpb25JRHOBYW0="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          },
+          {
+            "VariationIDs": [
+              "m"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4KiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4FhcqJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFt",
+      "Hash": "Oiv2S6ZuNEbbZ2grvFVj9Vx0qFwYE+3I9YEicQB2yHc="
+    },
+    {
+      "Name": "TestPatchListing/prepend_a_stock_status",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "0"
+        ],
+        "Value": "omdJblN0b2Nr9WxWYXJpYXRpb25JRHOBYW0="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "m"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          },
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4KiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4FhbaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "OEQqRRiHgWq95J5oQyvW74RstvtnY7ykyFzVXImiaxM="
+    },
+    {
+      "Name": "TestPatchListing/replace_stock_status",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "0"
+        ],
+        "Value": "omdJblN0b2Nr9GxWYXJpYXRpb25JRHOBYW0="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "m"
+            ],
+            "InStock": false,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v0bFZhcmlhdGlvbklEc4FhbQ==",
+      "Hash": "XjULYIDKpOyDeSFSjOm9VrMQ+GT1BBYI++wWlVYLwnA="
+    },
+    {
+      "Name": "TestPatchListing/replace_expectedInStockBy",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "0",
+          "expectedInStockBy"
+        ],
+        "Value": "eBkyMjg2LTExLTIwVDE4OjQ2OjQwKzAxOjAw"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": null,
+            "ExpectedInStockBy": "2286-11-20T18:46:40+01:00"
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GibFZhcmlhdGlvbklEc4FhcnFFeHBlY3RlZEluU3RvY2tCeXgZMjI4Ni0xMS0yMFQxODo0Njo0MCswMTowMA==",
+      "Hash": "cEs5zWFp3WouNGTnoWRK/M73y+EqmLFyrA+Q2ppPqk8="
+    },
+    {
+      "Name": "TestPatchListing/replace_inStock",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "0",
+          "inStock"
+        ],
+        "Value": "9Q=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "Wyl9qrPx+Iv45388gokzsEPxDuDzIjsVky84n+TBDbY="
+    },
+    {
+      "Name": "TestPatchListing/remove_stock_status",
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "listing",
+          1,
+          "stockStatuses",
+          "0"
+        ],
+        "Value": "9g=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": []
+      },
+      "Encoded": "pWJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AE=",
+      "Hash": "xnICf0Z1/UE1mVM5TlK+s+7V1XXFACCK0fPIqqgqUgw="
+    },
+    {
+      "Name": "TestPatchListing/add_an_option",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "size"
+        ],
+        "Value": "omVUaXRsZWRTaXplalZhcmlhdGlvbnOiYW2hbVZhcmlhdGlvbkluZm+iZVRpdGxlZk1lZGl1bWtEZXNjcmlwdGlvbmtNZWRpdW0gc2l6ZWFzoW1WYXJpYXRpb25JbmZvomVUaXRsZWVTbWFsbGtEZXNjcmlwdGlvbmpTbWFsbCBzaXpl"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          },
+          "size": {
+            "Title": "Size",
+            "Variations": {
+              "m": {
+                "VariationInfo": {
+                  "Title": "Medium",
+                  "Description": "Medium size",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "s": {
+                "VariationInfo": {
+                  "Title": "Small",
+                  "Description": "Small size",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6Jkc2l6ZaJlVGl0bGVkU2l6ZWpWYXJpYXRpb25zomFtoW1WYXJpYXRpb25JbmZvomVUaXRsZWZNZWRpdW1rRGVzY3JpcHRpb25rTWVkaXVtIHNpemVhc6FtVmFyaWF0aW9uSW5mb6JlVGl0bGVlU21hbGxrRGVzY3JpcHRpb25qU21hbGwgc2l6ZWVjb2xvcqJlVGl0bGVlQ29sb3JqVmFyaWF0aW9uc6JhYqFtVmFyaWF0aW9uSW5mb6JlVGl0bGVkQmx1ZWtEZXNjcmlwdGlvbmpCbHVlIGNvbG9yYXKhbVZhcmlhdGlvbkluZm+iZVRpdGxlY1JlZGtEZXNjcmlwdGlvbmlSZWQgY29sb3JoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "4cIrv053BhC7ypSNQuMe5tjUMRW+KQOQ98iGnqBdffg="
+    },
+    {
+      "Name": "TestPatchListing/replace_one_option",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color"
+        ],
+        "Value": "omVUaXRsZWVDb2xvcmpWYXJpYXRpb25zomRwaW5roW1WYXJpYXRpb25JbmZvomVUaXRsZWRQaW5ra0Rlc2NyaXB0aW9ualBpbmsgY29sb3Jmb3JhbmdloW1WYXJpYXRpb25JbmZvomVUaXRsZWZPcmFuZ2VrRGVzY3JpcHRpb25sT3JhbmdlIGNvbG9y"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "orange": {
+                "VariationInfo": {
+                  "Title": "Orange",
+                  "Description": "Orange color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "pink": {
+                "VariationInfo": {
+                  "Title": "Pink",
+                  "Description": "Pink color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiZHBpbmuhbVZhcmlhdGlvbkluZm+iZVRpdGxlZFBpbmtrRGVzY3JpcHRpb25qUGluayBjb2xvcmZvcmFuZ2WhbVZhcmlhdGlvbkluZm+iZVRpdGxlZk9yYW5nZWtEZXNjcmlwdGlvbmxPcmFuZ2UgY29sb3JoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "gf+lY5bwUil+9zmBpw+Y1FjkPRfnI2h+cddxq5UMSoo="
+    },
+    {
+      "Name": "TestPatchListing/replace_whole_options",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "options"
+        ],
+        "Value": "oWVjb2xvcqJlVGl0bGVlQ29sb3JqVmFyaWF0aW9uc6JkcGlua6FtVmFyaWF0aW9uSW5mb6JlVGl0bGVkUGlua2tEZXNjcmlwdGlvbmpQaW5rIGNvbG9yZm9yYW5nZaFtVmFyaWF0aW9uSW5mb6JlVGl0bGVmT3Jhbmdla0Rlc2NyaXB0aW9ubE9yYW5nZSBjb2xvcg=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "orange": {
+                "VariationInfo": {
+                  "Title": "Orange",
+                  "Description": "Orange color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "pink": {
+                "VariationInfo": {
+                  "Title": "Pink",
+                  "Description": "Pink color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiZHBpbmuhbVZhcmlhdGlvbkluZm+iZVRpdGxlZFBpbmtrRGVzY3JpcHRpb25qUGluayBjb2xvcmZvcmFuZ2WhbVZhcmlhdGlvbkluZm+iZVRpdGxlZk9yYW5nZWtEZXNjcmlwdGlvbmxPcmFuZ2UgY29sb3JoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "gf+lY5bwUil+9zmBpw+Y1FjkPRfnI2h+cddxq5UMSoo="
+    },
+    {
+      "Name": "TestPatchListing/remove_an_option",
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color"
+        ],
+        "Value": "9g=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {},
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6BoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "4NZU0AvOX/C9D6wOOsBBpLRhsEgSHE2lzr66jm/KhLE="
+    },
+    {
+      "Name": "TestPatchListing/add_a_variation_to_an_option",
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color",
+          "variations",
+          "pink"
+        ],
+        "Value": "oW1WYXJpYXRpb25JbmZvomVUaXRsZWRQaW5ra0Rlc2NyaXB0aW9ualBpbmsgY29sb3I="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "pink": {
+                "VariationInfo": {
+                  "Title": "Pink",
+                  "Description": "Pink color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOjYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yZHBpbmuhbVZhcmlhdGlvbkluZm+iZVRpdGxlZFBpbmtrRGVzY3JpcHRpb25qUGluayBjb2xvcmhNZXRhZGF0YaNlVGl0bGVsdGVzdCBMaXN0aW5nZkltYWdlc4F4H2h0dHBzOi8vaHR0cC5jYXQvaW1hZ2VzLzEwMC5qcGdrRGVzY3JpcHRpb25qc2hvcnQgZGVzY2lWaWV3U3RhdGXZA+gBbVN0b2NrU3RhdHVzZXOBomdJblN0b2Nr9WxWYXJpYXRpb25JRHOBYXI=",
+      "Hash": "iHdXcQpJ1+ZlO8u8Zxi+UCtQvd4+Gn8iW7MvlaP2gQc="
+    },
+    {
+      "Name": "TestPatchListing/replace_title_of_an_option",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color",
+          "title"
+        ],
+        "Value": "ZUZBUkJF"
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "FARBE",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Blue",
+                  "Description": "Blue color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUZBUkJFalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZEJsdWVrRGVzY3JpcHRpb25qQmx1ZSBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "PbLcJbD/wPpK1cyozIOg42cQPMyyl10VrU3pj2Oc56U="
+    },
+    {
+      "Name": "TestPatchListing/replace_variations_of_an_option",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color",
+          "variations",
+          "b"
+        ],
+        "Value": "oW1WYXJpYXRpb25JbmZvomVUaXRsZWRQaW5ra0Rlc2NyaXB0aW9ualBpbmsgY29sb3I="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Pink",
+                  "Description": "Pink color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZFBpbmtrRGVzY3JpcHRpb25qUGluayBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "2F15+fDw0vHHQ1UvpdGf0IjkrWKewF4hBNbr866DLYA="
+    },
+    {
+      "Name": "TestPatchListing/replace_one_variation's_info",
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color",
+          "variations",
+          "b",
+          "variationInfo"
+        ],
+        "Value": "omVUaXRsZWRQaW5ra0Rlc2NyaXB0aW9ualBpbmsgY29sb3I="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "b": {
+                "VariationInfo": {
+                  "Title": "Pink",
+                  "Description": "Pink color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              },
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOiYWKhbVZhcmlhdGlvbkluZm+iZVRpdGxlZFBpbmtrRGVzY3JpcHRpb25qUGluayBjb2xvcmFyoW1WYXJpYXRpb25JbmZvomVUaXRsZWNSZWRrRGVzY3JpcHRpb25pUmVkIGNvbG9yaE1ldGFkYXRho2VUaXRsZWx0ZXN0IExpc3RpbmdmSW1hZ2VzgXgfaHR0cHM6Ly9odHRwLmNhdC9pbWFnZXMvMTAwLmpwZ2tEZXNjcmlwdGlvbmpzaG9ydCBkZXNjaVZpZXdTdGF0ZdkD6AFtU3RvY2tTdGF0dXNlc4GiZ0luU3RvY2v1bFZhcmlhdGlvbklEc4Fhcg==",
+      "Hash": "2F15+fDw0vHHQ1UvpdGf0IjkrWKewF4hBNbr866DLYA="
+    },
+    {
+      "Name": "TestPatchListing/remove_a_variation_from_an_option",
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "listing",
+          1,
+          "options",
+          "color",
+          "variations",
+          "b"
+        ],
+        "Value": "9g=="
+      },
+      "After": {
+        "ID": 1,
+        "Price": 12345,
+        "Metadata": {
+          "Title": "test Listing",
+          "Description": "short desc",
+          "Images": [
+            "https://http.cat/images/100.jpg"
+          ]
+        },
+        "ViewState": 1,
+        "Options": {
+          "color": {
+            "Title": "Color",
+            "Variations": {
+              "r": {
+                "VariationInfo": {
+                  "Title": "Red",
+                  "Description": "Red color",
+                  "Images": null
+                },
+                "PriceModifier": {
+                  "ModificationPrecents": null,
+                  "ModificationAbsolute": null
+                },
+                "SKU": ""
+              }
+            }
+          }
+        },
+        "StockStatuses": [
+          {
+            "VariationIDs": [
+              "r"
+            ],
+            "InStock": true,
+            "ExpectedInStockBy": null
+          }
+        ]
+      },
+      "Encoded": "pmJJRAFlUHJpY2UZMDlnT3B0aW9uc6FlY29sb3KiZVRpdGxlZUNvbG9yalZhcmlhdGlvbnOhYXKhbVZhcmlhdGlvbkluZm+iZVRpdGxlY1JlZGtEZXNjcmlwdGlvbmlSZWQgY29sb3JoTWV0YWRhdGGjZVRpdGxlbHRlc3QgTGlzdGluZ2ZJbWFnZXOBeB9odHRwczovL2h0dHAuY2F0L2ltYWdlcy8xMDAuanBna0Rlc2NyaXB0aW9uanNob3J0IGRlc2NpVmlld1N0YXRl2QPoAW1TdG9ja1N0YXR1c2VzgaJnSW5TdG9ja/VsVmFyaWF0aW9uSURzgWFy",
+      "Hash": "2uavxXlQH7aBkaXHCRyt+V4yOPrsi2S2oydXNpR1IFg="
+    }
+  ]
+}
