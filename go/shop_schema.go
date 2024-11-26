@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding"
 	"fmt"
 	"math/big"
@@ -17,9 +18,48 @@ func (err ErrBytesTooShort) Error() string {
 	return fmt.Sprintf("not enough bytes. Expected %d but got %d", err.Want, err.Got)
 }
 
+type ErrRequiredFieldMissing struct {
+	Want string
+}
+
+func (err ErrRequiredFieldMissing) Error() string {
+	return fmt.Sprintf("missing required field %s", err.Want)
+}
+
+type MassEvent interface {
+	Required() []string
+}
+
+func Decode[V MassEvent](v V, data []byte) error {
+	reqFields := v.Required()
+	var keys map[string]any
+
+	dec := DefaultDecoder(bytes.NewReader(data))
+	err := dec.Decode(&keys)
+	if err != nil {
+		return fmt.Errorf("data is not a map")
+	}
+	for _, r := range reqFields {
+		_, has := keys[r]
+		if !has {
+			return ErrRequiredFieldMissing{r}
+		}
+	}
+
+	dec = DefaultDecoder(bytes.NewReader(data))
+	return dec.Decode(&v)
+}
+
 /*
 BASE TYPES
 */
+
+type ObjectId = big.Int
+
+func NewObjectId(id int64) ObjectId {
+	b := big.NewInt(id)
+	return ObjectId(*b)
+}
 
 // Signature represents a cryptographic signature
 const SignatureSize = 64
@@ -160,6 +200,10 @@ type Listing struct {
 	Options   []ListingOption
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus
+}
+
+func (lis Listing) Required() []string {
+	return []string{"Price", "Metadata", "ViewState"}
 }
 
 type ListingStockStatus struct {

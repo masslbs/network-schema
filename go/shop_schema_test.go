@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"math/big"
+	"slices"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -34,31 +35,76 @@ func TestSignatureIncomplete(t *testing.T) {
 	r.IsType(ErrBytesTooShort{}, err)
 }
 
-func TestIncompleteField(t *testing.T) {
+func TestMissingField(t *testing.T) {
 	r := require.New(t)
-
-	// try missing metadata
-	var lis Listing
-	lis.Metadata.Title = "foo"
-	diag(lis)
 
 	type FakeListing struct {
 		Price Uint256
 		// looks like a listing but has no metadata
 		// Metadata  ListingMetadata
-		ViewState     ListingViewState
-		Options       []ListingOption
-		StockStatuses []ListingStockStatus
+		ViewState ListingViewState
 	}
 	var fl FakeListing
 	twentythree := big.NewInt(230000)
 	fl.Price = *twentythree
 	fl.ViewState = ListingViewStateDeleted
-	diag(fl)
+	t.Log("FakeListing:\n" + pretty(fl))
 	testData := dump(fl)
 
-	// TODO: shouldnt unmarshal with missing Metadata
-	err := cbor.Unmarshal(testData, &lis)
+	keys, err := MapKeys(fl)
+	r.NoError(err)
+	r.Len(keys, 4)
+	r.False(slices.Contains(keys, "Metadata"))
+
+	var lis Listing
+	err = Decode(&lis, testData)
 	r.Error(err)
-	t.Log("got expected error:", err)
+}
+
+func TestCreateOp(t *testing.T) {
+	var (
+		err error
+		buf bytes.Buffer
+		r   = require.New(t)
+		enc = DefaultEncoder(&buf)
+	)
+
+	var createListing Patch
+	createListing.Op = AddOp
+	createListing.Path = []any{"listing", NewObjectId(238000)}
+
+	var lis Listing
+	lis.Metadata.Title = "test Listing"
+	lis.Metadata.Description = "short desc"
+	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
+	price := big.NewInt(12345)
+	lis.Price = *price
+
+	err = enc.Encode(lis)
+	r.NoError(err)
+	lisBytes := buf.Bytes()
+	buf.Reset()
+	createListing.Value = lisBytes
+
+	err = enc.Encode(createListing)
+	r.NoError(err)
+
+	opData := buf.Bytes()
+	t.Log("OP encoded:")
+	//t.Error(hex.EncodeToString(opData))
+	t.Log("\n" + pretty(createListing))
+
+	var rxOp Patch
+	dec := DefaultDecoder(bytes.NewReader(opData))
+	err = dec.Decode(&rxOp)
+	r.NoError(err)
+	r.Equal("listing", rxOp.Path[0])
+	var rxLis Listing
+
+	decLis := DefaultDecoder(bytes.NewReader(rxOp.Value))
+	err = decLis.Decode(&rxLis)
+	r.NoError(err)
+
+	t.Logf("listing received: %+v", rxLis)
+	r.EqualValues(lis, rxLis)
 }

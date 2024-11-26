@@ -84,6 +84,7 @@
         unconvert
         godef
         clang
+        cbor-diag
 
         buf
         black

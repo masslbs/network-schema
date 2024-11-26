@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"os/exec"
 	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
+	"golang.org/x/exp/maps"
 )
 
 func MassMarketTags() cbor.TagSet {
@@ -40,6 +42,24 @@ func DefaultEncoder(w io.Writer) cbor.Encoder {
 	return *mode.NewEncoder(w)
 }
 
+func MapKeys(val any) ([]string, error) {
+	var buf bytes.Buffer
+	enc := DefaultEncoder(&buf)
+	err := enc.Encode(val)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]any
+	dec := DefaultDecoder(&buf)
+	err = dec.Decode(&m)
+	if err != nil {
+		return nil, err
+	}
+
+	return maps.Keys(m), nil
+}
+
 func main() {
 	var t Tag
 	t.Name = "foo"
@@ -53,7 +73,9 @@ func main() {
 	price = price.Mul(price, big.NewInt(999999999999999999))
 	l.Price = *price
 	l.ViewState = ListingViewStatePublished
-	diag(l)
+	dump(l)
+
+	fmt.Println(MapKeys(l))
 }
 
 func check(err error) {
@@ -71,7 +93,7 @@ func dump(val any) []byte {
 
 	fmt.Printf("CBOR of: %+v\n", val)
 	data := buf.Bytes()
-	fmt.Println(hex.Dump(data))
+	fmt.Println(hex.EncodeToString(data))
 	return data
 }
 
@@ -86,5 +108,21 @@ func diag(val any) {
 	check(err)
 
 	//fmt.Printf("\n\nDIAG of: %+v\n", val)
+
 	fmt.Println(diagStr)
+}
+
+func pretty(val any) string {
+	var buf bytes.Buffer
+	enc := DefaultEncoder(&buf)
+
+	err := enc.Encode(val)
+	check(err)
+
+	shell := exec.Command("cbor2pretty.rb")
+	shell.Stdin = &buf
+
+	out, err := shell.CombinedOutput()
+	check(err)
+	return string(out)
 }

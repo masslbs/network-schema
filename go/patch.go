@@ -7,23 +7,26 @@ This is a modified version of JSON Patch (rfc6902). We first constraint the oper
 
 package main
 
+import (
+	"github.com/fxamacker/cbor/v2"
+)
+
 type Write struct {
-	Patchs []Patch
+	Patches []Patch
 }
 
 type Patch struct {
-	Op   OpString
-	Path string
-	// ??
-	Value map[string]interface{}
+	Op    OpString
+	Path  []any // TODO: custom path type
+	Value cbor.RawMessage
 }
 
 type OpString string
 
 const (
-    AddOp OpString = "add"
-    ReplaceOp OpString = "replace"
-    RemoveOp OpString = "remove"
-    IncrementOp OpString = "increment"
-    DecrementOp OpString = "decrement"
+	AddOp       OpString = "add"
+	ReplaceOp   OpString = "replace"
+	RemoveOp    OpString = "remove"
+	IncrementOp OpString = "increment"
+	DecrementOp OpString = "decrement"
 )
