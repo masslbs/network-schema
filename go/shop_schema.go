@@ -5,9 +5,12 @@ import (
 	"encoding"
 	"fmt"
 	"math/big"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/fission-codes/go-car-mirror/ipld"
+	"github.com/fxamacker/cbor/v2"
 )
 
 type ErrBytesTooShort struct {
@@ -26,14 +29,9 @@ func (err ErrRequiredFieldMissing) Error() string {
 	return fmt.Sprintf("missing required field %s", err.Want)
 }
 
-// TODO: placeholder for getting the required fields via struct tags
-type MassEvent interface {
-	Required() []string
-}
-
-func Decode[V MassEvent](v V, data []byte) error {
-	reqFields := v.Required()
-	var keys map[string]any
+func Decode[V any](v V, data []byte) error {
+	reqFields := requiredFields(v)
+	var keys map[string]cbor.RawMessage
 
 	// TODO: we could use maxDepth1 here
 	dec := DefaultDecoder(bytes.NewReader(data))
@@ -51,6 +49,23 @@ func Decode[V MassEvent](v V, data []byte) error {
 	// TODO: instead we could copy keys into v using reflection
 	dec = DefaultDecoder(bytes.NewReader(data))
 	return dec.Decode(&v)
+}
+
+// all fields that are not marked with cbor:",omitempty" are required
+func requiredFields[V any](v V) []string {
+	tv := reflect.TypeOf(v)
+	if tv.Kind() == reflect.Pointer {
+		tv = tv.Elem()
+	}
+	fields := make([]string, 0, tv.NumField())
+	for i := 0; i < tv.NumField(); i++ {
+		field := tv.Field(i)
+		if strings.Contains(field.Tag.Get("cbor"), ",omitempty") {
+			continue
+		}
+		fields = append(fields, field.Name)
+	}
+	return fields
 }
 
 /*
@@ -203,10 +218,6 @@ type Listing struct {
 	Options   []ListingOption
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus
-}
-
-func (lis Listing) Required() []string {
-	return []string{"Price", "Metadata", "ViewState"}
 }
 
 type ListingStockStatus struct {
