@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package main
 
 import (
@@ -10,7 +14,6 @@ import (
 	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
-	"golang.org/x/exp/maps"
 )
 
 func MassMarketTags() cbor.TagSet {
@@ -42,24 +45,6 @@ func DefaultEncoder(w io.Writer) cbor.Encoder {
 	return *mode.NewEncoder(w)
 }
 
-func MapKeys(val any) ([]string, error) {
-	var buf bytes.Buffer
-	enc := DefaultEncoder(&buf)
-	err := enc.Encode(val)
-	if err != nil {
-		return nil, err
-	}
-
-	var m map[string]any
-	dec := DefaultDecoder(&buf)
-	err = dec.Decode(&m)
-	if err != nil {
-		return nil, err
-	}
-
-	return maps.Keys(m), nil
-}
-
 func main() {
 	var t Tag
 	t.Name = "foo"
@@ -75,7 +60,6 @@ func main() {
 	l.ViewState = ListingViewStatePublished
 	dump(l)
 
-	fmt.Println(MapKeys(l))
 }
 
 func check(err error) {

@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package main
 
 import (
 	"bytes"
 	"math/big"
-	"slices"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -48,16 +51,17 @@ func TestMissingField(t *testing.T) {
 	fl.Price = *twentythree
 	fl.ViewState = ListingViewStateDeleted
 	t.Log("FakeListing:\n" + pretty(fl))
-	testData := dump(fl)
 
-	keys, err := MapKeys(fl)
+	var buf bytes.Buffer
+	enc := DefaultEncoder(&buf)
+	err := enc.Encode(fl)
 	r.NoError(err)
-	r.Len(keys, 2)
-	r.False(slices.Contains(keys, "Metadata"))
+	testData := buf.Bytes()
 
 	var lis Listing
 	err = Decode(&lis, testData)
 	r.Error(err)
+	r.IsType(ErrRequiredFieldMissing{}, err)
 }
 
 func TestCreateOp(t *testing.T) {
