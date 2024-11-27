@@ -83,7 +83,7 @@ def test_verify_vector_file():
     assert len(vector["events"]) > 0
     assert "signatures" in vector
     vec_sigs = vector["signatures"]
-    signer = vec_sigs["signer_address"]
+    signer = vec_sigs["signer"]["address"]
     assert signer == "0xB8b8985e55aBEa8E36C777c28C08ECBe0104a37d"
     for idx, evt in enumerate(vector["events"]):
         parsed = mevents.ShopEvent()
