@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package main
+package schema
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -50,14 +51,13 @@ func Decode[V any](v V, data []byte) error {
 			return ErrRequiredFieldMissing{r}
 		}
 	}
-
 	// TODO: instead we could copy keys into v using reflection
 	dec = DefaultDecoder(bytes.NewReader(data))
 	return dec.Decode(&v)
 }
 
 // all fields that are not marked with cbor:",omitempty" are required
-func requiredFields[V any](v V) []string {
+func requiredFields(v any) []string {
 	tv := reflect.TypeOf(v)
 	if tv.Kind() == reflect.Pointer {
 		tv = tv.Elem()
@@ -75,6 +75,8 @@ func requiredFields[V any](v V) []string {
 		}
 		fields = append(fields, field.Name)
 	}
+	// TODO: cryptix was lazy during test writing and did not sort the fields
+	sort.Strings(fields)
 	return fields
 }
 
@@ -148,6 +150,10 @@ type ChainAddress struct {
 	Address EthereumAddress
 }
 
+func (ca *ChainAddress) UnmarshalBinary(data []byte) error {
+	return Decode(ca, data)
+}
+
 func addrFromHex(chain uint64, hexAddr string) ChainAddress {
 	addr := ChainAddress{ChainID: chain}
 	hexAddr = strings.TrimPrefix(hexAddr, "0x")
@@ -189,25 +195,27 @@ type Manifest struct {
 	ShippingRegions map[string]ShippingRegion `cbor:",omitempty"`
 }
 
-type ShippingRegion struct {
-	/* the location
+type ShippingRegion shippingRegionHack
 
-	   the region for an order is picked by successivly matching fields.
-	   empty-string values match everything / act as catch-all's.
-
-	   therefore this can be used to say "only on this city" for pickups.
-	   Or, for an international region, all three fields should be empty.
-
-	   TODO: need a country map and dropdowns for matching to work
-	*/
+type shippingRegionHack struct {
 	Country        string
 	Postcode       string
 	City           string
-	PriceModifiers map[string]OrderPriceModifier `cbor:",omitempty"`
+	PriceModifiers map[string]PriceModifier `cbor:",omitempty"`
+}
+
+func (sr *ShippingRegion) UnmarshalCBOR(data []byte) error {
+	var tmp shippingRegionHack
+	err := Decode(&tmp, data)
+	if err != nil {
+		return err
+	}
+	*sr = ShippingRegion(tmp)
+	return nil
 }
 
 // ListingViewState represents the publication state of a listing
-type OrderPriceModifier struct {
+type PriceModifier struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
 	ModificationPrecents Uint256              `cbor:",omitempty"`
@@ -232,25 +240,61 @@ type Listing struct {
 	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
 
-type ListingStockStatus struct {
+type ListingStockStatus listingStockStatusHack
+
+type listingStockStatusHack struct {
 	VariationIDs []uint64
 	// one of the following should be set
 	InStock           bool      `cbor:",omitempty"`
 	ExpectedInStockBy time.Time `cbor:",omitempty"`
 }
 
+func (l *ListingStockStatus) UnmarshalCBOR(data []byte) error {
+	var tmp listingStockStatusHack
+	err := Decode(&tmp, data)
+	if err != nil {
+		return err
+	}
+	*l = ListingStockStatus(tmp)
+	return nil
+}
+
 // ListingMetadata represents listing information
-type ListingMetadata struct {
+type ListingMetadata listingMetadataHack
+
+type listingMetadataHack struct {
 	Title       string
 	Description string
-	Images      []string
+	Images      []string `cbor:",omitempty"`
+}
+
+func (l *ListingMetadata) UnmarshalCBOR(data []byte) error {
+	var tmp listingMetadataHack
+	err := Decode(&tmp, data)
+	if err != nil {
+		return err
+	}
+	*l = ListingMetadata(tmp)
+	return nil
 }
 
 // ListingOption represents a product option
-type ListingOption struct {
+type ListingOption listingOptionHack
+
+type listingOptionHack struct {
 	// the title of the option (like Color, Size, etc.)
 	Title      string
 	Variations map[string]ListingVariation `cbor:",omitempty"`
+}
+
+func (lo *ListingOption) UnmarshalCBOR(data []byte) error {
+	var tmp listingOptionHack
+	err := Decode(&tmp, data)
+	if err != nil {
+		return err
+	}
+	*lo = ListingOption(tmp)
+	return nil
 }
 
 // ListingVariation represents a variation of a product option
@@ -258,7 +302,7 @@ type ListingVariation struct {
 	// the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
 	VariationInfo ListingMetadata
-	PriceModifier OrderPriceModifier
+	PriceModifier PriceModifier
 	SKU           string
 }
 
@@ -269,7 +313,23 @@ const (
 	ListingViewStateUnspecified ListingViewState = iota
 	ListingViewStatePublished
 	ListingViewStateDeleted
+
+	maxListingViewState
 )
+
+func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
+	dec := DefaultDecoder(bytes.NewReader(data))
+	var i int
+	err := dec.Decode(&i)
+	if err != nil {
+		return err
+	}
+	if i < 0 || int(i) >= int(maxListingViewState) {
+		return fmt.Errorf("invalid listing view state: %d", i)
+	}
+	*s = ListingViewState(i)
+	return nil
+}
 
 /*
 Account schema
@@ -277,6 +337,19 @@ Account schema
 type Account struct {
 	KeyCards []PublicKey
 	Guest    bool
+}
+
+func (a *Account) UnmarshalCBOR(data []byte) error {
+	var tmp struct {
+		KeyCards []PublicKey
+		Guest    bool
+	}
+	err := Decode(&tmp, data)
+	if err != nil {
+		return err
+	}
+	*a = Account(tmp)
+	return nil
 }
 
 /*

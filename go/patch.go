@@ -9,7 +9,7 @@ This is a modified version of JSON Patch (rfc6902). We first constraint the oper
 - decrement - Decrements a number by a specified value. Only valid if the value of the path is a number.,
 */
 
-package main
+package schema
 
 import (
 	"github.com/fxamacker/cbor/v2"

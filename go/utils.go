@@ -2,14 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-package main
+package schema
 
 import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"math/big"
 	"os/exec"
 	"reflect"
 
@@ -45,23 +44,6 @@ func DefaultEncoder(w io.Writer) cbor.Encoder {
 	return *mode.NewEncoder(w)
 }
 
-func main() {
-	var t Tag
-	t.Name = "foo"
-	t.ListingIds = []uint64{1, 2, 3}
-	fmt.Println("Simple Tag")
-	diag(t)
-
-	var l Listing
-	l.Metadata.Title = "foo"
-	price := big.NewInt(1111122222333344449)
-	price = price.Mul(price, big.NewInt(999999999999999999))
-	l.Price = *price
-	l.ViewState = ListingViewStatePublished
-	dump(l)
-
-}
-
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -90,8 +72,6 @@ func diag(val any) {
 
 	diagStr, err := cbor.Diagnose(buf.Bytes())
 	check(err)
-
-	//fmt.Printf("\n\nDIAG of: %+v\n", val)
 
 	fmt.Println(diagStr)
 }

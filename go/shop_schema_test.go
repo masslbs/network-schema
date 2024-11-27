@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-package main
+package schema
 
 import (
 	"bytes"
 	"math/big"
-	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -17,10 +17,6 @@ import (
 func TestSignatureIncomplete(t *testing.T) {
 	r := require.New(t)
 
-	var msg struct {
-		Sig Signature
-	}
-
 	// we Prepare a message that looks like a proper signature but is too short
 	var short struct {
 		Sig []byte
@@ -29,12 +25,13 @@ func TestSignatureIncomplete(t *testing.T) {
 	shortData, err := cbor.Marshal(short)
 	r.NoError(err)
 	t.Log("shortData:\n" + pretty(shortData))
-	rd := bytes.NewReader(shortData)
-	dec := DefaultDecoder(rd)
-
-	err = dec.Decode(&msg)
-	r.EqualValues([64]byte{}, msg.Sig)
+	// The actual signature is 64 bytes
+	var msg struct {
+		Sig Signature
+	}
+	err = Decode(&msg, shortData)
 	r.Error(err)
+	r.EqualValues([64]byte{}, msg.Sig)
 	r.IsType(ErrBytesTooShort{}, err)
 }
 
@@ -63,6 +60,29 @@ func TestMissingField(t *testing.T) {
 	err = Decode(&lis, testData)
 	r.Error(err)
 	r.IsType(ErrRequiredFieldMissing{}, err)
+
+	// If we set metadata, it needs description
+	var missingDesc struct {
+		Price    Uint256
+		Metadata struct {
+			Title string
+		}
+		ViewState ListingViewState
+	}
+	missingDesc.Price = *twentythree
+	missingDesc.ViewState = ListingViewStatePublished
+	missingDesc.Metadata.Title = "test"
+
+	buf.Reset()
+	err = enc.Encode(missingDesc)
+	r.NoError(err)
+	missingDescData := buf.Bytes()
+	t.Log("missingDescData:\n" + pretty(missingDescData))
+
+	var lis2 Listing
+	err = Decode(&lis2, missingDescData)
+	r.Error(err)
+	r.IsType(ErrRequiredFieldMissing{}, err, err.Error())
 }
 
 func TestCreateOp(t *testing.T) {
@@ -135,13 +155,13 @@ func TestCreateAllTypes(t *testing.T) {
 					Variations: map[string]ListingVariation{
 						"R": {
 							VariationInfo: ListingMetadata{Title: "Rot"},
-							PriceModifier: OrderPriceModifier{
+							PriceModifier: PriceModifier{
 								ModificationPrecents: *big.NewInt(95),
 							},
 						},
 						"G": {
 							VariationInfo: ListingMetadata{Title: "Grün"},
-							PriceModifier: OrderPriceModifier{
+							PriceModifier: PriceModifier{
 								ModificationAbsolute: ModificationAbsolute{
 									Amount: *big.NewInt(161),
 									Plus:   false,
@@ -155,6 +175,7 @@ func TestCreateAllTypes(t *testing.T) {
 				},
 			},
 		}, []string{"Price", "Metadata", "ViewState"}},
+
 		{Manifest{
 			ShopId: *bigId,
 			Payees: map[string]Payee{
@@ -169,10 +190,7 @@ func TestCreateAllTypes(t *testing.T) {
 			PricingCurrency: vanillaEth,
 			ShippingRegions: map[string]ShippingRegion{
 				"default": {
-					Country:  "",
-					Postcode: "",
-					City:     "",
-					PriceModifiers: map[string]OrderPriceModifier{
+					PriceModifiers: map[string]PriceModifier{
 						"discount": {
 							ModificationPrecents: *big.NewInt(95),
 						},
@@ -186,10 +204,16 @@ func TestCreateAllTypes(t *testing.T) {
 				},
 			},
 		}, []string{"ShopId", "Payees", "AcceptedCurrencies", "PricingCurrency"}},
+
+		{Account{
+			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
+			Guest:    true,
+		}, []string{"KeyCards", "Guest"}},
 	}
 
 	var buf bytes.Buffer
 	for _, c := range cases {
+		sort.Strings(c.required) // TODO: cryptix was lazy during test writing and did not sort the fields
 		r.Equal(c.required, requiredFields(c.typ))
 		buf.Reset()
 		enc := DefaultEncoder(&buf)
@@ -197,23 +221,26 @@ func TestCreateAllTypes(t *testing.T) {
 		r.NoError(err)
 
 		testData := buf.Bytes()
-		//t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
+		t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
 
-		// Create a concrete instance of the same type
-		rx := reflect.New(reflect.TypeOf(c.typ)).Interface()
-		// Type assert to the correct type before passing to Decode
+		var decoded any
 		switch c.typ.(type) {
 		case Listing:
 			var l Listing
 			err = Decode(&l, testData)
-			rx = l
+			decoded = l
 		case Manifest:
 			var m Manifest
 			err = Decode(&m, testData)
-			rx = m
+			decoded = m
+		case Account:
+			var a Account
+			err = Decode(&a, testData)
+			decoded = a
+		default:
+			t.Fatalf("unknown type: %T", c.typ)
 		}
-
 		r.NoError(err)
-		r.EqualValues(c.typ, rx)
+		r.EqualValues(c.typ, decoded)
 	}
 }
