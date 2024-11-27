@@ -21,3 +21,5 @@ jobs:
         run: nix develop -c bash -c "make lint"
       - name: Run pip package tests
         run: nix develop -c bash -c "cd python && pytest"
+      - name: Run go tests
+        run: nix develop -c bash -c "cd go && go test"

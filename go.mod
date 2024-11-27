@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 module github.com/masslbs/network-schema
 
 go 1.22.6
