@@ -11,7 +11,6 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
-	"github.com/go-playground/validator/v10/non-standard/validators"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,8 +18,7 @@ import (
 var validate *validator.Validate
 
 func init() {
-	validate = validator.New(validator.WithRequiredStructEnabled())
-	validate.RegisterValidation("notblank", validators.NotBlank)
+	validate = DefaultValidator()
 }
 
 func TestSignatureIncomplete(t *testing.T) {

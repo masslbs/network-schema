@@ -43,8 +43,6 @@ func (val *Signature) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-var _ encoding.BinaryUnmarshaler = (*Signature)(nil)
-
 // PublicKey represents a public key
 const PublicKeySize = 32
 
@@ -83,6 +81,14 @@ func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	copy(val[:], data)
 	return nil
 }
+
+// make sure these types implement encoding.BinaryUnmarshaler
+var (
+	_ encoding.BinaryUnmarshaler = (*Signature)(nil)
+	_ encoding.BinaryUnmarshaler = (*PublicKey)(nil)
+	_ encoding.BinaryUnmarshaler = (*Hash)(nil)
+	_ encoding.BinaryUnmarshaler = (*EthereumAddress)(nil)
+)
 
 // Uint256 represents a 256-bit unsigned integer
 type Uint256 = big.Int
@@ -128,7 +134,7 @@ type Shop struct {
 	Listings []Listing
 	Accounts map[EthereumAddress]Account
 	Orders   []Order
-	Tags     map[string]Tag `validate:"dive,keys,required,notblank,endkeys,required"`
+	Tags     map[string]Tag `validate:"nonEmptyMapKeys"`
 }
 
 /*
@@ -146,19 +152,19 @@ type Manifest struct {
 	// shop metadata lives in the NFT
 	ShopId Uint256 `validate:"required"`
 	// maps payee names to payee objects
-	Payees map[string]Payee `validate:"required,dive,keys,required,notblank,endkeys,required"`
+	Payees map[string]Payee `validate:"nonEmptyMapKeys"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	AcceptedCurrencies []ChainAddress `validate:"required,dive,required"`
+	AcceptedCurrencies []ChainAddress `validate:"required,gt=0"`
 	// the currency listings are priced in
 	PricingCurrency ChainAddress              `validate:"required"`
-	ShippingRegions map[string]ShippingRegion `cbor:",omitempty" validate:"dive,keys,required,notblank,endkeys,required"`
+	ShippingRegions map[string]ShippingRegion `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
 type ShippingRegion struct {
 	Country        string
 	Postcode       string
 	City           string
-	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"dive,keys,required,notblank,endkeys,required"`
+	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
 // ListingViewState represents the publication state of a listing
@@ -199,7 +205,7 @@ type Listing struct {
 	Metadata  ListingMetadata  `validate:"required"`
 	ViewState ListingViewState `validate:"required"`
 	// TODO: how do we enforce sorting these? maybe maps only..?
-	Options map[string]ListingOption `cbor:",omitempty" validate:"dive,keys,required,endkeys,required"`
+	Options map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
@@ -239,7 +245,7 @@ type ListingMetadata struct {
 type ListingOption struct {
 	// the title of the option (like Color, Size, etc.)
 	Title      string                      `validate:"required,notblank"`
-	Variations map[string]ListingVariation `cbor:",omitempty" validate:"dive,keys,required,endkeys,required"`
+	Variations map[string]ListingVariation `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
 // ListingVariation represents a variation of a product option

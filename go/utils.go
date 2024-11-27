@@ -13,6 +13,8 @@ import (
 	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 )
 
 func MassMarketTags() cbor.TagSet {
@@ -42,6 +44,13 @@ func DefaultEncoder(w io.Writer) cbor.Encoder {
 	mode, err := opts.EncModeWithTags(MassMarketTags())
 	check(err)
 	return *mode.NewEncoder(w)
+}
+
+func DefaultValidator() *validator.Validate {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	validate.RegisterValidation("notblank", validators.NotBlank)
+	validate.RegisterAlias("nonEmptyMapKeys", "dive,keys,required,notblank,endkeys,required")
+	return validate
 }
 
 func check(err error) {
