@@ -6,20 +6,19 @@ package schema
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 	"testing"
 
+	"github.com/fission-codes/go-car-mirror/ipld"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/go-playground/validator/v10"
+	"github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
 )
 
 // use a single instance of Validate, it caches struct info
-var validate *validator.Validate
-
-func init() {
-	validate = DefaultValidator()
-}
+var validate = DefaultValidator()
 
 func TestSignatureIncomplete(t *testing.T) {
 	r := require.New(t)
@@ -234,13 +233,79 @@ func TestCreateAllTypes(t *testing.T) {
 			ListingIds: []ObjectId{*bigId},
 		}},
 
-		// TODO: need to add validation based on the state
 		{Order{
 			Items: []OrderedItem{{
 				ListingID: ObjectId(*bigId),
 				Quantity:  1,
 			}},
 			State: OrderStateOpen,
+		}},
+
+		{Order{
+			Items: []OrderedItem{{
+				ListingID: ObjectId(*bigId),
+				Quantity:  1,
+			}},
+			State: OrderStateCommited,
+			ChosenPayee: &Payee{
+				CallAsContract: true,
+				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+			},
+			ChosenCurrency: &vanillaEth,
+			InvoiceAddress: &AddressDetails{
+				Name:         "test",
+				Address1:     "test",
+				City:         "test",
+				PostalCode:   "test",
+				Country:      "test",
+				EmailAddress: "test@foo.bar",
+				PhoneNumber:  strptr("+21911223344"),
+			},
+		}},
+
+		{Order{
+			Items: []OrderedItem{{
+				ListingID: ObjectId(*bigId),
+				Quantity:  1,
+			}},
+			State: OrderStateUnpaid,
+			ChosenPayee: &Payee{
+				CallAsContract: true,
+				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+			},
+			ChosenCurrency: &vanillaEth,
+			PaymentDetails: &PaymentDetails{
+				TTL:       1000,
+				PaymentID: Hash{0xff},
+				ListingHashes: []ipld.Cid{
+					testHash(0),
+					testHash(1),
+				},
+			},
+		}},
+
+		{Order{
+			Items: []OrderedItem{{
+				ListingID: ObjectId(*bigId),
+				Quantity:  1,
+			}},
+			State: OrderStatePaid,
+			ChosenPayee: &Payee{
+				CallAsContract: true,
+				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+			},
+			ChosenCurrency: &vanillaEth,
+			PaymentDetails: &PaymentDetails{
+				TTL:       1000,
+				PaymentID: Hash{0xff},
+				ListingHashes: []ipld.Cid{
+					testHash(0),
+					testHash(1),
+				},
+			},
+			TxDetails: &OrderPaid{
+				TxHash: &Hash{0xff},
+			},
 		}},
 	}
 
@@ -281,4 +346,17 @@ func decode[T any](data []byte) (T, error) {
 	dec := DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&t)
 	return t, err
+}
+
+func testHash(i uint) ipld.Cid {
+	h, err := mh.Sum([]byte(fmt.Sprintf("TEST-%d", i)), mh.SHA3, 4)
+	if err != nil {
+		panic(err)
+	}
+	// TODO: check what the codec number should be
+	return ipld.WrapCid(cid.NewCidV1(666, h))
+}
+
+func strptr(s string) *string {
+	return &s
 }

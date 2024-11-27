@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/fission-codes/go-car-mirror/ipld"
+	"github.com/go-playground/validator/v10"
 )
 
 type ErrBytesTooShort struct {
@@ -305,6 +306,47 @@ type Order struct {
 	TxDetails       *OrderPaid      `cbor:",omitempty"`
 }
 
+func OrderValidation(sl validator.StructLevel) {
+	order := sl.Current().Interface().(Order)
+	switch order.State {
+	case OrderStateOpen:
+		if order.PaymentDetails != nil {
+			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "notAllowed", "")
+		}
+		if order.TxDetails != nil {
+			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "notAllowed", "")
+		}
+	case OrderStateCanceled:
+		if order.CanceledAt == nil {
+			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
+		}
+	case OrderStateCommited:
+		if order.ChosenPayee == nil {
+			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
+		}
+		if order.ChosenCurrency == nil {
+			sl.ReportError(order.ChosenCurrency, "ChosenCurrency", "ChosenCurrency", "required", "")
+		}
+		if order.InvoiceAddress == nil && order.ShippingAddress == nil {
+			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
+			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
+		}
+	case OrderStateUnpaid:
+		if order.PaymentDetails == nil {
+			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
+		}
+	case OrderStatePaid:
+		if order.PaymentDetails == nil {
+			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
+		}
+		if order.TxDetails == nil {
+			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
+		}
+	default:
+		sl.ReportError(order.State, "State", "State", fmt.Sprintf("invalid order state: %d", order.State), "")
+	}
+}
+
 // OrderedItem represents an item in an order
 type OrderedItem struct {
 	ListingID    ObjectId `validate:"required"`
@@ -342,14 +384,14 @@ func (s *OrderState) UnmarshalCBOR(data []byte) error {
 
 // AddressDetails represents shipping or billing address information
 type AddressDetails struct {
-	Name         string
-	Address1     string
-	Address2     string `cbor:",omitempty"`
-	City         string
-	PostalCode   string `cbor:",omitempty"` // Malta does use postal codes
-	Country      string
-	EmailAddress string
-	PhoneNumber  *string `cbor:",omitempty"`
+	Name         string  `validate:"required,notblank"`
+	Address1     string  `validate:"required,notblank"`
+	Address2     string  `cbor:",omitempty"`
+	City         string  `validate:"required,notblank"`
+	PostalCode   string  `cbor:",omitempty"` // Malta does use postal codes
+	Country      string  `validate:"required,notblank"`
+	EmailAddress string  `validate:"required,email"`
+	PhoneNumber  *string `cbor:",omitempty" validate:"omitempty,e164"`
 }
 
 type PaymentDetails struct {
@@ -361,7 +403,23 @@ type PaymentDetails struct {
 }
 
 // TODO: add either_or=TxHash,BlockHash
-type OrderPaid struct {
-	TxHash    Hash `cbor:"1,keyasint"`
-	BlockHash Hash `cbor:"2,keyasint"`
+type OrderPaid orderPaidHack
+
+type orderPaidHack struct {
+	TxHash    *Hash `cbor:",omitempty"`
+	BlockHash *Hash `cbor:",omitempty"`
+}
+
+func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
+	var tmp orderPaidHack
+	dec := DefaultDecoder(bytes.NewReader(data))
+	err := dec.Decode(&tmp)
+	if err != nil {
+		return err
+	}
+	if tmp.TxHash == nil && tmp.BlockHash == nil {
+		return fmt.Errorf("one of TxHash or BlockHash must be set")
+	}
+	*op = OrderPaid(tmp)
+	return nil
 }

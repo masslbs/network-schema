@@ -50,6 +50,8 @@ func DefaultValidator() *validator.Validate {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	validate.RegisterValidation("notblank", validators.NotBlank)
 	validate.RegisterAlias("nonEmptyMapKeys", "dive,keys,required,notblank,endkeys,required")
+	validate.RegisterStructValidation(OrderValidation, Order{})
+
 	return validate
 }
 
