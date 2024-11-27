@@ -96,15 +96,9 @@ func diag(val any) {
 	fmt.Println(diagStr)
 }
 
-func pretty(val any) string {
-	var buf bytes.Buffer
-	enc := DefaultEncoder(&buf)
-
-	err := enc.Encode(val)
-	check(err)
-
+func pretty(data []byte) string {
 	shell := exec.Command("cbor2pretty.rb")
-	shell.Stdin = &buf
+	shell.Stdin = bytes.NewReader(data)
 
 	out, err := shell.CombinedOutput()
 	check(err)

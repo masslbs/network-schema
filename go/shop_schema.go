@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"encoding"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -61,10 +62,15 @@ func requiredFields[V any](v V) []string {
 	if tv.Kind() == reflect.Pointer {
 		tv = tv.Elem()
 	}
+	if tv.Kind() != reflect.Struct {
+		panic(fmt.Sprintf("not a struct: %T Kind: %s", v, tv.Kind()))
+	}
 	fields := make([]string, 0, tv.NumField())
 	for i := 0; i < tv.NumField(); i++ {
 		field := tv.Field(i)
-		if strings.Contains(field.Tag.Get("cbor"), ",omitempty") {
+		tag := field.Tag.Get("cbor")
+		// fmt.Printf("field: %s tag: %s\n", field.Name, tag)
+		if strings.Contains(tag, ",omitempty") {
 			continue
 		}
 		fields = append(fields, field.Name)
@@ -77,11 +83,6 @@ BASE TYPES
 */
 
 type ObjectId = big.Int
-
-func NewObjectId(id int64) ObjectId {
-	b := big.NewInt(id)
-	return ObjectId(*b)
-}
 
 // Signature represents a cryptographic signature
 const SignatureSize = 64
@@ -147,6 +148,18 @@ type ChainAddress struct {
 	Address EthereumAddress
 }
 
+func addrFromHex(chain uint64, hexAddr string) ChainAddress {
+	addr := ChainAddress{ChainID: chain}
+	hexAddr = strings.TrimPrefix(hexAddr, "0x")
+	decoded, err := hex.DecodeString(hexAddr)
+	check(err)
+	n := copy(addr.Address[:], decoded)
+	if n != EthereumAddressSize {
+		panic(fmt.Sprintf("copy failed: %d != %d", n, EthereumAddressSize))
+	}
+	return addr
+}
+
 // Payee represents a payment recipient
 type Payee struct {
 	Address ChainAddress
@@ -162,29 +175,18 @@ type Payee struct {
 }
 
 /*
-The Shop schema
-*/
-type Shop struct {
-	Manifest Manifest
-	Listings []Listing
-	Accounts map[EthereumAddress]Account
-	Orders   []Order
-	Tags     []Tag
-}
-
-/*
 The Manifest schema
 */
 type Manifest struct {
 	// shop metadata lives in the NFT
 	ShopId Uint256
 	// maps payee names to payee objects
-	Payee map[string]Payee
+	Payees map[string]Payee
 	// TODO: should we add a name field to the acceptedCurrencies object?
 	AcceptedCurrencies []ChainAddress
 	// the currency listings are priced in
 	PricingCurrency ChainAddress
-	ShippingRegions map[string]ShippingRegion
+	ShippingRegions map[string]ShippingRegion `cbor:",omitempty"`
 }
 
 type ShippingRegion struct {
@@ -201,15 +203,20 @@ type ShippingRegion struct {
 	Country        string
 	Postcode       string
 	City           string
-	PriceModifiers map[string]OrderPriceModifier
+	PriceModifiers map[string]OrderPriceModifier `cbor:",omitempty"`
 }
 
 // ListingViewState represents the publication state of a listing
 type OrderPriceModifier struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
-	ModificationPrecents Uint256 `cbor:",omitempty"`
-	ModificationAbsolute Uint256 `cbor:",omitempty"`
+	ModificationPrecents Uint256              `cbor:",omitempty"`
+	ModificationAbsolute ModificationAbsolute `cbor:",omitempty"`
+}
+
+type ModificationAbsolute struct {
+	Amount Uint256
+	Plus   bool // false means subtract
 }
 
 /*
@@ -219,9 +226,10 @@ type Listing struct {
 	Price     Uint256
 	Metadata  ListingMetadata
 	ViewState ListingViewState
-	Options   []ListingOption
+	// TODO: how do we enforce sorting these? maybe maps only..?
+	Options map[string]ListingOption `cbor:",omitempty"`
 	// one for each combination of variations
-	StockStatuses []ListingStockStatus
+	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
 
 type ListingStockStatus struct {
@@ -242,7 +250,7 @@ type ListingMetadata struct {
 type ListingOption struct {
 	// the title of the option (like Color, Size, etc.)
 	Title      string
-	Variations []ListingVariation
+	Variations map[string]ListingVariation `cbor:",omitempty"`
 }
 
 // ListingVariation represents a variation of a product option
@@ -250,8 +258,7 @@ type ListingVariation struct {
 	// the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
 	VariationInfo ListingMetadata
-	PriceDiffSign bool
-	PriceDiff     Uint256
+	PriceModifier OrderPriceModifier
 	SKU           string
 }
 
@@ -337,4 +344,15 @@ Tags schema
 type Tag struct {
 	Name       string
 	ListingIds []uint64
+}
+
+/*
+The complete Shop state
+*/
+type Shop struct {
+	Manifest Manifest
+	Listings []Listing
+	Accounts map[EthereumAddress]Account
+	Orders   []Order
+	Tags     []Tag
 }

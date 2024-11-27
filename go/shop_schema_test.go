@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -50,13 +51,13 @@ func TestMissingField(t *testing.T) {
 	twentythree := big.NewInt(230000)
 	fl.Price = *twentythree
 	fl.ViewState = ListingViewStateDeleted
-	t.Log("FakeListing:\n" + pretty(fl))
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
 	err := enc.Encode(fl)
 	r.NoError(err)
 	testData := buf.Bytes()
+	t.Log("FakeListing:\n" + pretty(testData))
 
 	var lis Listing
 	err = Decode(&lis, testData)
@@ -74,7 +75,7 @@ func TestCreateOp(t *testing.T) {
 
 	var createListing Patch
 	createListing.Op = AddOp
-	createListing.Path = []any{"listing", NewObjectId(238000)}
+	createListing.Path = []any{"listing", ObjectId(*big.NewInt(238000))}
 
 	var lis Listing
 	lis.Metadata.Title = "test Listing"
@@ -94,8 +95,7 @@ func TestCreateOp(t *testing.T) {
 
 	opData := buf.Bytes()
 	t.Log("OP encoded:")
-	//t.Error(hex.EncodeToString(opData))
-	t.Log("\n" + pretty(createListing))
+	t.Log("\n" + pretty(opData))
 
 	var rxOp Patch
 	dec := DefaultDecoder(bytes.NewReader(opData))
@@ -109,4 +109,111 @@ func TestCreateOp(t *testing.T) {
 
 	t.Logf("listing received: %+v", rxLis)
 	r.EqualValues(lis, rxLis)
+}
+
+func TestCreateAllTypes(t *testing.T) {
+	r := require.New(t)
+
+	bigId := big.NewInt(12345)
+
+	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
+	cases := []struct {
+		typ      any
+		required []string
+	}{
+		{Listing{
+			Price:     *big.NewInt(12345),
+			ViewState: ListingViewStatePublished,
+			Metadata: ListingMetadata{
+				Title:       "test Listing",
+				Description: "short desc",
+				Images:      []string{"https://http.cat/images/100.jpg"},
+			},
+			Options: map[string]ListingOption{
+				"Color": {
+					Title: "Farbe",
+					Variations: map[string]ListingVariation{
+						"R": {
+							VariationInfo: ListingMetadata{Title: "Rot"},
+							PriceModifier: OrderPriceModifier{
+								ModificationPrecents: *big.NewInt(95),
+							},
+						},
+						"G": {
+							VariationInfo: ListingMetadata{Title: "Grün"},
+							PriceModifier: OrderPriceModifier{
+								ModificationAbsolute: ModificationAbsolute{
+									Amount: *big.NewInt(161),
+									Plus:   false,
+								},
+							},
+						},
+						"B": {
+							VariationInfo: ListingMetadata{Title: "Blau"},
+						},
+					},
+				},
+			},
+		}, []string{"Price", "Metadata", "ViewState"}},
+		{Manifest{
+			ShopId: *bigId,
+			Payees: map[string]Payee{
+				"ethereum": {
+					CallAsContract: true,
+					Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				},
+			},
+			AcceptedCurrencies: []ChainAddress{
+				vanillaEth,
+			},
+			PricingCurrency: vanillaEth,
+			ShippingRegions: map[string]ShippingRegion{
+				"default": {
+					Country:  "",
+					Postcode: "",
+					City:     "",
+					PriceModifiers: map[string]OrderPriceModifier{
+						"discount": {
+							ModificationPrecents: *big.NewInt(95),
+						},
+						"static": {
+							ModificationAbsolute: ModificationAbsolute{
+								Amount: *big.NewInt(161),
+								Plus:   false,
+							},
+						},
+					},
+				},
+			},
+		}, []string{"ShopId", "Payees", "AcceptedCurrencies", "PricingCurrency"}},
+	}
+
+	var buf bytes.Buffer
+	for _, c := range cases {
+		r.Equal(c.required, requiredFields(c.typ))
+		buf.Reset()
+		enc := DefaultEncoder(&buf)
+		err := enc.Encode(c.typ)
+		r.NoError(err)
+
+		testData := buf.Bytes()
+		//t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
+
+		// Create a concrete instance of the same type
+		rx := reflect.New(reflect.TypeOf(c.typ)).Interface()
+		// Type assert to the correct type before passing to Decode
+		switch c.typ.(type) {
+		case Listing:
+			var l Listing
+			err = Decode(&l, testData)
+			rx = l
+		case Manifest:
+			var m Manifest
+			err = Decode(&m, testData)
+			rx = m
+		}
+
+		r.NoError(err)
+		r.EqualValues(c.typ, rx)
+	}
 }
