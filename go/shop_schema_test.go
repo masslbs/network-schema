@@ -7,12 +7,21 @@ package schema
 import (
 	"bytes"
 	"math/big"
-	"sort"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 	"github.com/stretchr/testify/require"
 )
+
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New(validator.WithRequiredStructEnabled())
+	validate.RegisterValidation("notblank", validators.NotBlank)
+}
 
 func TestSignatureIncomplete(t *testing.T) {
 	r := require.New(t)
@@ -29,7 +38,8 @@ func TestSignatureIncomplete(t *testing.T) {
 	var msg struct {
 		Sig Signature
 	}
-	err = Decode(&msg, shortData)
+	dec := DefaultDecoder(bytes.NewReader(shortData))
+	err = dec.Decode(&msg)
 	r.Error(err)
 	r.EqualValues([64]byte{}, msg.Sig)
 	r.IsType(ErrBytesTooShort{}, err)
@@ -57,9 +67,10 @@ func TestMissingField(t *testing.T) {
 	t.Log("FakeListing:\n" + pretty(testData))
 
 	var lis Listing
-	err = Decode(&lis, testData)
-	r.Error(err)
-	r.IsType(ErrRequiredFieldMissing{}, err)
+	dec := DefaultDecoder(bytes.NewReader(testData))
+	err = dec.Decode(&lis)
+	r.NoError(err)
+	r.Error(validate.Struct(lis))
 
 	// If we set metadata, it needs description
 	var missingDesc struct {
@@ -80,9 +91,10 @@ func TestMissingField(t *testing.T) {
 	t.Log("missingDescData:\n" + pretty(missingDescData))
 
 	var lis2 Listing
-	err = Decode(&lis2, missingDescData)
-	r.Error(err)
-	r.IsType(ErrRequiredFieldMissing{}, err, err.Error())
+	dec = DefaultDecoder(bytes.NewReader(missingDescData))
+	err = dec.Decode(&lis2)
+	r.NoError(err)
+	r.Error(validate.Struct(lis2))
 }
 
 func TestCreateOp(t *testing.T) {
@@ -98,6 +110,7 @@ func TestCreateOp(t *testing.T) {
 	createListing.Path = []any{"listing", ObjectId(*big.NewInt(238000))}
 
 	var lis Listing
+	lis.ViewState = ListingViewStatePublished
 	lis.Metadata.Title = "test Listing"
 	lis.Metadata.Description = "short desc"
 	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
@@ -124,7 +137,8 @@ func TestCreateOp(t *testing.T) {
 	r.Equal("listing", rxOp.Path[0])
 	var rxLis Listing
 
-	err = Decode(&rxLis, rxOp.Value)
+	dec = DefaultDecoder(bytes.NewReader(rxOp.Value))
+	err = dec.Decode(&rxLis)
 	r.NoError(err)
 
 	t.Logf("listing received: %+v", rxLis)
@@ -138,9 +152,36 @@ func TestCreateAllTypes(t *testing.T) {
 
 	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
-		typ      any
-		required []string
+		typ any
 	}{
+
+		{Manifest{
+			ShopId: *bigId,
+			Payees: map[string]Payee{
+				"ethereum": {
+					CallAsContract: true,
+					Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				},
+			},
+			AcceptedCurrencies: []ChainAddress{vanillaEth},
+			PricingCurrency:    vanillaEth,
+			ShippingRegions: map[string]ShippingRegion{
+				"default": {
+					PriceModifiers: map[string]PriceModifier{
+						"discount": {
+							ModificationPrecents: big.NewInt(95),
+						},
+						"static": {
+							ModificationAbsolute: &ModificationAbsolute{
+								Amount: *big.NewInt(161),
+								Plus:   false,
+							},
+						},
+					},
+				},
+			},
+		}},
+
 		{Listing{
 			Price:     *big.NewInt(12345),
 			ViewState: ListingViewStatePublished,
@@ -154,67 +195,55 @@ func TestCreateAllTypes(t *testing.T) {
 					Title: "Farbe",
 					Variations: map[string]ListingVariation{
 						"R": {
-							VariationInfo: ListingMetadata{Title: "Rot"},
+							VariationInfo: ListingMetadata{
+								Title:       "Rot",
+								Description: "short desc",
+							},
 							PriceModifier: PriceModifier{
-								ModificationPrecents: *big.NewInt(95),
+								ModificationPrecents: big.NewInt(95),
 							},
 						},
 						"G": {
-							VariationInfo: ListingMetadata{Title: "Grün"},
+							VariationInfo: ListingMetadata{
+								Title:       "Grün",
+								Description: "short desc",
+							},
 							PriceModifier: PriceModifier{
-								ModificationAbsolute: ModificationAbsolute{
+								ModificationAbsolute: &ModificationAbsolute{
 									Amount: *big.NewInt(161),
 									Plus:   false,
 								},
 							},
 						},
 						"B": {
-							VariationInfo: ListingMetadata{Title: "Blau"},
-						},
-					},
-				},
-			},
-		}, []string{"Price", "Metadata", "ViewState"}},
-
-		{Manifest{
-			ShopId: *bigId,
-			Payees: map[string]Payee{
-				"ethereum": {
-					CallAsContract: true,
-					Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
-				},
-			},
-			AcceptedCurrencies: []ChainAddress{
-				vanillaEth,
-			},
-			PricingCurrency: vanillaEth,
-			ShippingRegions: map[string]ShippingRegion{
-				"default": {
-					PriceModifiers: map[string]PriceModifier{
-						"discount": {
-							ModificationPrecents: *big.NewInt(95),
-						},
-						"static": {
-							ModificationAbsolute: ModificationAbsolute{
-								Amount: *big.NewInt(161),
-								Plus:   false,
+							VariationInfo: ListingMetadata{
+								Title:       "Blau",
+								Description: "short desc",
 							},
 						},
 					},
 				},
 			},
-		}, []string{"ShopId", "Payees", "AcceptedCurrencies", "PricingCurrency"}},
+		}},
 
 		{Account{
 			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
 			Guest:    true,
-		}, []string{"KeyCards", "Guest"}},
+		}},
+
+		// TODO: need to add validation based on the state
+		{Order{
+			Items: []OrderedItem{{
+				ListingID: ObjectId(*bigId),
+				Quantity:  1,
+			}},
+			State: OrderStateOpen,
+		}},
 	}
 
 	var buf bytes.Buffer
 	for _, c := range cases {
-		sort.Strings(c.required) // TODO: cryptix was lazy during test writing and did not sort the fields
-		r.Equal(c.required, requiredFields(c.typ))
+		r.NoError(validate.Struct(c.typ))
 		buf.Reset()
 		enc := DefaultEncoder(&buf)
 		err := enc.Encode(c.typ)
@@ -226,21 +255,18 @@ func TestCreateAllTypes(t *testing.T) {
 		var decoded any
 		switch c.typ.(type) {
 		case Listing:
-			var l Listing
-			err = Decode(&l, testData)
-			decoded = l
+			decoded, err = Decode[Listing](testData)
 		case Manifest:
-			var m Manifest
-			err = Decode(&m, testData)
-			decoded = m
+			decoded, err = Decode[Manifest](testData)
 		case Account:
-			var a Account
-			err = Decode(&a, testData)
-			decoded = a
+			decoded, err = Decode[Account](testData)
+		case Order:
+			decoded, err = Decode[Order](testData)
 		default:
 			t.Fatalf("unknown type: %T", c.typ)
 		}
 		r.NoError(err)
+		r.NoError(validate.Struct(decoded))
 		r.EqualValues(c.typ, decoded)
 	}
 }

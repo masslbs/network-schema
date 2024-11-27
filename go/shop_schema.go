@@ -10,13 +10,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"reflect"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/fission-codes/go-car-mirror/ipld"
-	"github.com/fxamacker/cbor/v2"
 )
 
 type ErrBytesTooShort struct {
@@ -27,57 +24,11 @@ func (err ErrBytesTooShort) Error() string {
 	return fmt.Sprintf("not enough bytes. Expected %d but got %d", err.Want, err.Got)
 }
 
-type ErrRequiredFieldMissing struct {
-	Want string
-}
-
-func (err ErrRequiredFieldMissing) Error() string {
-	return fmt.Sprintf("missing required field %s", err.Want)
-}
-
-func Decode[V any](v V, data []byte) error {
-	reqFields := requiredFields(v)
-	var keys map[string]cbor.RawMessage
-
-	// TODO: we could use maxDepth1 here
+func Decode[T any](data []byte) (T, error) {
+	var t T
 	dec := DefaultDecoder(bytes.NewReader(data))
-	err := dec.Decode(&keys)
-	if err != nil {
-		return fmt.Errorf("data is not a map")
-	}
-	for _, r := range reqFields {
-		_, has := keys[r]
-		if !has {
-			return ErrRequiredFieldMissing{r}
-		}
-	}
-	// TODO: instead we could copy keys into v using reflection
-	dec = DefaultDecoder(bytes.NewReader(data))
-	return dec.Decode(&v)
-}
-
-// all fields that are not marked with cbor:",omitempty" are required
-func requiredFields(v any) []string {
-	tv := reflect.TypeOf(v)
-	if tv.Kind() == reflect.Pointer {
-		tv = tv.Elem()
-	}
-	if tv.Kind() != reflect.Struct {
-		panic(fmt.Sprintf("not a struct: %T Kind: %s", v, tv.Kind()))
-	}
-	fields := make([]string, 0, tv.NumField())
-	for i := 0; i < tv.NumField(); i++ {
-		field := tv.Field(i)
-		tag := field.Tag.Get("cbor")
-		// fmt.Printf("field: %s tag: %s\n", field.Name, tag)
-		if strings.Contains(tag, ",omitempty") {
-			continue
-		}
-		fields = append(fields, field.Name)
-	}
-	// TODO: cryptix was lazy during test writing and did not sort the fields
-	sort.Strings(fields)
-	return fields
+	err := dec.Decode(&t)
+	return t, err
 }
 
 /*
@@ -145,13 +96,9 @@ type Uint256 = big.Int
 
 // An ethereum address with a chain ID attached
 type ChainAddress struct {
-	ChainID uint64
+	ChainID uint64 `validate:"required,gt=0"`
 	// when repsenting an ERC20 the zero address is used native currency
 	Address EthereumAddress
-}
-
-func (ca *ChainAddress) UnmarshalBinary(data []byte) error {
-	return Decode(ca, data)
 }
 
 func addrFromHex(chain uint64, hexAddr string) ChainAddress {
@@ -185,57 +132,62 @@ The Manifest schema
 */
 type Manifest struct {
 	// shop metadata lives in the NFT
-	ShopId Uint256
+	ShopId Uint256 `validate:"required"`
 	// maps payee names to payee objects
-	Payees map[string]Payee
+	Payees map[string]Payee `validate:"required,dive,keys,required,notblank,endkeys,required"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	AcceptedCurrencies []ChainAddress
+	AcceptedCurrencies []ChainAddress `validate:"required,dive,required"`
 	// the currency listings are priced in
-	PricingCurrency ChainAddress
-	ShippingRegions map[string]ShippingRegion `cbor:",omitempty"`
+	PricingCurrency ChainAddress              `validate:"required"`
+	ShippingRegions map[string]ShippingRegion `cbor:",omitempty" validate:"dive,keys,required,notblank,endkeys,required"`
 }
 
-type ShippingRegion shippingRegionHack
-
-type shippingRegionHack struct {
+type ShippingRegion struct {
 	Country        string
 	Postcode       string
 	City           string
-	PriceModifiers map[string]PriceModifier `cbor:",omitempty"`
-}
-
-func (sr *ShippingRegion) UnmarshalCBOR(data []byte) error {
-	var tmp shippingRegionHack
-	err := Decode(&tmp, data)
-	if err != nil {
-		return err
-	}
-	*sr = ShippingRegion(tmp)
-	return nil
+	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"dive,keys,required,notblank,endkeys,required"`
 }
 
 // ListingViewState represents the publication state of a listing
-type PriceModifier struct {
+type PriceModifier priceModifierHack
+
+// using pointers here to express optionality clearer
+type priceModifierHack struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
-	ModificationPrecents Uint256              `cbor:",omitempty"`
-	ModificationAbsolute ModificationAbsolute `cbor:",omitempty"`
+	ModificationPrecents *Uint256              `cbor:",omitempty"`
+	ModificationAbsolute *ModificationAbsolute `cbor:",omitempty"`
+}
+
+func (pm *PriceModifier) UnmarshalCBOR(data []byte) error {
+	var pm2 priceModifierHack
+	dec := DefaultDecoder(bytes.NewReader(data))
+	err := dec.Decode(&pm2)
+	if err != nil {
+		return err
+	}
+	if pm2.ModificationPrecents == nil && pm2.ModificationAbsolute == nil {
+		return fmt.Errorf("one of ModificationPrecents or ModificationAbsolute must be set")
+	}
+	*pm = PriceModifier(pm2)
+	return nil
 }
 
 type ModificationAbsolute struct {
-	Amount Uint256
-	Plus   bool // false means subtract
+	Amount Uint256 `validate:"required"`
+	Plus   bool    // false means subtract
 }
 
 /*
 Listing schema
 */
 type Listing struct {
-	Price     Uint256
-	Metadata  ListingMetadata
-	ViewState ListingViewState
+	Price     Uint256          `validate:"required"`
+	Metadata  ListingMetadata  `validate:"required"`
+	ViewState ListingViewState `validate:"required"`
 	// TODO: how do we enforce sorting these? maybe maps only..?
-	Options map[string]ListingOption `cbor:",omitempty"`
+	Options map[string]ListingOption `cbor:",omitempty" validate:"dive,keys,required,endkeys,required"`
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
@@ -245,69 +197,50 @@ type ListingStockStatus listingStockStatusHack
 type listingStockStatusHack struct {
 	VariationIDs []uint64
 	// one of the following should be set
-	InStock           bool      `cbor:",omitempty"`
-	ExpectedInStockBy time.Time `cbor:",omitempty"`
+	InStock           *bool      `cbor:",omitempty"`
+	ExpectedInStockBy *time.Time `cbor:",omitempty"`
 }
 
-func (l *ListingStockStatus) UnmarshalCBOR(data []byte) error {
-	var tmp listingStockStatusHack
-	err := Decode(&tmp, data)
+func (ls *ListingStockStatus) UnmarshalCBOR(data []byte) error {
+	var ls2 listingStockStatusHack
+	dec := DefaultDecoder(bytes.NewReader(data))
+	err := dec.Decode(&ls2)
 	if err != nil {
 		return err
 	}
-	*l = ListingStockStatus(tmp)
+	// TODO: maybe add validate:"either_or=InStock,ExpectedInStockBy"`
+	if ls2.InStock == nil && ls2.ExpectedInStockBy == nil {
+		return fmt.Errorf("one of InStock or ExpectedInStockBy must be set")
+	}
+	*ls = ListingStockStatus(ls2)
 	return nil
 }
 
 // ListingMetadata represents listing information
-type ListingMetadata listingMetadataHack
-
-type listingMetadataHack struct {
-	Title       string
-	Description string
+type ListingMetadata struct {
+	Title       string   `validate:"required,notblank"`
+	Description string   `validate:"required,notblank"`
 	Images      []string `cbor:",omitempty"`
 }
 
-func (l *ListingMetadata) UnmarshalCBOR(data []byte) error {
-	var tmp listingMetadataHack
-	err := Decode(&tmp, data)
-	if err != nil {
-		return err
-	}
-	*l = ListingMetadata(tmp)
-	return nil
-}
-
 // ListingOption represents a product option
-type ListingOption listingOptionHack
-
-type listingOptionHack struct {
+type ListingOption struct {
 	// the title of the option (like Color, Size, etc.)
-	Title      string
-	Variations map[string]ListingVariation `cbor:",omitempty"`
-}
-
-func (lo *ListingOption) UnmarshalCBOR(data []byte) error {
-	var tmp listingOptionHack
-	err := Decode(&tmp, data)
-	if err != nil {
-		return err
-	}
-	*lo = ListingOption(tmp)
-	return nil
+	Title      string                      `validate:"required,notblank"`
+	Variations map[string]ListingVariation `cbor:",omitempty" validate:"dive,keys,required,endkeys,required"`
 }
 
 // ListingVariation represents a variation of a product option
 type ListingVariation struct {
 	// the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
-	VariationInfo ListingMetadata
-	PriceModifier PriceModifier
-	SKU           string
+	VariationInfo ListingMetadata `validate:"required"`
+	PriceModifier PriceModifier   `cbor:",omitempty"`
+	SKU           string          `cbor:",omitempty"`
 }
 
 // ListingViewState represents the publication state of a listing
-type ListingViewState int
+type ListingViewState uint
 
 const (
 	ListingViewStateUnspecified ListingViewState = iota
@@ -319,12 +252,12 @@ const (
 
 func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
 	dec := DefaultDecoder(bytes.NewReader(data))
-	var i int
+	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
 		return err
 	}
-	if i < 0 || int(i) >= int(maxListingViewState) {
+	if i == uint(ListingViewStateUnspecified) || i >= uint(maxListingViewState) {
 		return fmt.Errorf("invalid listing view state: %d", i)
 	}
 	*s = ListingViewState(i)
@@ -335,56 +268,59 @@ func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
 Account schema
 */
 type Account struct {
-	KeyCards []PublicKey
+	KeyCards []PublicKey `validate:"required,gt=0"`
 	Guest    bool
-}
-
-func (a *Account) UnmarshalCBOR(data []byte) error {
-	var tmp struct {
-		KeyCards []PublicKey
-		Guest    bool
-	}
-	err := Decode(&tmp, data)
-	if err != nil {
-		return err
-	}
-	*a = Account(tmp)
-	return nil
 }
 
 /*
 Oder Schema
 */
 type Order struct {
-	Items           []OrderedItem
-	State           OrderState
-	InvoiceAddress  AddressDetails `cbor:",omitempty"`
-	ShippingAddress AddressDetails `cbor:",omitempty"`
-	CanceledAt      time.Time      `cbor:",omitempty"`
-	ChosenPayee     Payee          `cbor:",omitempty"`
-	ChosenCurrency  ChainAddress   `cbor:",omitempty"`
-	PaymentDetails  PaymentDetails `cbor:",omitempty"`
-	TxDetails       OrderPaid      `cbor:",omitempty"`
+	Items           []OrderedItem   `validate:"required,gt=0"`
+	State           OrderState      `validate:"required"`
+	InvoiceAddress  *AddressDetails `cbor:",omitempty"`
+	ShippingAddress *AddressDetails `cbor:",omitempty"`
+	CanceledAt      *time.Time      `cbor:",omitempty"`
+	ChosenPayee     *Payee          `cbor:",omitempty"`
+	ChosenCurrency  *ChainAddress   `cbor:",omitempty"`
+	PaymentDetails  *PaymentDetails `cbor:",omitempty"`
+	TxDetails       *OrderPaid      `cbor:",omitempty"`
 }
 
 // OrderedItem represents an item in an order
 type OrderedItem struct {
-	ListingID    uint64
-	VariationIDs []uint64
-	Quantity     uint32
+	ListingID    ObjectId `validate:"required"`
+	VariationIDs []ObjectId
+	Quantity     uint32 `validate:"required,gt=0"`
 }
 
 // OrderState represents the possible states of an order
-type OrderState int
+type OrderState uint
 
 const (
-	OrderStateUnspecified OrderState = 0
-	OrderStateOpen        OrderState = 1
-	OrderStateCanceled    OrderState = 2
-	OrderStateCommited    OrderState = 3
-	OrderStateUnpaid      OrderState = 4
-	OrderStatePaid        OrderState = 5
+	OrderStateUnspecified OrderState = iota
+	OrderStateOpen
+	OrderStateCanceled
+	OrderStateCommited
+	OrderStateUnpaid
+	OrderStatePaid
+
+	maxOrderState
 )
+
+func (s *OrderState) UnmarshalCBOR(data []byte) error {
+	dec := DefaultDecoder(bytes.NewReader(data))
+	var i uint
+	err := dec.Decode(&i)
+	if err != nil {
+		return err
+	}
+	if i == uint(OrderStateUnspecified) || i >= uint(maxOrderState) {
+		return fmt.Errorf("invalid order state: %d", i)
+	}
+	*s = OrderState(i)
+	return nil
+}
 
 // AddressDetails represents shipping or billing address information
 type AddressDetails struct {
@@ -401,31 +337,13 @@ type AddressDetails struct {
 type PaymentDetails struct {
 	PaymentID     Hash
 	Total         Uint256
-	ListingHashes []ipld.Cid
-	TTL           uint64 // The time to live in block
+	ListingHashes []ipld.Cid `validate:"required,gt=0"`
+	TTL           uint64     `validate:"required,gt=0"` // The time to live in block
 	ShopSignature Signature
 }
 
+// TODO: add either_or=TxHash,BlockHash
 type OrderPaid struct {
 	TxHash    Hash `cbor:"1,keyasint"`
 	BlockHash Hash `cbor:"2,keyasint"`
-}
-
-/*
-Tags schema
-*/
-type Tag struct {
-	Name       string
-	ListingIds []uint64
-}
-
-/*
-The complete Shop state
-*/
-type Shop struct {
-	Manifest Manifest
-	Listings []Listing
-	Accounts map[EthereumAddress]Account
-	Orders   []Order
-	Tags     []Tag
 }
