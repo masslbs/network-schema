@@ -182,6 +182,11 @@ func TestCreateAllTypes(t *testing.T) {
 			},
 		}},
 
+		{Account{
+			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
+			Guest:    true,
+		}},
+
 		{Listing{
 			Price:     *big.NewInt(12345),
 			ViewState: ListingViewStatePublished,
@@ -226,9 +231,9 @@ func TestCreateAllTypes(t *testing.T) {
 			},
 		}},
 
-		{Account{
-			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
-			Guest:    true,
+		{Tag{
+			Name:       "test",
+			ListingIds: []ObjectId{*bigId},
 		}},
 
 		// TODO: need to add validation based on the state
@@ -254,14 +259,16 @@ func TestCreateAllTypes(t *testing.T) {
 
 		var decoded any
 		switch c.typ.(type) {
-		case Listing:
-			decoded, err = Decode[Listing](testData)
 		case Manifest:
-			decoded, err = Decode[Manifest](testData)
+			decoded, err = decode[Manifest](testData)
+		case Listing:
+			decoded, err = decode[Listing](testData)
+		case Tag:
+			decoded, err = decode[Tag](testData)
 		case Account:
-			decoded, err = Decode[Account](testData)
+			decoded, err = decode[Account](testData)
 		case Order:
-			decoded, err = Decode[Order](testData)
+			decoded, err = decode[Order](testData)
 		default:
 			t.Fatalf("unknown type: %T", c.typ)
 		}
@@ -269,4 +276,11 @@ func TestCreateAllTypes(t *testing.T) {
 		r.NoError(validate.Struct(decoded))
 		r.EqualValues(c.typ, decoded)
 	}
+}
+
+func decode[T any](data []byte) (T, error) {
+	var t T
+	dec := DefaultDecoder(bytes.NewReader(data))
+	err := dec.Decode(&t)
+	return t, err
 }

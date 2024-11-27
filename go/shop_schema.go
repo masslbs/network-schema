@@ -24,13 +24,6 @@ func (err ErrBytesTooShort) Error() string {
 	return fmt.Sprintf("not enough bytes. Expected %d but got %d", err.Want, err.Got)
 }
 
-func Decode[T any](data []byte) (T, error) {
-	var t T
-	dec := DefaultDecoder(bytes.NewReader(data))
-	err := dec.Decode(&t)
-	return t, err
-}
-
 /*
 BASE TYPES
 */
@@ -125,6 +118,25 @@ type Payee struct {
 	// commit: 377aba24796e029945696350db581ec1f65da657
 	// file: src/IPayments.sol#L90-L95.
 	CallAsContract bool
+}
+
+/*
+The complete Shop state
+*/
+type Shop struct {
+	Manifest Manifest
+	Listings []Listing
+	Accounts map[EthereumAddress]Account
+	Orders   []Order
+	Tags     map[string]Tag `validate:"dive,keys,required,notblank,endkeys,required"`
+}
+
+/*
+Tags schema
+*/
+type Tag struct {
+	Name       string `validate:"required,notblank"`
+	ListingIds []ObjectId
 }
 
 /*
