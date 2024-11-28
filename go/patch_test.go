@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,6 +93,7 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 	}
+	testTimeFuture := time.Unix(10000000000, 0)
 
 	testCases := []struct {
 		name     string
@@ -222,7 +224,16 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 
-		// TODO: replace of InStock with ExpectedBy
+		{
+			name:  "replace expectedInStockBy",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0", "expectedInStockBy"}},
+			value: testTimeFuture,
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Nil(l.StockStatuses[0].InStock)
+				a.Equal(testTimeFuture, *l.StockStatuses[0].ExpectedInStockBy)
+			},
+		},
 
 		{
 			name: "remove stock status",
@@ -435,6 +446,7 @@ func TestPatchManifest(t *testing.T) {
 		ChainID: 1337,
 		Address: EthereumAddress([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
 	}
+
 	testCases := []struct {
 		name     string
 		op       OpString

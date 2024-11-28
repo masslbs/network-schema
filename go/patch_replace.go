@@ -7,6 +7,7 @@ package schema
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -130,15 +131,30 @@ func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) er
 		if err != nil {
 			return fmt.Errorf("failed to convert index to int: %w", err)
 		}
-		if index < 0 || index >= len(existing.StockStatuses) {
-			return fmt.Errorf("index out of bounds: %d", index)
+		if len(fields) == 2 {
+			if index < 0 || index >= len(existing.StockStatuses) {
+				return fmt.Errorf("index out of bounds: %d", index)
+			}
+			var newStatus ListingStockStatus
+			err = Unmarshal(value, &newStatus)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal stock status: %w", err)
+			}
+			existing.StockStatuses[index] = newStatus
+		} else if len(fields) == 3 {
+			switch fields[2] {
+			case "expectedInStockBy":
+				var expectedInStockBy time.Time
+				err := Unmarshal(value, &expectedInStockBy)
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal expectedInStockBy: %w", err)
+				}
+				existing.StockStatuses[index].InStock = nil
+				existing.StockStatuses[index].ExpectedInStockBy = &expectedInStockBy
+			default:
+				return fmt.Errorf("unsupported field: %s", fields[2])
+			}
 		}
-		var newStatus ListingStockStatus
-		err = Unmarshal(value, &newStatus)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal stock status: %w", err)
-		}
-		existing.StockStatuses[index] = newStatus
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])
 	}
