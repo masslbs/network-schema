@@ -203,14 +203,16 @@ type ModificationAbsolute struct {
 Listing schema
 */
 type Listing struct {
-	ID        ObjectId                 `validate:"required,gt=0"`
-	Price     Uint256                  `validate:"required"`
-	Metadata  ListingMetadata          `validate:"required"`
-	ViewState ListingViewState         `validate:"required"`
-	Options   map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	ID        ObjectId         `validate:"required,gt=0"`
+	Price     Uint256          `validate:"required"`
+	Metadata  ListingMetadata  `validate:"required"`
+	ViewState ListingViewState `validate:"required"`
+	Options   ListingOptions   `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
+
+type ListingOptions map[string]ListingOption
 
 type ListingStockStatus listingStockStatusHack
 
@@ -246,9 +248,11 @@ type ListingMetadata struct {
 // ListingOption represents a product option
 type ListingOption struct {
 	// the title of the option (like Color, Size, etc.)
-	Title      string                      `validate:"required,notblank"`
-	Variations map[string]ListingVariation `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	Title      string            `validate:"required,notblank"`
+	Variations ListingVariations `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
+
+type ListingVariations map[string]ListingVariation
 
 // ListingVariation represents a variation of a product option
 type ListingVariation struct {
@@ -283,15 +287,6 @@ func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
 	}
 	*s = ListingViewState(i)
 	return nil
-}
-
-type ListingPartial struct {
-	Price     *Uint256
-	Metadata  *ListingMetadata
-	ViewState *ListingViewState
-	Options   map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
-	// one for each combination of variations
-	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
 
 /*

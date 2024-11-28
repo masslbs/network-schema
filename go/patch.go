@@ -12,23 +12,19 @@ This is a modified version of JSON Patch (rfc6902). We first constraint the oper
 package schema
 
 import (
+	"fmt"
+
 	"github.com/fxamacker/cbor/v2"
 )
 
 type Write struct {
-	Patches []PatchTx
+	Patches []Patch
 }
 
-type PatchRx struct {
+type Patch struct {
 	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
-	Path  []any           `validate:"required,gte=2"`
+	Path  PatchPath       `validate:"required,gte=2"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
-}
-
-type PatchTx struct {
-	Op    OpString `validate:"oneof=add replace remove increment decrement"`
-	Path  []any    `validate:"required,gte=2"`
-	Value any      `validate:"required"`
 }
 
 type OpString string
@@ -40,3 +36,51 @@ const (
 	IncrementOp OpString = "increment"
 	DecrementOp OpString = "decrement"
 )
+
+type PatchPath []any
+
+func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
+	var v []any
+	err := Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+	if len(v) < 2 {
+		return fmt.Errorf("PatchPath must have at least two elements [type, id]")
+	}
+	*pp = v
+	return nil
+}
+
+func (p PatchPath) Type() string {
+	assert(len(p) > 0, "PatchPath must have at least one element")
+	first, ok := p[0].(string)
+	if !ok {
+		return ""
+	}
+	return first
+}
+
+func (p PatchPath) ID() ObjectId {
+	assert(len(p) > 1, "PatchPath must have at least two elements")
+	id, ok := p[1].(ObjectId)
+	if !ok {
+		return 0
+	}
+	return id
+}
+
+func (p PatchPath) Fields() []string {
+	assert(len(p) > 1, "PatchPath must have at least two elements")
+	var fields []string
+	for _, field := range p[2:] {
+		fields = append(fields, field.(string))
+	}
+	return fields
+}
+
+func assert(condition bool, msg string) {
+	if !condition {
+		panic(msg)
+	}
+}

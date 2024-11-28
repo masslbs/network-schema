@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"reflect"
 
@@ -38,6 +39,11 @@ func DefaultDecoder(rd io.Reader) cbor.Decoder {
 	return *mode.NewDecoder(rd)
 }
 
+func Unmarshal(data []byte, v interface{}) error {
+	dec := DefaultDecoder(bytes.NewReader(data))
+	return dec.Decode(v)
+}
+
 func DefaultEncoder(w io.Writer) cbor.Encoder {
 	opts := cbor.CanonicalEncOptions()
 	opts.BigIntConvert = cbor.BigIntConvertShortest
@@ -45,6 +51,13 @@ func DefaultEncoder(w io.Writer) cbor.Encoder {
 	mode, err := opts.EncModeWithTags(MassMarketTags())
 	check(err)
 	return *mode.NewEncoder(w)
+}
+
+func Marshal(v interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := DefaultEncoder(&buf)
+	err := enc.Encode(v)
+	return buf.Bytes(), err
 }
 
 func DefaultValidator() *validator.Validate {
@@ -89,6 +102,9 @@ func diag(val any) {
 }
 
 func pretty(data []byte) string {
+	if os.Getenv("PRETTY") == "" {
+		return hex.EncodeToString(data)
+	}
 	shell := exec.Command("cbor2pretty.rb")
 	shell.Stdin = bytes.NewReader(data)
 
