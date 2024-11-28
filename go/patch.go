@@ -40,7 +40,7 @@ const (
 type PatchPath struct {
 	Type   string   `validate:"required,notblank"`
 	ID     ObjectId `validate:"required,gt=0"`
-	Fields []string `validate:"required"`
+	Fields []string
 }
 
 func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
@@ -68,10 +68,4 @@ func (pp PatchPath) MarshalCBOR() ([]byte, error) {
 		path = append(path, field)
 	}
 	return Marshal(path)
-}
-
-func assert(condition bool, msg string) {
-	if !condition {
-		panic(msg)
-	}
 }
