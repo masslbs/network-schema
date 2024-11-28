@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package schema
 
 import (
@@ -68,6 +72,13 @@ func (existing *ListingMetadata) PatchReplace(fields []string, value cbor.RawMes
 			return fmt.Errorf("failed to unmarshal description: %w", err)
 		}
 		existing.Description = description
+	case "title":
+		var title string
+		err := Unmarshal(value, &title)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal title: %w", err)
+		}
+		existing.Title = title
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])
 	}
@@ -94,12 +105,23 @@ func (existing *ListingOptions) PatchReplace(fields []string, value cbor.RawMess
 	}
 
 	// patch a variation
-	if fields[1] == "variations" {
+	switch fields[1] {
+	case "title":
+		var title string
+		err := Unmarshal(value, &title)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal title: %w", err)
+		}
+		option.Title = title
+		(*existing)[fields[0]] = option
+	case "variations":
 		err := option.Variations.PatchReplace(fields[2:], value)
 		if err != nil {
 			return fmt.Errorf("failed to replace option variation: %w", err)
 		}
 		return nil
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[1])
 	}
 
 	return nil

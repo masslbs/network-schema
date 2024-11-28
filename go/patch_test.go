@@ -129,6 +129,40 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 		{
+			name:  "append an image",
+			op:    AddOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "images", "-"}},
+			value: "https://http.cat/images/200.jpg",
+			expected: func(a *assert.Assertions, l Listing) {
+				if !a.Len(l.Metadata.Images, 2) {
+					return
+				}
+				a.Equal("https://http.cat/images/100.jpg", l.Metadata.Images[0])
+				a.Equal("https://http.cat/images/200.jpg", l.Metadata.Images[1])
+			},
+		},
+		{
+			name:  "prepend an image",
+			op:    AddOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "images", "0"}},
+			value: "https://http.cat/images/200.jpg",
+			expected: func(a *assert.Assertions, l Listing) {
+				if !a.Len(l.Metadata.Images, 2) {
+					return
+				}
+				a.Equal("https://http.cat/images/200.jpg", l.Metadata.Images[0])
+				a.Equal("https://http.cat/images/100.jpg", l.Metadata.Images[1])
+			},
+		},
+		{
+			name: "remove an image",
+			op:   RemoveOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "images", "0"}},
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Equal([]string{}, l.Metadata.Images)
+			},
+		},
+		{
 			name:  "replace view state",
 			op:    ReplaceOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"viewState"}},
@@ -138,9 +172,9 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 		{
-			name: "add stock status",
+			name: "append a stock status",
 			op:   AddOp,
-			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses"}},
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "-"}},
 			value: ListingStockStatus{
 				VariationIDs: []ObjectId{2},
 				InStock:      boolptr(true),
@@ -151,6 +185,23 @@ func TestPatchListing(t *testing.T) {
 				}
 				stockStatus := l.StockStatuses[1]
 				a.Equal([]ObjectId{2}, stockStatus.VariationIDs)
+				a.True(*stockStatus.InStock)
+			},
+		},
+		{
+			name: "prepend a stock status",
+			op:   AddOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "0"}},
+			value: ListingStockStatus{
+				VariationIDs: []ObjectId{23},
+				InStock:      boolptr(true),
+			},
+			expected: func(a *assert.Assertions, l Listing) {
+				if !a.Len(l.StockStatuses, 2) {
+					return
+				}
+				stockStatus := l.StockStatuses[0]
+				a.Equal([]ObjectId{23}, stockStatus.VariationIDs)
 				a.True(*stockStatus.InStock)
 			},
 		},
@@ -169,6 +220,14 @@ func TestPatchListing(t *testing.T) {
 				stockStatus := l.StockStatuses[0]
 				a.Equal([]ObjectId{1}, stockStatus.VariationIDs)
 				a.False(*stockStatus.InStock)
+			},
+		},
+		{
+			name: "remove stock status",
+			op:   RemoveOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "0"}},
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Len(l.StockStatuses, 0)
 			},
 		},
 
@@ -209,12 +268,30 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 		{
+			name: "remove an option",
+			op:   RemoveOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color"}},
+			expected: func(a *assert.Assertions, l Listing) {
+				_, ok := l.Options["color"]
+				a.False(ok)
+			},
+		},
+		{
 			name:  "add a variation to an option",
 			op:    AddOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "pink"}},
 			value: testColorOption.Variations["pink"],
 			expected: func(a *assert.Assertions, l Listing) {
 				a.Equal(testColorOption.Variations["pink"], l.Options["color"].Variations["pink"])
+			},
+		},
+		{
+			name:  "replace title of an option",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "title"}},
+			value: "FARBE",
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Equal("FARBE", l.Options["color"].Title)
 			},
 		},
 		{
@@ -235,6 +312,15 @@ func TestPatchListing(t *testing.T) {
 				a.Equal(testColorOption.Variations["pink"].VariationInfo, l.Options["color"].Variations["b"].VariationInfo)
 			},
 		},
+		{
+			name: "remove a variation from an option",
+			op:   RemoveOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "b"}},
+			expected: func(a *assert.Assertions, l Listing) {
+				_, ok := l.Options["color"].Variations["b"]
+				a.False(ok)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -251,18 +337,18 @@ func TestPatchListing(t *testing.T) {
 			r.Equal(tc.path, decodedPatch.Path)
 
 			a := assert.New(t)
-			var failed bool
+			var err error
 			switch decodedPatch.Op {
 			case ReplaceOp:
-				err := lis.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
-				failed = a.NoError(err)
+				err = lis.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
 			case AddOp:
-				err := lis.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
-				failed = a.NoError(err)
+				err = lis.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
+			case RemoveOp:
+				err = lis.PatchRemove(decodedPatch.Path.Fields)
+			default:
+				t.Fatalf("unsupported op: %s", decodedPatch.Op)
 			}
-			if failed {
-				return
-			}
+			r.NoError(err)
 			a.NoError(validate.Struct(lis))
 			tc.expected(a, lis)
 		})

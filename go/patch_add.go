@@ -1,7 +1,13 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package schema
 
 import (
 	"fmt"
+	"net/url"
+	"strconv"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -11,6 +17,8 @@ func (existing *Listing) PatchAdd(fields []string, value cbor.RawMessage) error 
 		return fmt.Errorf("PatchAdd requires at least one field")
 	}
 	switch fields[0] {
+	case "metadata":
+		return existing.Metadata.PatchAdd(fields[1:], value)
 	case "options":
 		return existing.Options.PatchAdd(fields[1:], value)
 	case "StockStatuses":
@@ -19,8 +27,57 @@ func (existing *Listing) PatchAdd(fields []string, value cbor.RawMessage) error 
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal stock status: %w", err)
 		}
-		existing.StockStatuses = append(existing.StockStatuses, stockStatus)
-		return nil
+		switch fields[1] {
+		case "-": // append to the list
+			existing.StockStatuses = append(existing.StockStatuses, stockStatus)
+			return nil
+		default:
+			index, err := strconv.Atoi(fields[1])
+			if err != nil {
+				return fmt.Errorf("failed to convert index to int: %w", err)
+			}
+			if index < 0 || index >= len(existing.StockStatuses) {
+				return fmt.Errorf("index out of bounds: %d", index)
+			}
+			existing.StockStatuses = append(existing.StockStatuses[:index], append([]ListingStockStatus{stockStatus}, existing.StockStatuses[index:]...)...)
+			return nil
+		}
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+}
+
+func (existing *ListingMetadata) PatchAdd(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchAdd metadata requires at least one field")
+	}
+	switch fields[0] {
+	case "images":
+		var image string
+		err := Unmarshal(value, &image)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal image: %w", err)
+		}
+		_, err = url.Parse(image)
+		if err != nil {
+			return fmt.Errorf("invalid image URL: %w", err)
+		}
+		switch fields[1] {
+		case "-": // append to the list
+			existing.Images = append(existing.Images, image)
+			return nil
+		default:
+			index, err := strconv.Atoi(fields[1])
+			if err != nil {
+				return fmt.Errorf("failed to convert index to int: %w", err)
+			}
+			if index < 0 || index >= len(existing.Images) {
+				return fmt.Errorf("index out of bounds: %d", index)
+			}
+			// splice the element into the list
+			existing.Images = append(existing.Images[:index], append([]string{image}, existing.Images[index:]...)...)
+			return nil
+		}
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])
 	}
