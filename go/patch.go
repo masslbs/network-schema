@@ -23,7 +23,7 @@ type Write struct {
 
 type Patch struct {
 	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
-	Path  PatchPath       `validate:"required,gte=2"`
+	Path  PatchPath       `validate:"required"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
 }
 
@@ -37,7 +37,11 @@ const (
 	DecrementOp OpString = "decrement"
 )
 
-type PatchPath []any
+type PatchPath struct {
+	Type   string   `validate:"required,notblank"`
+	ID     ObjectId `validate:"required,gt=0"`
+	Fields []string `validate:"required"`
+}
 
 func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
 	var v []any
@@ -48,35 +52,22 @@ func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
 	if len(v) < 2 {
 		return fmt.Errorf("PatchPath must have at least two elements [type, id]")
 	}
-	*pp = v
+	pp.Type = v[0].(string)
+	pp.ID = v[1].(ObjectId)
+	for _, field := range v[2:] {
+		pp.Fields = append(pp.Fields, field.(string))
+	}
 	return nil
 }
 
-func (p PatchPath) Type() string {
-	assert(len(p) > 0, "PatchPath must have at least one element")
-	first, ok := p[0].(string)
-	if !ok {
-		return ""
+func (pp PatchPath) MarshalCBOR() ([]byte, error) {
+	var path []any
+	path = append(path, pp.Type)
+	path = append(path, pp.ID)
+	for _, field := range pp.Fields {
+		path = append(path, field)
 	}
-	return first
-}
-
-func (p PatchPath) ID() ObjectId {
-	assert(len(p) > 1, "PatchPath must have at least two elements")
-	id, ok := p[1].(ObjectId)
-	if !ok {
-		return 0
-	}
-	return id
-}
-
-func (p PatchPath) Fields() []string {
-	assert(len(p) > 1, "PatchPath must have at least two elements")
-	var fields []string
-	for _, field := range p[2:] {
-		fields = append(fields, field.(string))
-	}
-	return fields
+	return Marshal(path)
 }
 
 func assert(condition bool, msg string) {

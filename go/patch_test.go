@@ -7,7 +7,6 @@ package schema
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"math/big"
 	"testing"
 
@@ -25,7 +24,7 @@ func TestPatchAdd(t *testing.T) {
 
 	var createListing Patch
 	createListing.Op = AddOp
-	createListing.Path = []any{"listing", ObjectId(1)}
+	createListing.Path = PatchPath{Type: "listing", ID: 1}
 
 	lis := testListing()
 	createListing.Value, err = Marshal(lis)
@@ -41,7 +40,8 @@ func TestPatchAdd(t *testing.T) {
 	var rxOp Patch
 	err = dec.Decode(&rxOp)
 	r.NoError(err)
-	r.Equal("listing", rxOp.Path[0])
+	r.Equal("listing", rxOp.Path.Type)
+	r.Equal(ObjectId(1), rxOp.Path.ID)
 	r.NoError(validate.Struct(rxOp))
 
 	dec = DefaultDecoder(bytes.NewReader(rxOp.Value))
@@ -53,10 +53,10 @@ func TestPatchAdd(t *testing.T) {
 	r.EqualValues(lis, rxLis)
 }
 
-func TestPatchReplaceListing(t *testing.T) {
+func TestPatchListing(t *testing.T) {
 	r := require.New(t)
 
-	testOption := ListingOption{
+	testColorOption := ListingOption{
 		Title: "Color",
 		Variations: map[string]ListingVariation{
 			"pink": {
@@ -67,7 +67,7 @@ func TestPatchReplaceListing(t *testing.T) {
 				},
 			},
 			"orange": {
-				ID: 2,
+				ID: 444,
 				VariationInfo: ListingMetadata{
 					Title:       "Orange",
 					Description: "Orange color",
@@ -76,15 +76,37 @@ func TestPatchReplaceListing(t *testing.T) {
 		},
 	}
 
+	testSizeOption := ListingOption{
+		Title: "Size",
+		Variations: map[string]ListingVariation{
+			"s": {
+				ID: 33,
+				VariationInfo: ListingMetadata{
+					Title:       "Small",
+					Description: "Small size",
+				},
+			},
+			"m": {
+				ID: 44,
+				VariationInfo: ListingMetadata{
+					Title:       "Medium",
+					Description: "Medium size",
+				},
+			},
+		},
+	}
+
 	testCases := []struct {
 		name     string
+		op       OpString
 		path     PatchPath
 		value    interface{}
 		expected func(*require.Assertions, Listing)
 	}{
 		{
 			name:  "replace price",
-			path:  []any{"listing", ObjectId(1), "price"},
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"price"}},
 			value: *big.NewInt(66666),
 			expected: func(r *require.Assertions, l Listing) {
 				r.Equal(*big.NewInt(66666), l.Price)
@@ -92,7 +114,8 @@ func TestPatchReplaceListing(t *testing.T) {
 		},
 		{
 			name:  "replace description",
-			path:  []any{"listing", ObjectId(1), "metadata", "description"},
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "description"}},
 			value: "new description",
 			expected: func(r *require.Assertions, l Listing) {
 				r.Equal("new description", l.Metadata.Description)
@@ -100,7 +123,8 @@ func TestPatchReplaceListing(t *testing.T) {
 		},
 		{
 			name:  "replace whole metadata",
-			path:  []any{"listing", ObjectId(1), "metadata"},
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata"}},
 			value: testListing().Metadata,
 			expected: func(r *require.Assertions, l Listing) {
 				r.Equal(testListing().Metadata, l.Metadata)
@@ -108,7 +132,8 @@ func TestPatchReplaceListing(t *testing.T) {
 		},
 		{
 			name:  "replace view state",
-			path:  []any{"listing", ObjectId(1), "viewState"},
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"viewState"}},
 			value: ListingViewStatePublished,
 			expected: func(r *require.Assertions, l Listing) {
 				r.Equal(ListingViewStatePublished, l.ViewState)
@@ -116,37 +141,57 @@ func TestPatchReplaceListing(t *testing.T) {
 		},
 		// map manipulation of Options
 		{
-			name:  "replace one option",
-			path:  []any{"listing", ObjectId(1), "options", "color"},
-			value: testOption,
+			name:  "add an option",
+			op:    AddOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "size"}},
+			value: testSizeOption,
 			expected: func(r *require.Assertions, l Listing) {
-				r.Equal(testOption, l.Options["color"])
+				sizeOption, ok := l.Options["size"]
+				r.True(ok)
+				r.Equal(testSizeOption, sizeOption)
+			},
+		},
+		{
+			name:  "replace one option",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color"}},
+			value: testColorOption,
+			expected: func(r *require.Assertions, l Listing) {
+				colorOption, ok := l.Options["color"]
+				r.True(ok)
+				r.Equal(testColorOption, colorOption)
 			},
 		},
 		{
 			name: "replace whole options",
-			path: []any{"listing", ObjectId(1), "options"},
+			op:   ReplaceOp,
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options"}},
 			value: ListingOptions{
-				"color": testOption,
+				"color": testColorOption,
 			},
 			expected: func(r *require.Assertions, l Listing) {
-				r.Equal(ListingOptions{"color": testOption}, l.Options)
+				colorOption, ok := l.Options["color"]
+				r.True(ok)
+				r.Equal(testColorOption, colorOption)
 			},
 		},
+
 		{
 			name:  "replace variation of an option",
-			path:  []any{"listing", ObjectId(1), "options", "color", "variations", "b"},
-			value: testOption.Variations["pink"],
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "b"}},
+			value: testColorOption.Variations["pink"],
 			expected: func(r *require.Assertions, l Listing) {
-				r.Equal(testOption.Variations["pink"], l.Options["color"].Variations["b"])
+				r.Equal(testColorOption.Variations["pink"], l.Options["color"].Variations["b"])
 			},
 		},
 		{
 			name:  "replace variation info",
-			path:  []any{"listing", ObjectId(1), "options", "color", "variations", "b", "variationInfo"},
-			value: testOption.Variations["pink"].VariationInfo,
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "b", "variationInfo"}},
+			value: testColorOption.Variations["pink"].VariationInfo,
 			expected: func(r *require.Assertions, l Listing) {
-				r.Equal(testOption.Variations["pink"].VariationInfo, l.Options["color"].Variations["b"].VariationInfo)
+				r.Equal(testColorOption.Variations["pink"].VariationInfo, l.Options["color"].Variations["b"].VariationInfo)
 			},
 		},
 	}
@@ -154,23 +199,28 @@ func TestPatchReplaceListing(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			lis := testListing()
-			patch := createPatch(ReplaceOp, tc.path, tc.value)
+			patch := createPatch(tc.op, tc.path, tc.value)
 			// round trip to make sure we can encode/decode the patch
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			r.Equal(ReplaceOp, decodedPatch.Op)
+			r.Equal(tc.op, decodedPatch.Op)
 			r.Equal(tc.path, decodedPatch.Path)
 
-			err := lis.Replace(decodedPatch.Path.Fields(), decodedPatch.Value)
-			r.NoError(err)
-			r := require.New(t)
+			switch decodedPatch.Op {
+			case ReplaceOp:
+				err := lis.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
+				r.NoError(err)
+			case AddOp:
+				err := lis.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
+				r.NoError(err)
+			}
 			tc.expected(r, lis)
 		})
 	}
 }
 
-func createPatch(op OpString, path []any, value interface{}) Patch {
+func createPatch(op OpString, path PatchPath, value interface{}) Patch {
 	encodedValue, err := Marshal(value)
 	if err != nil {
 		panic(err)
@@ -231,7 +281,26 @@ func testListing() Listing {
 	return lis
 }
 
-func (existing *Listing) Replace(fields []string, value cbor.RawMessage) error {
+func (existing *Listing) PatchAdd(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchAdd requires at least one field")
+	}
+	switch fields[0] {
+	case "options":
+		assert(len(fields) == 2, "PatchAdd options requires exactly two fields")
+		var option ListingOption
+		err := Unmarshal(value, &option)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal option: %w", err)
+		}
+		existing.Options[fields[1]] = option
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+	return nil
+}
+
+func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) error {
 	switch fields[0] {
 	case "price":
 		var price Uint256
@@ -241,7 +310,7 @@ func (existing *Listing) Replace(fields []string, value cbor.RawMessage) error {
 		}
 		existing.Price = price
 	case "metadata":
-		err := existing.Metadata.Replace(fields[1:], value)
+		err := existing.Metadata.PatchReplace(fields[1:], value)
 		if err != nil {
 			return fmt.Errorf("failed to replace metadata: %w", err)
 		}
@@ -253,7 +322,7 @@ func (existing *Listing) Replace(fields []string, value cbor.RawMessage) error {
 		}
 		existing.ViewState = viewState
 	case "options":
-		err := existing.Options.Replace(fields[1:], value)
+		err := existing.Options.PatchReplace(fields[1:], value)
 		if err != nil {
 			return fmt.Errorf("failed to replace options: %w", err)
 		}
@@ -268,7 +337,7 @@ func (existing *Listing) Replace(fields []string, value cbor.RawMessage) error {
 	return nil
 }
 
-func (existing *ListingMetadata) Replace(fields []string, value cbor.RawMessage) error {
+func (existing *ListingMetadata) PatchReplace(fields []string, value cbor.RawMessage) error {
 	if len(fields) == 0 { // replace the whole metadata
 		return Unmarshal(value, existing)
 	}
@@ -286,7 +355,7 @@ func (existing *ListingMetadata) Replace(fields []string, value cbor.RawMessage)
 	return nil
 }
 
-func (existing *ListingOptions) Replace(fields []string, value cbor.RawMessage) error {
+func (existing *ListingOptions) PatchReplace(fields []string, value cbor.RawMessage) error {
 	if len(fields) == 0 { // replace the whole options
 		return Unmarshal(value, existing)
 	}
@@ -306,7 +375,7 @@ func (existing *ListingOptions) Replace(fields []string, value cbor.RawMessage) 
 	}
 
 	// patch a variation
-	err := option.Variations.Replace(fields[2:], value)
+	err := option.Variations.PatchReplace(fields[2:], value)
 	if err != nil {
 		return fmt.Errorf("failed to replace option variation: %w", err)
 	}
@@ -314,8 +383,7 @@ func (existing *ListingOptions) Replace(fields []string, value cbor.RawMessage) 
 	return nil
 }
 
-func (existing *ListingVariations) Replace(fields []string, value cbor.RawMessage) error {
-	log.Printf("replacing variations: %v", fields)
+func (existing *ListingVariations) PatchReplace(fields []string, value cbor.RawMessage) error {
 	if len(fields) == 0 { // replace the whole variations
 		return Unmarshal(value, existing)
 	}
