@@ -6,8 +6,70 @@ package schema
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 )
+
+// Manifest
+// ========
+
+func (existing *Manifest) PatchRemove(fields []string) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchRemove manifest requires at least one field")
+	}
+	switch fields[0] {
+	case "payees":
+		return existing.Payees.PatchRemove(fields[1:])
+	case "shippingRegions":
+		return existing.ShippingRegions.PatchRemove(fields[1:])
+	case "acceptedCurrencies":
+		return existing.AcceptedCurrencies.PatchRemove(fields[1:])
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+}
+
+func (existing Payees) PatchRemove(fields []string) error {
+	if len(fields) != 1 {
+		return fmt.Errorf("Payees requires exactly one field")
+	}
+	_, has := existing[fields[0]]
+	if !has {
+		return fmt.Errorf("payee not found: %s", fields[0])
+	}
+	delete(existing, fields[0])
+	return nil
+}
+
+func (existing ShippingRegions) PatchRemove(fields []string) error {
+	if len(fields) != 1 {
+		return fmt.Errorf("ShippingRegions requires exactly one field")
+	}
+	_, has := existing[fields[0]]
+	if !has {
+		return fmt.Errorf("shipping region not found: %s", fields[0])
+	}
+	delete(existing, fields[0])
+	return nil
+}
+
+func (existing *ChainAddresses) PatchRemove(fields []string) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchRemove acceptedCurrencies requires at least one field")
+	}
+	index, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(*existing) {
+		return fmt.Errorf("index out of bounds: %d", index)
+	}
+	*existing = slices.Delete(*existing, index, index+1)
+	return nil
+}
+
+// Listing
+// =======
 
 func (existing *Listing) PatchRemove(fields []string) error {
 	if len(fields) == 0 {
@@ -16,7 +78,7 @@ func (existing *Listing) PatchRemove(fields []string) error {
 	switch fields[0] {
 	case "metadata":
 		return existing.Metadata.PatchRemove(fields[1:])
-	case "StockStatuses":
+	case "stockStatuses":
 		// TODO: need to make []ListingStockStatus it's own type
 		index, err := strconv.Atoi(fields[1])
 		if err != nil {
@@ -25,7 +87,7 @@ func (existing *Listing) PatchRemove(fields []string) error {
 		if index < 0 || index >= len(existing.StockStatuses) {
 			return fmt.Errorf("index out of bounds: %d", index)
 		}
-		existing.StockStatuses = append(existing.StockStatuses[:index], existing.StockStatuses[index+1:]...)
+		existing.StockStatuses = slices.Delete(existing.StockStatuses, index, index+1)
 		return nil
 	case "options":
 		return existing.Options.PatchRemove(fields[1:])
@@ -47,7 +109,7 @@ func (existing *ListingMetadata) PatchRemove(fields []string) error {
 		if index < 0 || index >= len(existing.Images) {
 			return fmt.Errorf("index out of bounds: %d", index)
 		}
-		existing.Images = append(existing.Images[:index], existing.Images[index+1:]...)
+		existing.Images = slices.Delete(existing.Images, index, index+1)
 		return nil
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])

@@ -40,8 +40,8 @@ const (
 // PatchPath encodes as an opaque array of [type, id, fields...]
 // This utility helps getting type and id in the expected types for Go.
 type PatchPath struct {
-	Type   string   `validate:"required,notblank"`
-	ID     ObjectId `validate:"required,gt=0"`
+	Type   string `validate:"required,notblank"`
+	ID     ObjectId
 	Fields []string
 }
 

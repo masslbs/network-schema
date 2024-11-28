@@ -11,6 +11,91 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
+// Manifest
+// ========
+
+func (existing *Manifest) PatchReplace(fields []string, value cbor.RawMessage) error {
+	switch fields[0] {
+	case "payees":
+		return existing.Payees.PatchReplace(fields[1:], value)
+	case "shippingRegions":
+		return existing.ShippingRegions.PatchReplace(fields[1:], value)
+	case "acceptedCurrencies":
+		return existing.AcceptedCurrencies.PatchReplace(fields[1:], value)
+	case "pricingCurrency":
+		var currency ChainAddress
+		err := Unmarshal(value, &currency)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal currency: %w", err)
+		}
+		existing.PricingCurrency = currency
+		return nil
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+}
+
+func (existing ChainAddresses) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, &existing)
+	}
+	index, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(existing) {
+		return fmt.Errorf("index out of bounds: %d", index)
+	}
+	var currency ChainAddress
+	err = Unmarshal(value, &currency)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal currency: %w", err)
+	}
+	existing[index] = currency
+	return nil
+}
+
+func (existing Payees) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, &existing)
+	}
+
+	if len(fields) != 1 {
+		return fmt.Errorf("Payees requires exactly one field")
+	}
+	_, has := existing[fields[0]]
+	if !has {
+		return fmt.Errorf("payee not found: %s", fields[0])
+	}
+
+	var payee Payee
+	err := Unmarshal(value, &payee)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal payee: %w", err)
+	}
+	existing[fields[0]] = payee
+	return nil
+}
+
+func (existing ShippingRegions) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, &existing)
+	}
+	if len(fields) != 1 {
+		return fmt.Errorf("ShippingRegions requires exactly one field")
+	}
+	var region ShippingRegion
+	err := Unmarshal(value, &region)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal shipping region: %w", err)
+	}
+	existing[fields[0]] = region
+	return nil
+}
+
+// Listing
+// =======
+
 func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) error {
 	switch fields[0] {
 	case "price":
@@ -37,7 +122,7 @@ func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) er
 		if err != nil {
 			return fmt.Errorf("failed to replace options: %w", err)
 		}
-	case "StockStatuses":
+	case "stockStatuses":
 		if len(fields) == 1 {
 			return fmt.Errorf("StockStatuses requires at least one field")
 		}

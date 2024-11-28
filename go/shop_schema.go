@@ -153,13 +153,19 @@ type Manifest struct {
 	// shop metadata lives in the NFT
 	ShopId Uint256 `validate:"required"`
 	// maps payee names to payee objects
-	Payees map[string]Payee `validate:"nonEmptyMapKeys"`
+	Payees Payees `validate:"nonEmptyMapKeys"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	AcceptedCurrencies []ChainAddress `validate:"required,gt=0"`
+	AcceptedCurrencies ChainAddresses `validate:"required,gt=0"`
 	// the currency listings are priced in
-	PricingCurrency ChainAddress              `validate:"required"`
-	ShippingRegions map[string]ShippingRegion `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	PricingCurrency ChainAddress    `validate:"required"`
+	ShippingRegions ShippingRegions `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
+
+type Payees map[string]Payee
+
+type ShippingRegions map[string]ShippingRegion
+
+type ChainAddresses []ChainAddress
 
 type ShippingRegion struct {
 	Country        string

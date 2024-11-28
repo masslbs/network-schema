@@ -53,7 +53,6 @@ func TestPatchAdd(t *testing.T) {
 }
 
 func TestPatchListing(t *testing.T) {
-
 	testColorOption := ListingOption{
 		Title: "Color",
 		Variations: map[string]ListingVariation{
@@ -174,7 +173,7 @@ func TestPatchListing(t *testing.T) {
 		{
 			name: "append a stock status",
 			op:   AddOp,
-			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "-"}},
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "-"}},
 			value: ListingStockStatus{
 				VariationIDs: []ObjectId{2},
 				InStock:      boolptr(true),
@@ -191,7 +190,7 @@ func TestPatchListing(t *testing.T) {
 		{
 			name: "prepend a stock status",
 			op:   AddOp,
-			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "0"}},
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0"}},
 			value: ListingStockStatus{
 				VariationIDs: []ObjectId{23},
 				InStock:      boolptr(true),
@@ -208,7 +207,7 @@ func TestPatchListing(t *testing.T) {
 		{
 			name: "replace stock status",
 			op:   ReplaceOp,
-			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "0"}},
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0"}},
 			value: ListingStockStatus{
 				VariationIDs: []ObjectId{1},
 				InStock:      boolptr(false),
@@ -222,10 +221,13 @@ func TestPatchListing(t *testing.T) {
 				a.False(*stockStatus.InStock)
 			},
 		},
+
+		// TODO: replace of InStock with ExpectedBy
+
 		{
 			name: "remove stock status",
 			op:   RemoveOp,
-			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"StockStatuses", "0"}},
+			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0"}},
 			expected: func(a *assert.Assertions, l Listing) {
 				a.Len(l.StockStatuses, 0)
 			},
@@ -418,4 +420,199 @@ func testListing() Listing {
 		},
 	}
 	return lis
+}
+
+func TestPatchManifest(t *testing.T) {
+
+	testPayee := Payee{
+		CallAsContract: true,
+		Address: ChainAddress{
+			ChainID: 1337,
+			Address: EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+		},
+	}
+	testCurrency := ChainAddress{
+		ChainID: 1337,
+		Address: EthereumAddress([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
+	}
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    interface{}
+		expected func(*assert.Assertions, Manifest)
+	}{
+		// simple field mutations
+		{
+			name:  "replace pricing currency",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"pricingCurrency"}},
+			value: testCurrency,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Equal(testCurrency, m.PricingCurrency)
+			},
+		},
+
+		// array mutations
+		{
+			name:  "append accepted currency",
+			op:    AddOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"acceptedCurrencies", "-"}},
+			value: testCurrency,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.AcceptedCurrencies, 3)
+				a.Equal(testCurrency, m.AcceptedCurrencies[2])
+			},
+		},
+		{
+			name:  "insert accepted currency at index",
+			op:    AddOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"acceptedCurrencies", "0"}},
+			value: testCurrency,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.AcceptedCurrencies, 3)
+				a.Equal(testCurrency, m.AcceptedCurrencies[0])
+			},
+		},
+		{
+			name:  "replace accepted currency",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"acceptedCurrencies", "0"}},
+			value: testCurrency,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Equal(testCurrency, m.AcceptedCurrencies[0])
+			},
+		},
+		{
+			name: "remove accepted currency",
+			op:   RemoveOp,
+			path: PatchPath{Type: "manifest", ID: 0, Fields: []string{"acceptedCurrencies", "0"}},
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.AcceptedCurrencies, 1)
+			},
+		},
+
+		// map mutations
+		{
+			name:  "replace payee",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"payees", "default"}},
+			value: testPayee,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Equal(testPayee, m.Payees["default"])
+			},
+		},
+		{
+			name:  "add a payee",
+			op:    AddOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"payees", "test"}},
+			value: testPayee,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.Payees, 2)
+				a.Equal(testPayee, m.Payees["test"])
+			},
+		},
+		{
+			name: "remove a payee",
+			op:   RemoveOp,
+			path: PatchPath{Type: "manifest", ID: 0, Fields: []string{"payees", "default"}},
+			expected: func(a *assert.Assertions, m Manifest) {
+				_, ok := m.Payees["default"]
+				a.False(ok)
+			},
+		},
+		{
+			name:  "add a shipping region",
+			op:    AddOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"shippingRegions", "germany"}},
+			value: ShippingRegion{Country: "DE"},
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.ShippingRegions, 2)
+				a.Equal("DE", m.ShippingRegions["germany"].Country)
+			},
+		},
+		{
+			name:  "replace a shipping region",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "manifest", ID: 0, Fields: []string{"shippingRegions", "default"}},
+			value: ShippingRegion{Country: "DE"},
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Equal("DE", m.ShippingRegions["default"].Country)
+			},
+		},
+		{
+			name: "remove a shipping region",
+			op:   RemoveOp,
+			path: PatchPath{Type: "manifest", ID: 0, Fields: []string{"shippingRegions", "default"}},
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Len(m.ShippingRegions, 0)
+				_, ok := m.ShippingRegions["default"]
+				a.False(ok)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			manifest := testManifest()
+
+			patch := createPatch(tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			r := require.New(t)
+			r.Equal(tc.op, decodedPatch.Op)
+			r.Equal(tc.path, decodedPatch.Path)
+
+			a := assert.New(t)
+			var err error
+			switch decodedPatch.Op {
+			case ReplaceOp:
+				err = manifest.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
+			case AddOp:
+				err = manifest.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
+			case RemoveOp:
+				err = manifest.PatchRemove(decodedPatch.Path.Fields)
+			default:
+				t.Fatalf("unsupported op: %s", decodedPatch.Op)
+			}
+			r.NoError(err)
+			a.NoError(validate.Struct(manifest))
+			tc.expected(a, manifest)
+		})
+	}
+}
+
+func testManifest() Manifest {
+	return Manifest{
+		ShopId: *big.NewInt(1),
+		Payees: map[string]Payee{
+			"default": {
+				CallAsContract: false,
+				Address: ChainAddress{
+					ChainID: 1337,
+					Address: EthereumAddress([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}),
+				},
+			},
+		},
+		AcceptedCurrencies: []ChainAddress{
+			{
+				ChainID: 1337,
+				Address: EthereumAddress{},
+			},
+			{
+				ChainID: 1337,
+				Address: EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+			},
+		},
+		PricingCurrency: ChainAddress{
+			ChainID: 1337,
+			Address: EthereumAddress{},
+		},
+		ShippingRegions: map[string]ShippingRegion{
+			"default": {
+				Country: "DE",
+			},
+		},
+	}
 }
