@@ -29,7 +29,7 @@ func (err ErrBytesTooShort) Error() string {
 BASE TYPES
 */
 
-type ObjectId = big.Int
+type ObjectId = uint64
 
 // Signature represents a cryptographic signature
 const SignatureSize = 64
@@ -172,6 +172,7 @@ type ShippingRegion struct {
 type PriceModifier priceModifierHack
 
 // using pointers here to express optionality clearer
+// TODO: add validate:"either_or=ModificationPrecents,ModificationAbsolute"`
 type priceModifierHack struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
@@ -202,6 +203,7 @@ type ModificationAbsolute struct {
 Listing schema
 */
 type Listing struct {
+	ID        ObjectId         `validate:"required,gt=0"`
 	Price     Uint256          `validate:"required"`
 	Metadata  ListingMetadata  `validate:"required"`
 	ViewState ListingViewState `validate:"required"`
@@ -214,7 +216,7 @@ type Listing struct {
 type ListingStockStatus listingStockStatusHack
 
 type listingStockStatusHack struct {
-	VariationIDs []uint64
+	VariationIDs []ObjectId
 	// one of the following should be set
 	InStock           *bool      `cbor:",omitempty"`
 	ExpectedInStockBy *time.Time `cbor:",omitempty"`
@@ -251,7 +253,8 @@ type ListingOption struct {
 
 // ListingVariation represents a variation of a product option
 type ListingVariation struct {
-	// the metadata of the variation: for example if the option is Color
+	ID ObjectId `validate:"required,gt=0"`
+	// VariationInfo is the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
 	VariationInfo ListingMetadata `validate:"required"`
 	PriceModifier PriceModifier   `cbor:",omitempty"`
@@ -309,17 +312,16 @@ type Order struct {
 func OrderValidation(sl validator.StructLevel) {
 	order := sl.Current().Interface().(Order)
 	switch order.State {
-	case OrderStateOpen:
-		if order.PaymentDetails != nil {
-			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "notAllowed", "")
+	case OrderStatePaid:
+		if order.TxDetails == nil {
+			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
 		}
-		if order.TxDetails != nil {
-			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "notAllowed", "")
+		fallthrough
+	case OrderStateUnpaid:
+		if order.PaymentDetails == nil {
+			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
-	case OrderStateCanceled:
-		if order.CanceledAt == nil {
-			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
-		}
+		fallthrough
 	case OrderStateCommited:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
@@ -331,17 +333,12 @@ func OrderValidation(sl validator.StructLevel) {
 			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
 		}
-	case OrderStateUnpaid:
-		if order.PaymentDetails == nil {
-			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
+	case OrderStateCanceled:
+		if order.CanceledAt == nil {
+			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
 		}
-	case OrderStatePaid:
-		if order.PaymentDetails == nil {
-			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
-		}
-		if order.TxDetails == nil {
-			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
-		}
+	case OrderStateOpen:
+		// noop
 	default:
 		sl.ReportError(order.State, "State", "State", fmt.Sprintf("invalid order state: %d", order.State), "")
 	}
@@ -349,9 +346,9 @@ func OrderValidation(sl validator.StructLevel) {
 
 // OrderedItem represents an item in an order
 type OrderedItem struct {
-	ListingID    ObjectId `validate:"required"`
-	VariationIDs []ObjectId
-	Quantity     uint32 `validate:"required,gt=0"`
+	ListingID    ObjectId   `validate:"required,gt=0"`
+	VariationIDs []ObjectId `cbor:",omitempty"`
+	Quantity     uint32     `validate:"required,gt=0"`
 }
 
 // OrderState represents the possible states of an order
@@ -402,9 +399,9 @@ type PaymentDetails struct {
 	ShopSignature Signature
 }
 
-// TODO: add either_or=TxHash,BlockHash
 type OrderPaid orderPaidHack
 
+// TODO: add either_or=TxHash,BlockHash
 type orderPaidHack struct {
 	TxHash    *Hash `cbor:",omitempty"`
 	BlockHash *Hash `cbor:",omitempty"`

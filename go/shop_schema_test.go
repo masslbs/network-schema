@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/fission-codes/go-car-mirror/ipld"
 	"github.com/fxamacker/cbor/v2"
@@ -42,7 +43,7 @@ func TestSignatureIncomplete(t *testing.T) {
 	r.IsType(ErrBytesTooShort{}, err)
 }
 
-func TestMissingField(t *testing.T) {
+func TestMissingFields(t *testing.T) {
 	r := require.New(t)
 
 	type FakeListing struct {
@@ -104,7 +105,7 @@ func TestCreateOp(t *testing.T) {
 
 	var createListing Patch
 	createListing.Op = AddOp
-	createListing.Path = []any{"listing", ObjectId(*big.NewInt(238000))}
+	createListing.Path = []any{"listing", 1}
 
 	var lis Listing
 	lis.ViewState = ListingViewStatePublished
@@ -143,9 +144,19 @@ func TestCreateOp(t *testing.T) {
 }
 
 func TestCreateAllTypes(t *testing.T) {
-	r := require.New(t)
 
 	bigId := big.NewInt(12345)
+
+	testAddress := &AddressDetails{
+		Name:         "test",
+		Address1:     "test",
+		City:         "test",
+		PostalCode:   "test",
+		Country:      "test",
+		EmailAddress: "test@foo.bar",
+		PhoneNumber:  strptr("+21911223344"),
+	}
+	expectedInStockBy := time.Unix(9999999999, 0)
 
 	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
@@ -185,6 +196,7 @@ func TestCreateAllTypes(t *testing.T) {
 		}},
 
 		{Listing{
+			ID:        1,
 			Price:     *big.NewInt(12345),
 			ViewState: ListingViewStatePublished,
 			Metadata: ListingMetadata{
@@ -197,6 +209,7 @@ func TestCreateAllTypes(t *testing.T) {
 					Title: "Farbe",
 					Variations: map[string]ListingVariation{
 						"R": {
+							ID: 100,
 							VariationInfo: ListingMetadata{
 								Title:       "Rot",
 								Description: "short desc",
@@ -206,6 +219,7 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 						},
 						"G": {
+							ID: 200,
 							VariationInfo: ListingMetadata{
 								Title:       "Grün",
 								Description: "short desc",
@@ -218,6 +232,7 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 						},
 						"B": {
+							ID: 300,
 							VariationInfo: ListingMetadata{
 								Title:       "Blau",
 								Description: "short desc",
@@ -226,16 +241,30 @@ func TestCreateAllTypes(t *testing.T) {
 					},
 				},
 			},
+			StockStatuses: []ListingStockStatus{
+				{
+					VariationIDs: []uint64{100},
+					InStock:      boolptr(true),
+				},
+				{
+					VariationIDs: []uint64{200},
+					InStock:      boolptr(false),
+				},
+				{
+					VariationIDs:      []uint64{300},
+					ExpectedInStockBy: &expectedInStockBy,
+				},
+			},
 		}},
 
 		{Tag{
 			Name:       "test",
-			ListingIds: []ObjectId{*bigId},
+			ListingIds: []uint64{1, 2, 3},
 		}},
 
 		{Order{
 			Items: []OrderedItem{{
-				ListingID: ObjectId(*bigId),
+				ListingID: 1,
 				Quantity:  1,
 			}},
 			State: OrderStateOpen,
@@ -243,7 +272,7 @@ func TestCreateAllTypes(t *testing.T) {
 
 		{Order{
 			Items: []OrderedItem{{
-				ListingID: ObjectId(*bigId),
+				ListingID: 1,
 				Quantity:  1,
 			}},
 			State: OrderStateCommited,
@@ -252,20 +281,12 @@ func TestCreateAllTypes(t *testing.T) {
 				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
-			InvoiceAddress: &AddressDetails{
-				Name:         "test",
-				Address1:     "test",
-				City:         "test",
-				PostalCode:   "test",
-				Country:      "test",
-				EmailAddress: "test@foo.bar",
-				PhoneNumber:  strptr("+21911223344"),
-			},
+			InvoiceAddress: testAddress,
 		}},
 
 		{Order{
 			Items: []OrderedItem{{
-				ListingID: ObjectId(*bigId),
+				ListingID: 1,
 				Quantity:  1,
 			}},
 			State: OrderStateUnpaid,
@@ -274,9 +295,10 @@ func TestCreateAllTypes(t *testing.T) {
 				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
+			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
-				PaymentID: Hash{0xff},
+				PaymentID: Hash{},
 				ListingHashes: []ipld.Cid{
 					testHash(0),
 					testHash(1),
@@ -286,7 +308,7 @@ func TestCreateAllTypes(t *testing.T) {
 
 		{Order{
 			Items: []OrderedItem{{
-				ListingID: ObjectId(*bigId),
+				ListingID: 1,
 				Quantity:  1,
 			}},
 			State: OrderStatePaid,
@@ -295,49 +317,53 @@ func TestCreateAllTypes(t *testing.T) {
 				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
+			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
-				PaymentID: Hash{0xff},
+				PaymentID: Hash{},
 				ListingHashes: []ipld.Cid{
 					testHash(0),
 					testHash(1),
 				},
 			},
 			TxDetails: &OrderPaid{
-				TxHash: &Hash{0xff},
+				TxHash: &Hash{},
 			},
 		}},
 	}
 
 	var buf bytes.Buffer
-	for _, c := range cases {
-		r.NoError(validate.Struct(c.typ))
-		buf.Reset()
-		enc := DefaultEncoder(&buf)
-		err := enc.Encode(c.typ)
-		r.NoError(err)
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("index:%d/type:%T", i, c.typ), func(t *testing.T) {
+			r := require.New(t)
+			r.NoError(validate.Struct(c.typ))
+			buf.Reset()
+			enc := DefaultEncoder(&buf)
+			err := enc.Encode(c.typ)
+			r.NoError(err)
 
-		testData := buf.Bytes()
-		t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
+			testData := buf.Bytes()
+			t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
 
-		var decoded any
-		switch c.typ.(type) {
-		case Manifest:
-			decoded, err = decode[Manifest](testData)
-		case Listing:
-			decoded, err = decode[Listing](testData)
-		case Tag:
-			decoded, err = decode[Tag](testData)
-		case Account:
-			decoded, err = decode[Account](testData)
-		case Order:
-			decoded, err = decode[Order](testData)
-		default:
-			t.Fatalf("unknown type: %T", c.typ)
-		}
-		r.NoError(err)
-		r.NoError(validate.Struct(decoded))
-		r.EqualValues(c.typ, decoded)
+			var decoded any
+			switch c.typ.(type) {
+			case Manifest:
+				decoded, err = decode[Manifest](testData)
+			case Listing:
+				decoded, err = decode[Listing](testData)
+			case Tag:
+				decoded, err = decode[Tag](testData)
+			case Account:
+				decoded, err = decode[Account](testData)
+			case Order:
+				decoded, err = decode[Order](testData)
+			default:
+				t.Fatalf("unknown type: %T", c.typ)
+			}
+			r.NoError(err)
+			r.NoError(validate.Struct(decoded))
+			r.EqualValues(c.typ, decoded)
+		})
 	}
 }
 
@@ -350,13 +376,15 @@ func decode[T any](data []byte) (T, error) {
 
 func testHash(i uint) ipld.Cid {
 	h, err := mh.Sum([]byte(fmt.Sprintf("TEST-%d", i)), mh.SHA3, 4)
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	// TODO: check what the codec number should be
 	return ipld.WrapCid(cid.NewCidV1(666, h))
 }
 
 func strptr(s string) *string {
 	return &s
+}
+
+func boolptr(b bool) *bool {
+	return &b
 }
