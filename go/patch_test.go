@@ -137,7 +137,6 @@ func TestPatchListing(t *testing.T) {
 				a.Equal(ListingViewStatePublished, l.ViewState)
 			},
 		},
-
 		{
 			name: "add stock status",
 			op:   AddOp,
@@ -155,7 +154,6 @@ func TestPatchListing(t *testing.T) {
 				a.True(*stockStatus.InStock)
 			},
 		},
-
 		{
 			name: "replace stock status",
 			op:   ReplaceOp,
@@ -173,6 +171,7 @@ func TestPatchListing(t *testing.T) {
 				a.False(*stockStatus.InStock)
 			},
 		},
+
 		// map manipulation of Options
 		{
 			name:  "add an option",
@@ -209,18 +208,17 @@ func TestPatchListing(t *testing.T) {
 				a.Equal(testColorOption, colorOption)
 			},
 		},
-
 		{
 			name:  "add a variation to an option",
 			op:    AddOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "pink"}},
 			value: testColorOption.Variations["pink"],
-			expected: func(r *assert.Assertions, l Listing) {
-				r.Equal(testColorOption.Variations["pink"], l.Options["color"].Variations["pink"])
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Equal(testColorOption.Variations["pink"], l.Options["color"].Variations["pink"])
 			},
 		},
 		{
-			name:  "replace variation of an option",
+			name:  "replace variations of an option",
 			op:    ReplaceOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "b"}},
 			value: testColorOption.Variations["pink"],
@@ -229,12 +227,12 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 		{
-			name:  "replace variation info",
+			name:  "replace one variation's info",
 			op:    ReplaceOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "b", "variationInfo"}},
 			value: testColorOption.Variations["pink"].VariationInfo,
-			expected: func(r *assert.Assertions, l Listing) {
-				r.Equal(testColorOption.Variations["pink"].VariationInfo, l.Options["color"].Variations["b"].VariationInfo)
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Equal(testColorOption.Variations["pink"].VariationInfo, l.Options["color"].Variations["b"].VariationInfo)
 			},
 		},
 	}
@@ -273,9 +271,7 @@ func TestPatchListing(t *testing.T) {
 
 func createPatch(op OpString, path PatchPath, value interface{}) Patch {
 	encodedValue, err := Marshal(value)
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	return Patch{
 		Op:    op,
 		Path:  path,

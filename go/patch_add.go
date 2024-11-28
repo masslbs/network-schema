@@ -57,13 +57,16 @@ func (existing *ListingOptions) PatchAdd(fields []string, value cbor.RawMessage)
 		if !ok {
 			return fmt.Errorf("option not found: %v", fields)
 		}
-		return option.Variations.PatchAdd(fields[1:], value)
+		if fields[1] != "variations" {
+			return fmt.Errorf("unsupported field: %s", fields[1])
+		}
+		return option.Variations.PatchAdd(fields[2:], value)
 	}
 }
 
 func (existing *ListingVariations) PatchAdd(fields []string, value cbor.RawMessage) error {
 	switch n := len(fields); n {
-	case 2: // replace the whole variations
+	case 1: // replace the whole variations
 		var variation ListingVariation
 		err := Unmarshal(value, &variation)
 		if err != nil {

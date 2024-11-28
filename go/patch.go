@@ -61,11 +61,11 @@ func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
 }
 
 func (pp PatchPath) MarshalCBOR() ([]byte, error) {
-	var path []any
-	path = append(path, pp.Type)
-	path = append(path, pp.ID)
-	for _, field := range pp.Fields {
-		path = append(path, field)
+	path := make([]any, 2+len(pp.Fields))
+	path[0] = pp.Type
+	path[1] = pp.ID
+	for i, field := range pp.Fields {
+		path[2+i] = field
 	}
 	return Marshal(path)
 }
