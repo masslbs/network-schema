@@ -16,13 +16,19 @@ import (
 )
 
 type Write struct {
-	Patches []Patch
+	Patches []PatchTx
 }
 
-type Patch struct {
-	Op    OpString
-	Path  []any // TODO: custom path type
-	Value cbor.RawMessage
+type PatchRx struct {
+	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
+	Path  []any           `validate:"required,gte=2"`
+	Value cbor.RawMessage `validate:"required,gt=0"`
+}
+
+type PatchTx struct {
+	Op    OpString `validate:"oneof=add replace remove increment decrement"`
+	Path  []any    `validate:"required,gte=2"`
+	Value any      `validate:"required"`
 }
 
 type OpString string

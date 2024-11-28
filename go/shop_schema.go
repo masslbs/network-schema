@@ -203,12 +203,11 @@ type ModificationAbsolute struct {
 Listing schema
 */
 type Listing struct {
-	ID        ObjectId         `validate:"required,gt=0"`
-	Price     Uint256          `validate:"required"`
-	Metadata  ListingMetadata  `validate:"required"`
-	ViewState ListingViewState `validate:"required"`
-	// TODO: how do we enforce sorting these? maybe maps only..?
-	Options map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	ID        ObjectId                 `validate:"required,gt=0"`
+	Price     Uint256                  `validate:"required"`
+	Metadata  ListingMetadata          `validate:"required"`
+	ViewState ListingViewState         `validate:"required"`
+	Options   map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 	// one for each combination of variations
 	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
@@ -284,6 +283,15 @@ func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
 	}
 	*s = ListingViewState(i)
 	return nil
+}
+
+type ListingPartial struct {
+	Price     *Uint256
+	Metadata  *ListingMetadata
+	ViewState *ListingViewState
+	Options   map[string]ListingOption `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	// one for each combination of variations
+	StockStatuses []ListingStockStatus `cbor:",omitempty"`
 }
 
 /*

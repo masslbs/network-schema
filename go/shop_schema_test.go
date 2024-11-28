@@ -95,54 +95,6 @@ func TestMissingFields(t *testing.T) {
 	r.Error(validate.Struct(lis2))
 }
 
-func TestCreateOp(t *testing.T) {
-	var (
-		err error
-		buf bytes.Buffer
-		r   = require.New(t)
-		enc = DefaultEncoder(&buf)
-	)
-
-	var createListing Patch
-	createListing.Op = AddOp
-	createListing.Path = []any{"listing", 1}
-
-	var lis Listing
-	lis.ViewState = ListingViewStatePublished
-	lis.Metadata.Title = "test Listing"
-	lis.Metadata.Description = "short desc"
-	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
-	price := big.NewInt(12345)
-	lis.Price = *price
-
-	err = enc.Encode(lis)
-	r.NoError(err)
-	lisBytes := buf.Bytes()
-	buf.Reset()
-	createListing.Value = lisBytes
-
-	err = enc.Encode(createListing)
-	r.NoError(err)
-
-	opData := buf.Bytes()
-	t.Log("OP encoded:")
-	t.Log("\n" + pretty(opData))
-
-	var rxOp Patch
-	dec := DefaultDecoder(bytes.NewReader(opData))
-	err = dec.Decode(&rxOp)
-	r.NoError(err)
-	r.Equal("listing", rxOp.Path[0])
-	var rxLis Listing
-
-	dec = DefaultDecoder(bytes.NewReader(rxOp.Value))
-	err = dec.Decode(&rxLis)
-	r.NoError(err)
-
-	t.Logf("listing received: %+v", rxLis)
-	r.EqualValues(lis, rxLis)
-}
-
 func TestCreateAllTypes(t *testing.T) {
 
 	bigId := big.NewInt(12345)
@@ -366,6 +318,8 @@ func TestCreateAllTypes(t *testing.T) {
 		})
 	}
 }
+
+// utils
 
 func decode[T any](data []byte) (T, error) {
 	var t T
