@@ -161,7 +161,6 @@ func TestCreateAllTypes(t *testing.T) {
 					Title: "Farbe",
 					Variations: map[string]ListingVariation{
 						"R": {
-							ID: 100,
 							VariationInfo: ListingMetadata{
 								Title:       "Rot",
 								Description: "short desc",
@@ -171,7 +170,6 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 						},
 						"G": {
-							ID: 200,
 							VariationInfo: ListingMetadata{
 								Title:       "Grün",
 								Description: "short desc",
@@ -184,7 +182,6 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 						},
 						"B": {
-							ID: 300,
 							VariationInfo: ListingMetadata{
 								Title:       "Blau",
 								Description: "short desc",
@@ -195,15 +192,15 @@ func TestCreateAllTypes(t *testing.T) {
 			},
 			StockStatuses: []ListingStockStatus{
 				{
-					VariationIDs: []uint64{100},
+					VariationIDs: []string{"r"},
 					InStock:      boolptr(true),
 				},
 				{
-					VariationIDs: []uint64{200},
+					VariationIDs: []string{"m"},
 					InStock:      boolptr(false),
 				},
 				{
-					VariationIDs:      []uint64{300},
+					VariationIDs:      []string{"b"},
 					ExpectedInStockBy: &expectedInStockBy,
 				},
 			},

@@ -99,14 +99,13 @@ func testListing() Listing {
 			Title: "Color",
 			Variations: map[string]ListingVariation{
 				"r": {
-					ID: 1,
 					VariationInfo: ListingMetadata{
 						Title:       "Red",
 						Description: "Red color",
 					},
 				},
 				"b": {
-					ID: 2,
+
 					VariationInfo: ListingMetadata{
 						Title:       "Blue",
 						Description: "Blue color",
@@ -117,7 +116,7 @@ func testListing() Listing {
 	}
 	lis.StockStatuses = []ListingStockStatus{
 		{
-			VariationIDs: []ObjectId{1},
+			VariationIDs: []string{"r"},
 			InStock:      boolptr(true),
 		},
 	}
@@ -129,14 +128,14 @@ func TestPatchListing(t *testing.T) {
 		Title: "Color",
 		Variations: map[string]ListingVariation{
 			"pink": {
-				ID: 333,
+
 				VariationInfo: ListingMetadata{
 					Title:       "Pink",
 					Description: "Pink color",
 				},
 			},
 			"orange": {
-				ID: 444,
+
 				VariationInfo: ListingMetadata{
 					Title:       "Orange",
 					Description: "Orange color",
@@ -149,14 +148,12 @@ func TestPatchListing(t *testing.T) {
 		Title: "Size",
 		Variations: map[string]ListingVariation{
 			"s": {
-				ID: 33,
 				VariationInfo: ListingMetadata{
 					Title:       "Small",
 					Description: "Small size",
 				},
 			},
 			"m": {
-				ID: 44,
 				VariationInfo: ListingMetadata{
 					Title:       "Medium",
 					Description: "Medium size",
@@ -249,7 +246,7 @@ func TestPatchListing(t *testing.T) {
 			op:   AddOp,
 			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "-"}},
 			value: ListingStockStatus{
-				VariationIDs: []ObjectId{2},
+				VariationIDs: []string{"m"},
 				InStock:      boolptr(true),
 			},
 			expected: func(a *assert.Assertions, l Listing) {
@@ -257,7 +254,7 @@ func TestPatchListing(t *testing.T) {
 					return
 				}
 				stockStatus := l.StockStatuses[1]
-				a.Equal([]ObjectId{2}, stockStatus.VariationIDs)
+				a.Equal([]string{"m"}, stockStatus.VariationIDs)
 				a.True(*stockStatus.InStock)
 			},
 		},
@@ -266,7 +263,7 @@ func TestPatchListing(t *testing.T) {
 			op:   AddOp,
 			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0"}},
 			value: ListingStockStatus{
-				VariationIDs: []ObjectId{23},
+				VariationIDs: []string{"m"},
 				InStock:      boolptr(true),
 			},
 			expected: func(a *assert.Assertions, l Listing) {
@@ -274,7 +271,7 @@ func TestPatchListing(t *testing.T) {
 					return
 				}
 				stockStatus := l.StockStatuses[0]
-				a.Equal([]ObjectId{23}, stockStatus.VariationIDs)
+				a.Equal([]string{"m"}, stockStatus.VariationIDs)
 				a.True(*stockStatus.InStock)
 			},
 		},
@@ -283,7 +280,7 @@ func TestPatchListing(t *testing.T) {
 			op:   ReplaceOp,
 			path: PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0"}},
 			value: ListingStockStatus{
-				VariationIDs: []ObjectId{1},
+				VariationIDs: []string{"m"},
 				InStock:      boolptr(false),
 			},
 			expected: func(a *assert.Assertions, l Listing) {
@@ -291,7 +288,7 @@ func TestPatchListing(t *testing.T) {
 					return
 				}
 				stockStatus := l.StockStatuses[0]
-				a.Equal([]ObjectId{1}, stockStatus.VariationIDs)
+				a.Equal([]string{"m"}, stockStatus.VariationIDs)
 				a.False(*stockStatus.InStock)
 			},
 		},

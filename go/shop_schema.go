@@ -132,10 +132,10 @@ The complete Shop state
 */
 type Shop struct {
 	Manifest Manifest
-	Listings []Listing
 	Accounts map[EthereumAddress]Account
-	Orders   []Order
+	Listings map[ObjectId]Listing
 	Tags     map[string]Tag `validate:"nonEmptyMapKeys"`
+	Orders   map[ObjectId]Order
 }
 
 /*
@@ -223,7 +223,7 @@ type ListingOptions map[string]ListingOption
 type ListingStockStatus listingStockStatusHack
 
 type listingStockStatusHack struct {
-	VariationIDs []ObjectId
+	VariationIDs []string // list of variation map keys
 	// one of the following should be set
 	InStock           *bool      `cbor:",omitempty"`
 	ExpectedInStockBy *time.Time `cbor:",omitempty"`
@@ -261,8 +261,8 @@ type ListingOption struct {
 type ListingVariations map[string]ListingVariation
 
 // ListingVariation represents a variation of a product option
+// It's ID is the map key it's associated with
 type ListingVariation struct {
-	ID ObjectId `validate:"required,gt=0"`
 	// VariationInfo is the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
 	VariationInfo ListingMetadata `validate:"required"`
@@ -355,9 +355,9 @@ func OrderValidation(sl validator.StructLevel) {
 
 // OrderedItem represents an item in an order
 type OrderedItem struct {
-	ListingID    ObjectId   `validate:"required,gt=0"`
-	VariationIDs []ObjectId `cbor:",omitempty"`
-	Quantity     uint32     `validate:"required,gt=0"`
+	ListingID    ObjectId `validate:"required,gt=0"`
+	VariationIDs []string `cbor:",omitempty"`
+	Quantity     uint32   `validate:"required,gt=0"`
 }
 
 // OrderState represents the possible states of an order
