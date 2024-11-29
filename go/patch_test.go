@@ -6,12 +6,16 @@ package schema
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestPatchAdd(t *testing.T) {
@@ -24,7 +28,7 @@ func TestPatchAdd(t *testing.T) {
 
 	var createListing Patch
 	createListing.Op = AddOp
-	createListing.Path = PatchPath{Type: "listing", ID: 1}
+	createListing.Path = []any{"listing", 1}
 
 	lis := testListing()
 	createListing.Value, err = Marshal(lis)
@@ -40,8 +44,10 @@ func TestPatchAdd(t *testing.T) {
 	var rxOp Patch
 	err = dec.Decode(&rxOp)
 	r.NoError(err)
-	r.Equal("listing", rxOp.Path.Type)
-	r.Equal(ObjectId(1), rxOp.Path.ID)
+	path, err := rxOp.UnpackPath()
+	r.NoError(err)
+	r.Equal("listing", path.Type)
+	r.Equal(ObjectId(1), path.ID)
 	r.NoError(validate.Struct(rxOp))
 
 	dec = DefaultDecoder(bytes.NewReader(rxOp.Value))
@@ -94,6 +100,25 @@ func TestPatchListing(t *testing.T) {
 		},
 	}
 	testTimeFuture := time.Unix(10000000000, 0)
+
+	type vectorEntry struct {
+		Patch   Patch
+		Value   Listing
+		Encoded []byte
+		Hash    []byte
+	}
+	type vectorFile struct {
+		Encoded []byte
+		Value   Listing
+		Hash    []byte
+		Patches []vectorEntry
+	}
+	var vectors vectorFile
+	var err error
+	vectors.Value = testListing()
+	vectors.Encoded, err = Marshal(vectors.Value)
+	require.NoError(t, err)
+	vectors.Hash = hash(vectors.Encoded)
 
 	testCases := []struct {
 		name     string
@@ -172,6 +197,7 @@ func TestPatchListing(t *testing.T) {
 				a.Equal(ListingViewStatePublished, l.ViewState)
 			},
 		},
+
 		{
 			name: "append a stock status",
 			op:   AddOp,
@@ -223,7 +249,6 @@ func TestPatchListing(t *testing.T) {
 				a.False(*stockStatus.InStock)
 			},
 		},
-
 		{
 			name:  "replace expectedInStockBy",
 			op:    ReplaceOp,
@@ -234,7 +259,16 @@ func TestPatchListing(t *testing.T) {
 				a.Equal(testTimeFuture, *l.StockStatuses[0].ExpectedInStockBy)
 			},
 		},
-
+		{
+			name:  "replace inStock",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "0", "inStock"}},
+			value: true,
+			expected: func(a *assert.Assertions, l Listing) {
+				a.True(*l.StockStatuses[0].InStock)
+				a.Nil(l.StockStatuses[0].ExpectedInStockBy)
+			},
+		},
 		{
 			name: "remove stock status",
 			op:   RemoveOp,
@@ -338,6 +372,9 @@ func TestPatchListing(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			r := require.New(t)
+			a := assert.New(t)
+
 			lis := testListing()
 
 			// round trip to make sure we can encode/decode the patch
@@ -345,35 +382,60 @@ func TestPatchListing(t *testing.T) {
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			r := require.New(t)
 			r.Equal(tc.op, decodedPatch.Op)
-			r.Equal(tc.path, decodedPatch.Path)
 
-			a := assert.New(t)
-			var err error
+			path, err := decodedPatch.UnpackPath()
+			r.NoError(err)
 			switch decodedPatch.Op {
 			case ReplaceOp:
-				err = lis.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
+				err = lis.PatchReplace(path.Fields, decodedPatch.Value)
 			case AddOp:
-				err = lis.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
+				err = lis.PatchAdd(path.Fields, decodedPatch.Value)
 			case RemoveOp:
-				err = lis.PatchRemove(decodedPatch.Path.Fields)
+				err = lis.PatchRemove(path.Fields)
 			default:
 				t.Fatalf("unsupported op: %s", decodedPatch.Op)
 			}
 			r.NoError(err)
 			a.NoError(validate.Struct(lis))
 			tc.expected(a, lis)
+
+			var entry vectorEntry
+			entry.Patch = patch
+			entry.Value = lis
+			entry.Encoded, err = Marshal(lis)
+			require.NoError(t, err)
+			entry.Hash = hash(entry.Encoded)
+			vectors.Patches = append(vectors.Patches, entry)
 		})
+	}
+
+	if !t.Failed() {
+		tempFile, err := os.Create("vectors_patch_listing.json")
+		require.NoError(t, err)
+		// enc := DefaultEncoder(tempFile)
+		err = json.NewEncoder(tempFile).Encode(vectors)
+		require.NoError(t, err)
+		tempFile.Close()
+		tempFile, err = os.Create("vectors_patch_listing.cbor")
+		require.NoError(t, err)
+		enc := DefaultEncoder(tempFile)
+		err = enc.Encode(vectors)
+		require.NoError(t, err)
+		tempFile.Close()
 	}
 }
 
 func createPatch(op OpString, path PatchPath, value interface{}) Patch {
 	encodedValue, err := Marshal(value)
 	check(err)
+	anyPath := []any{path.Type, path.ID}
+	for _, field := range path.Fields {
+		anyPath = append(anyPath, field)
+	}
 	return Patch{
 		Op:    op,
-		Path:  path,
+		Path:  anyPath,
 		Value: encodedValue,
 	}
 }
@@ -564,34 +626,74 @@ func TestPatchManifest(t *testing.T) {
 		},
 	}
 
+	type vectorEntry struct {
+		Patch   Patch
+		Value   Manifest
+		Hash    []byte
+		Encoded []byte
+	}
+	type vector struct {
+		Value   Manifest
+		Encoded []byte
+		Hash    []byte
+		Patches []vectorEntry
+	}
+	var err error
+	var vectors vector
+	vectors.Value = testManifest()
+	vectors.Encoded, err = Marshal(vectors.Value)
+	require.NoError(t, err)
+	vectors.Hash = hash(vectors.Encoded)
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			manifest := testManifest()
+			r := require.New(t)
+			a := assert.New(t)
 
 			patch := createPatch(tc.op, tc.path, tc.value)
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
-
-			r := require.New(t)
 			r.Equal(tc.op, decodedPatch.Op)
-			r.Equal(tc.path, decodedPatch.Path)
 
-			a := assert.New(t)
-			var err error
+			path, err := decodedPatch.UnpackPath()
+			r.NoError(err)
 			switch decodedPatch.Op {
 			case ReplaceOp:
-				err = manifest.PatchReplace(decodedPatch.Path.Fields, decodedPatch.Value)
+				err = manifest.PatchReplace(path.Fields, decodedPatch.Value)
 			case AddOp:
-				err = manifest.PatchAdd(decodedPatch.Path.Fields, decodedPatch.Value)
+				err = manifest.PatchAdd(path.Fields, decodedPatch.Value)
 			case RemoveOp:
-				err = manifest.PatchRemove(decodedPatch.Path.Fields)
+				err = manifest.PatchRemove(path.Fields)
 			default:
 				t.Fatalf("unsupported op: %s", decodedPatch.Op)
 			}
 			r.NoError(err)
 			a.NoError(validate.Struct(manifest))
 			tc.expected(a, manifest)
+
+			var entry vectorEntry
+			entry.Patch = patch
+			entry.Value = manifest
+			entry.Encoded, err = Marshal(manifest)
+			require.NoError(t, err)
+			entry.Hash = hash(entry.Encoded)
+			vectors.Patches = append(vectors.Patches, entry)
 		})
+	}
+
+	if !t.Failed() {
+		tempFile, err := os.Create("vectors_patch_manifest.json")
+		require.NoError(t, err)
+		// enc := DefaultEncoder(tempFile)
+		err = json.NewEncoder(tempFile).Encode(vectors)
+		require.NoError(t, err)
+		tempFile.Close()
+		tempFile, err = os.Create("vectors_patch_manifest.cbor")
+		require.NoError(t, err)
+		enc := DefaultEncoder(tempFile)
+		err = enc.Encode(vectors)
+		require.NoError(t, err)
+		tempFile.Close()
 	}
 }
 
@@ -627,4 +729,21 @@ func testManifest() Manifest {
 			},
 		},
 	}
+}
+
+func hash(value []byte) []byte {
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(value)
+	return hash.Sum(nil)
+}
+
+// fix formatting for test vectors
+// go defaults to encode []byte as base64 encoded string
+
+func (sig Signature) MarshalJSON() ([]byte, error) {
+	return json.Marshal(base64.StdEncoding.EncodeToString(sig[:]))
+}
+
+func (adde EthereumAddress) MarshalJSON() ([]byte, error) {
+	return json.Marshal(base64.StdEncoding.EncodeToString(adde[:]))
 }

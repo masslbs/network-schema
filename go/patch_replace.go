@@ -151,6 +151,13 @@ func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) er
 				}
 				existing.StockStatuses[index].InStock = nil
 				existing.StockStatuses[index].ExpectedInStockBy = &expectedInStockBy
+			case "inStock":
+				var inStock bool
+				err := Unmarshal(value, &inStock)
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal inStock: %w", err)
+				}
+				existing.StockStatuses[index].InStock = &inStock
 			default:
 				return fmt.Errorf("unsupported field: %s", fields[2])
 			}

@@ -23,7 +23,7 @@ type Write struct {
 
 type Patch struct {
 	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
-	Path  PatchPath       `validate:"required"`
+	Path  []any           `validate:"required,gte=2"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
 }
 
@@ -45,29 +45,15 @@ type PatchPath struct {
 	Fields []string
 }
 
-func (pp *PatchPath) UnmarshalCBOR(data []byte) error {
-	var v []any
-	err := Unmarshal(data, &v)
-	if err != nil {
-		return err
+func (patch Patch) UnpackPath() (PatchPath, error) {
+	var path PatchPath
+	if len(patch.Path) < 2 {
+		return PatchPath{}, fmt.Errorf("PatchPath must have at least two elements [type, id]")
 	}
-	if len(v) < 2 {
-		return fmt.Errorf("PatchPath must have at least two elements [type, id]")
+	path.Type = patch.Path[0].(string)
+	path.ID = patch.Path[1].(ObjectId)
+	for _, field := range patch.Path[2:] {
+		path.Fields = append(path.Fields, field.(string))
 	}
-	pp.Type = v[0].(string)
-	pp.ID = v[1].(ObjectId)
-	for _, field := range v[2:] {
-		pp.Fields = append(pp.Fields, field.(string))
-	}
-	return nil
-}
-
-func (pp PatchPath) MarshalCBOR() ([]byte, error) {
-	path := make([]any, 2+len(pp.Fields))
-	path[0] = pp.Type
-	path[1] = pp.ID
-	for i, field := range pp.Fields {
-		path[2+i] = field
-	}
-	return Marshal(path)
+	return path, nil
 }
