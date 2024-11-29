@@ -21,7 +21,10 @@ import (
 func TestPatchPath(t *testing.T) {
 
 	r := require.New(t)
-	patch := Patch{Op: OpString(t.Name()), Path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "pink"}}}
+	patch := Patch{
+		Op:   OpString(t.Name()),
+		Path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "pink"}},
+	}
 
 	data, err := Marshal(patch)
 	r.NoError(err)
@@ -31,10 +34,16 @@ func TestPatchPath(t *testing.T) {
 	var rxPatch Patch
 	err = Unmarshal(data, &rxPatch)
 	r.NoError(err)
-
 	r.Equal("listing", rxPatch.Path.Type)
 	r.Equal(ObjectId(1), rxPatch.Path.ID)
 	r.Equal([]string{"options", "color", "variations", "pink"}, rxPatch.Path.Fields)
+
+	var testPath struct {
+		Path []any
+	}
+	err = Unmarshal(data, &testPath)
+	r.NoError(err)
+	r.Equal([]any{"listing", uint64(1), "options", "color", "variations", "pink"}, testPath.Path)
 }
 
 func TestPatchAdd(t *testing.T) {
@@ -74,6 +83,45 @@ func TestPatchAdd(t *testing.T) {
 
 	t.Logf("listing received: %+v", rxLis)
 	r.EqualValues(lis, rxLis)
+}
+
+func testListing() Listing {
+	var lis Listing
+	lis.ID = 1
+	lis.ViewState = ListingViewStatePublished
+	lis.Metadata.Title = "test Listing"
+	lis.Metadata.Description = "short desc"
+	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
+	price := big.NewInt(12345)
+	lis.Price = *price
+	lis.Options = ListingOptions{
+		"color": {
+			Title: "Color",
+			Variations: map[string]ListingVariation{
+				"r": {
+					ID: 1,
+					VariationInfo: ListingMetadata{
+						Title:       "Red",
+						Description: "Red color",
+					},
+				},
+				"b": {
+					ID: 2,
+					VariationInfo: ListingMetadata{
+						Title:       "Blue",
+						Description: "Blue color",
+					},
+				},
+			},
+		},
+	}
+	lis.StockStatuses = []ListingStockStatus{
+		{
+			VariationIDs: []ObjectId{1},
+			InStock:      boolptr(true),
+		},
+	}
+	return lis
 }
 
 func TestPatchListing(t *testing.T) {
@@ -433,68 +481,38 @@ func TestPatchListing(t *testing.T) {
 	}
 }
 
-func createPatch(op OpString, path PatchPath, value interface{}) Patch {
-	encodedValue, err := Marshal(value)
-	check(err)
-	return Patch{
-		Op:    op,
-		Path:  path,
-		Value: encodedValue,
-	}
-}
-
-func encodePatch(t *testing.T, patch Patch) []byte {
-	encoded, err := Marshal(patch)
-	require.NoError(t, err)
-	return encoded
-}
-
-func decodePatch(t *testing.T, encoded []byte) Patch {
-	var decoded Patch
-	dec := DefaultDecoder(bytes.NewReader(encoded))
-	err := dec.Decode(&decoded)
-	require.NoError(t, err)
-	require.NoError(t, validate.Struct(decoded))
-	return decoded
-}
-
-func testListing() Listing {
-	var lis Listing
-	lis.ID = 1
-	lis.ViewState = ListingViewStatePublished
-	lis.Metadata.Title = "test Listing"
-	lis.Metadata.Description = "short desc"
-	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
-	price := big.NewInt(12345)
-	lis.Price = *price
-	lis.Options = ListingOptions{
-		"color": {
-			Title: "Color",
-			Variations: map[string]ListingVariation{
-				"r": {
-					ID: 1,
-					VariationInfo: ListingMetadata{
-						Title:       "Red",
-						Description: "Red color",
-					},
-				},
-				"b": {
-					ID: 2,
-					VariationInfo: ListingMetadata{
-						Title:       "Blue",
-						Description: "Blue color",
-					},
+func testManifest() Manifest {
+	return Manifest{
+		ShopId: *big.NewInt(1),
+		Payees: map[string]Payee{
+			"default": {
+				CallAsContract: false,
+				Address: ChainAddress{
+					ChainID: 1337,
+					Address: EthereumAddress([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}),
 				},
 			},
 		},
-	}
-	lis.StockStatuses = []ListingStockStatus{
-		{
-			VariationIDs: []ObjectId{1},
-			InStock:      boolptr(true),
+		AcceptedCurrencies: []ChainAddress{
+			{
+				ChainID: 1337,
+				Address: EthereumAddress{},
+			},
+			{
+				ChainID: 1337,
+				Address: EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+			},
+		},
+		PricingCurrency: ChainAddress{
+			ChainID: 1337,
+			Address: EthereumAddress{},
+		},
+		ShippingRegions: map[string]ShippingRegion{
+			"default": {
+				Country: "DE",
+			},
 		},
 	}
-	return lis
 }
 
 func TestPatchManifest(t *testing.T) {
@@ -690,38 +708,31 @@ func TestPatchManifest(t *testing.T) {
 	}
 }
 
-func testManifest() Manifest {
-	return Manifest{
-		ShopId: *big.NewInt(1),
-		Payees: map[string]Payee{
-			"default": {
-				CallAsContract: false,
-				Address: ChainAddress{
-					ChainID: 1337,
-					Address: EthereumAddress([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}),
-				},
-			},
-		},
-		AcceptedCurrencies: []ChainAddress{
-			{
-				ChainID: 1337,
-				Address: EthereumAddress{},
-			},
-			{
-				ChainID: 1337,
-				Address: EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
-			},
-		},
-		PricingCurrency: ChainAddress{
-			ChainID: 1337,
-			Address: EthereumAddress{},
-		},
-		ShippingRegions: map[string]ShippingRegion{
-			"default": {
-				Country: "DE",
-			},
-		},
+// utility functions
+
+func createPatch(op OpString, path PatchPath, value interface{}) Patch {
+	encodedValue, err := Marshal(value)
+	check(err)
+	return Patch{
+		Op:    op,
+		Path:  path,
+		Value: encodedValue,
 	}
+}
+
+func encodePatch(t *testing.T, patch Patch) []byte {
+	encoded, err := Marshal(patch)
+	require.NoError(t, err)
+	return encoded
+}
+
+func decodePatch(t *testing.T, encoded []byte) Patch {
+	var decoded Patch
+	dec := DefaultDecoder(bytes.NewReader(encoded))
+	err := dec.Decode(&decoded)
+	require.NoError(t, err)
+	require.NoError(t, validate.Struct(decoded))
+	return decoded
 }
 
 func hash(value []byte) []byte {
