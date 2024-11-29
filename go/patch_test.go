@@ -18,6 +18,25 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+func TestPatchPath(t *testing.T) {
+
+	r := require.New(t)
+	patch := Patch{Op: OpString(t.Name()), Path: PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "pink"}}}
+
+	data, err := Marshal(patch)
+	r.NoError(err)
+	t.Log("CBOR encoded:")
+	t.Log("\n" + pretty(data))
+
+	var rxPatch Patch
+	err = Unmarshal(data, &rxPatch)
+	r.NoError(err)
+
+	r.Equal("listing", rxPatch.Path.Type)
+	r.Equal(ObjectId(1), rxPatch.Path.ID)
+	r.Equal([]string{"options", "color", "variations", "pink"}, rxPatch.Path.Fields)
+}
+
 func TestPatchAdd(t *testing.T) {
 	var (
 		err error
@@ -28,7 +47,7 @@ func TestPatchAdd(t *testing.T) {
 
 	var createListing Patch
 	createListing.Op = AddOp
-	createListing.Path = []any{"listing", 1}
+	createListing.Path = PatchPath{Type: "listing", ID: 1}
 
 	lis := testListing()
 	createListing.Value, err = Marshal(lis)
@@ -44,10 +63,8 @@ func TestPatchAdd(t *testing.T) {
 	var rxOp Patch
 	err = dec.Decode(&rxOp)
 	r.NoError(err)
-	path, err := rxOp.UnpackPath()
-	r.NoError(err)
-	r.Equal("listing", path.Type)
-	r.Equal(ObjectId(1), path.ID)
+	r.Equal("listing", rxOp.Path.Type)
+	r.Equal(ObjectId(1), rxOp.Path.ID)
 	r.NoError(validate.Struct(rxOp))
 
 	dec = DefaultDecoder(bytes.NewReader(rxOp.Value))
@@ -429,13 +446,9 @@ func TestPatchListing(t *testing.T) {
 func createPatch(op OpString, path PatchPath, value interface{}) Patch {
 	encodedValue, err := Marshal(value)
 	check(err)
-	anyPath := []any{path.Type, path.ID}
-	for _, field := range path.Fields {
-		anyPath = append(anyPath, field)
-	}
 	return Patch{
 		Op:    op,
-		Path:  anyPath,
+		Path:  path,
 		Value: encodedValue,
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"fmt"
 
 	"github.com/fxamacker/cbor/v2"
+	"github.com/go-playground/validator/v10"
 )
 
 type Write struct {
@@ -23,7 +24,7 @@ type Write struct {
 
 type Patch struct {
 	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
-	Path  []any           `validate:"required,gte=2"`
+	Path  PatchPath       `validate:"required"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
 }
 
@@ -45,15 +46,72 @@ type PatchPath struct {
 	Fields []string
 }
 
-func (patch Patch) UnpackPath() (PatchPath, error) {
-	var path PatchPath
-	if len(patch.Path) < 2 {
-		return PatchPath{}, fmt.Errorf("PatchPath must have at least two elements [type, id]")
+func (p PatchPath) MarshalCBOR() ([]byte, error) {
+	var path = make([]any, len(p.Fields)+2)
+	path[0] = p.Type
+	path[1] = p.ID
+	for i, field := range p.Fields {
+		path[i+2] = field
 	}
-	path.Type = patch.Path[0].(string)
-	path.ID = patch.Path[1].(ObjectId)
-	for _, field := range patch.Path[2:] {
-		path.Fields = append(path.Fields, field.(string))
+	return cbor.Marshal(path)
+}
+
+func (p *PatchPath) UnmarshalCBOR(data []byte) error {
+	var path []any
+	err := cbor.Unmarshal(data, &path)
+	if err != nil {
+		return err
 	}
-	return path, nil
+	if len(path) < 2 {
+		return fmt.Errorf("invalid patch path: %v - need at least type and id", path)
+	}
+	p.Type = path[0].(string)
+	p.ID = path[1].(ObjectId)
+	p.Fields = make([]string, len(path)-2)
+	for i, field := range path[2:] {
+		p.Fields[i] = field.(string)
+	}
+	return nil
+}
+
+type Patcher struct {
+	validator *validator.Validate
+}
+
+func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
+	var err error
+	switch patch.Op {
+	case ReplaceOp:
+		err = in.PatchReplace(patch.Path.Fields, patch.Value)
+	case AddOp:
+		err = patch.ManifestAdd(in)
+	case RemoveOp:
+		err = in.PatchRemove(patch.Path.Fields)
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	if err != nil {
+		return err
+	}
+	return p.validator.Struct(in)
+}
+
+func (p *Patcher) Listing(in *Listing, patch Patch) error {
+	var err error
+	switch patch.Op {
+	}
+	switch patch.Op {
+	case ReplaceOp:
+		err = in.PatchReplace(patch.Path.Fields, patch.Value)
+	case AddOp:
+		err = patch.ListingAdd(in)
+	case RemoveOp:
+		err = in.PatchRemove(patch.Path.Fields)
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	if err != nil {
+		return err
+	}
+	return p.validator.Struct(in)
 }
