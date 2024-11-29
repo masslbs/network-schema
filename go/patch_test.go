@@ -417,21 +417,22 @@ func TestPatchListing(t *testing.T) {
 	}
 
 	type vectorEntry struct {
+		Name    string
 		Patch   Patch
-		Value   Listing
+		After   Listing
 		Encoded []byte
 		Hash    []byte
 	}
 	type vectorFile struct {
 		Encoded []byte
-		Value   Listing
+		Before  Listing
 		Hash    []byte
 		Patches []vectorEntry
 	}
 	var vectors vectorFile
 	var err error
-	vectors.Value = testListing()
-	vectors.Encoded, err = Marshal(vectors.Value)
+	vectors.Before = testListing()
+	vectors.Encoded, err = Marshal(vectors.Before)
 	require.NoError(t, err)
 	vectors.Hash = hash(vectors.Encoded)
 
@@ -456,8 +457,9 @@ func TestPatchListing(t *testing.T) {
 			tc.expected(a, lis)
 
 			var entry vectorEntry
+			entry.Name = t.Name()
 			entry.Patch = patch
-			entry.Value = lis
+			entry.After = lis
 			entry.Encoded, err = Marshal(lis)
 			require.NoError(t, err)
 			entry.Hash = hash(entry.Encoded)
@@ -647,21 +649,22 @@ func TestPatchManifest(t *testing.T) {
 	}
 
 	type vectorEntry struct {
+		Name    string
 		Patch   Patch
-		Value   Manifest
+		After   Manifest
 		Hash    []byte
 		Encoded []byte
 	}
 	type vector struct {
-		Value   Manifest
+		Before  Manifest
 		Encoded []byte
 		Hash    []byte
 		Patches []vectorEntry
 	}
 	var err error
 	var vectors vector
-	vectors.Value = testManifest()
-	vectors.Encoded, err = Marshal(vectors.Value)
+	vectors.Before = testManifest()
+	vectors.Encoded, err = Marshal(vectors.Before)
 	require.NoError(t, err)
 	vectors.Hash = hash(vectors.Encoded)
 
@@ -683,8 +686,9 @@ func TestPatchManifest(t *testing.T) {
 			tc.expected(a, manifest)
 
 			var entry vectorEntry
+			entry.Name = t.Name()
 			entry.Patch = patch
-			entry.Value = manifest
+			entry.After = manifest
 			entry.Encoded, err = Marshal(manifest)
 			require.NoError(t, err)
 			entry.Hash = hash(entry.Encoded)
@@ -695,16 +699,15 @@ func TestPatchManifest(t *testing.T) {
 	if !t.Failed() {
 		tempFile, err := os.Create("vectors_patch_manifest.json")
 		require.NoError(t, err)
-		// enc := DefaultEncoder(tempFile)
 		err = json.NewEncoder(tempFile).Encode(vectors)
 		require.NoError(t, err)
-		tempFile.Close()
+		require.NoError(t, tempFile.Close())
 		tempFile, err = os.Create("vectors_patch_manifest.cbor")
 		require.NoError(t, err)
 		enc := DefaultEncoder(tempFile)
 		err = enc.Encode(vectors)
 		require.NoError(t, err)
-		tempFile.Close()
+		require.NoError(t, tempFile.Close())
 	}
 }
 
@@ -750,4 +753,12 @@ func (sig Signature) MarshalJSON() ([]byte, error) {
 
 func (adde EthereumAddress) MarshalJSON() ([]byte, error) {
 	return json.Marshal(base64.StdEncoding.EncodeToString(adde[:]))
+}
+
+func (patch PatchPath) MarshalJSON() ([]byte, error) {
+	path := []any{patch.Type, patch.ID}
+	for _, field := range patch.Fields {
+		path = append(path, field)
+	}
+	return json.Marshal(path)
 }
