@@ -118,25 +118,6 @@ func TestPatchListing(t *testing.T) {
 	}
 	testTimeFuture := time.Unix(10000000000, 0)
 
-	type vectorEntry struct {
-		Patch   Patch
-		Value   Listing
-		Encoded []byte
-		Hash    []byte
-	}
-	type vectorFile struct {
-		Encoded []byte
-		Value   Listing
-		Hash    []byte
-		Patches []vectorEntry
-	}
-	var vectors vectorFile
-	var err error
-	vectors.Value = testListing()
-	vectors.Encoded, err = Marshal(vectors.Value)
-	require.NoError(t, err)
-	vectors.Hash = hash(vectors.Encoded)
-
 	testCases := []struct {
 		name     string
 		op       OpString
@@ -387,6 +368,27 @@ func TestPatchListing(t *testing.T) {
 		},
 	}
 
+	type vectorEntry struct {
+		Patch   Patch
+		Value   Listing
+		Encoded []byte
+		Hash    []byte
+	}
+	type vectorFile struct {
+		Encoded []byte
+		Value   Listing
+		Hash    []byte
+		Patches []vectorEntry
+	}
+	var vectors vectorFile
+	var err error
+	vectors.Value = testListing()
+	vectors.Encoded, err = Marshal(vectors.Value)
+	require.NoError(t, err)
+	vectors.Hash = hash(vectors.Encoded)
+
+	var patcher Patcher
+	patcher.validator = validate
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
@@ -401,20 +403,8 @@ func TestPatchListing(t *testing.T) {
 
 			r.Equal(tc.op, decodedPatch.Op)
 
-			path, err := decodedPatch.UnpackPath()
+			err := patcher.Listing(&lis, decodedPatch)
 			r.NoError(err)
-			switch decodedPatch.Op {
-			case ReplaceOp:
-				err = lis.PatchReplace(path.Fields, decodedPatch.Value)
-			case AddOp:
-				err = lis.PatchAdd(path.Fields, decodedPatch.Value)
-			case RemoveOp:
-				err = lis.PatchRemove(path.Fields)
-			default:
-				t.Fatalf("unsupported op: %s", decodedPatch.Op)
-			}
-			r.NoError(err)
-			a.NoError(validate.Struct(lis))
 			tc.expected(a, lis)
 
 			var entry vectorEntry
@@ -456,7 +446,6 @@ func createPatch(op OpString, path PatchPath, value interface{}) Patch {
 func encodePatch(t *testing.T, patch Patch) []byte {
 	encoded, err := Marshal(patch)
 	require.NoError(t, err)
-	t.Log("Patch encoded:\n" + pretty(encoded))
 	return encoded
 }
 
@@ -657,6 +646,9 @@ func TestPatchManifest(t *testing.T) {
 	vectors.Encoded, err = Marshal(vectors.Value)
 	require.NoError(t, err)
 	vectors.Hash = hash(vectors.Encoded)
+
+	var patcher Patcher
+	patcher.validator = validate
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			manifest := testManifest()
@@ -668,20 +660,8 @@ func TestPatchManifest(t *testing.T) {
 			decodedPatch := decodePatch(t, encodedPatch)
 			r.Equal(tc.op, decodedPatch.Op)
 
-			path, err := decodedPatch.UnpackPath()
+			err = patcher.Manifest(&manifest, decodedPatch)
 			r.NoError(err)
-			switch decodedPatch.Op {
-			case ReplaceOp:
-				err = manifest.PatchReplace(path.Fields, decodedPatch.Value)
-			case AddOp:
-				err = manifest.PatchAdd(path.Fields, decodedPatch.Value)
-			case RemoveOp:
-				err = manifest.PatchRemove(path.Fields)
-			default:
-				t.Fatalf("unsupported op: %s", decodedPatch.Op)
-			}
-			r.NoError(err)
-			a.NoError(validate.Struct(manifest))
 			tc.expected(a, manifest)
 
 			var entry vectorEntry

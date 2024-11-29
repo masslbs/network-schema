@@ -84,7 +84,7 @@ func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
 	case ReplaceOp:
 		err = in.PatchReplace(patch.Path.Fields, patch.Value)
 	case AddOp:
-		err = patch.ManifestAdd(in)
+		err = in.PatchAdd(patch.Path.Fields, patch.Value)
 	case RemoveOp:
 		err = in.PatchRemove(patch.Path.Fields)
 	default:
@@ -104,7 +104,7 @@ func (p *Patcher) Listing(in *Listing, patch Patch) error {
 	case ReplaceOp:
 		err = in.PatchReplace(patch.Path.Fields, patch.Value)
 	case AddOp:
-		err = patch.ListingAdd(in)
+		err = in.PatchAdd(patch.Path.Fields, patch.Value)
 	case RemoveOp:
 		err = in.PatchRemove(patch.Path.Fields)
 	default:

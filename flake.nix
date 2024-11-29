@@ -69,6 +69,7 @@
           wheel
           build
           twine
+          cbor2
         ]
       );
 
