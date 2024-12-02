@@ -314,11 +314,11 @@ func (existing *AddressDetails) PatchAdd(fields []string, value cbor.RawMessage)
 	case "address1":
 		existing.Address1 = strValue
 	case "address2":
-		existing.Address2 = strValue
+		existing.Address2 = &strValue
 	case "city":
 		existing.City = strValue
 	case "postalCode":
-		existing.PostalCode = strValue
+		existing.PostalCode = &strValue
 	case "country":
 		existing.Country = strValue
 	case "emailAddress":

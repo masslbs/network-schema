@@ -6,16 +6,17 @@ package schema
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/fission-codes/go-car-mirror/ipld"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -39,7 +40,6 @@ func TestSignatureIncomplete(t *testing.T) {
 	dec := DefaultDecoder(bytes.NewReader(shortData))
 	err = dec.Decode(&msg)
 	r.Error(err)
-	r.EqualValues([64]byte{}, msg.Sig)
 	r.IsType(ErrBytesTooShort{}, err)
 }
 
@@ -103,7 +103,7 @@ func TestCreateAllTypes(t *testing.T) {
 		Name:         "test",
 		Address1:     "test",
 		City:         "test",
-		PostalCode:   "test",
+		PostalCode:   strptr("test"),
 		Country:      "test",
 		EmailAddress: "test@foo.bar",
 		PhoneNumber:  strptr("+21911223344"),
@@ -143,7 +143,7 @@ func TestCreateAllTypes(t *testing.T) {
 		}},
 
 		{Account{
-			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
+			KeyCards: []PublicKey{PublicKey(testHash(2342))},
 			Guest:    true,
 		}},
 
@@ -247,10 +247,10 @@ func TestCreateAllTypes(t *testing.T) {
 			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
-				PaymentID: Hash{},
-				ListingHashes: []ipld.Cid{
-					testHash(0),
-					testHash(1),
+				PaymentID: testHash(789),
+				ListingHashes: []cid.Cid{
+					testCID(0),
+					testCID(1),
 				},
 			},
 		}},
@@ -269,14 +269,15 @@ func TestCreateAllTypes(t *testing.T) {
 			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
-				PaymentID: Hash{},
-				ListingHashes: []ipld.Cid{
-					testHash(0),
-					testHash(1),
+				PaymentID: testHash(789),
+				ListingHashes: []cid.Cid{
+					testCID(0),
+					testCID(1),
 				},
 			},
 			TxDetails: &OrderPaid{
-				TxHash: &Hash{},
+				TxHash:    testHashPtr(123),
+				BlockHash: testHash(666),
 			},
 		}},
 	}
@@ -325,11 +326,32 @@ func decode[T any](data []byte) (T, error) {
 	return t, err
 }
 
-func testHash(i uint) ipld.Cid {
+func testCID(i uint) cid.Cid {
 	h, err := mh.Sum([]byte(fmt.Sprintf("TEST-%d", i)), mh.SHA3, 4)
 	check(err)
 	// TODO: check what the codec number should be
-	return ipld.WrapCid(cid.NewCidV1(666, h))
+	return cid.NewCidV1(666, h)
+}
+
+func testHash(i uint) Hash {
+	hash := sha3.NewLegacyKeccak256()
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:], uint64(i))
+	hash.Write(buf[:])
+	return Hash(hash.Sum(nil))
+}
+
+func testHashPtr(i uint) *Hash {
+	h := testHash(i)
+	return &h
+}
+
+func testSignature(i uint) Signature {
+	hash := sha3.NewLegacyKeccak512()
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:], uint64(i))
+	hash.Write(buf[:])
+	return Signature(hash.Sum(nil))
 }
 
 func strptr(s string) *string {

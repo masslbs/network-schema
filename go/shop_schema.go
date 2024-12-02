@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fission-codes/go-car-mirror/ipld"
 	"github.com/go-playground/validator/v10"
+	"github.com/ipfs/go-cid"
 )
 
 type ErrBytesTooShort struct {
@@ -34,52 +34,56 @@ type ObjectId = uint64
 // Signature represents a cryptographic signature
 const SignatureSize = 64
 
-type Signature [SignatureSize]byte
+type Signature []byte
 
 func (val *Signature) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != SignatureSize {
 		return ErrBytesTooShort{Want: SignatureSize, Got: n}
 	}
-	copy(val[:], data)
+	*val = make([]byte, SignatureSize)
+	copy(*val, data)
 	return nil
 }
 
 // PublicKey represents a public key
 const PublicKeySize = 32
 
-type PublicKey [PublicKeySize]byte
+type PublicKey []byte
 
 func (val *PublicKey) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != PublicKeySize {
 		return ErrBytesTooShort{Want: PublicKeySize, Got: n}
 	}
-	copy(val[:], data)
+	*val = make([]byte, PublicKeySize)
+	copy(*val, data)
 	return nil
 }
 
 // Hash represents a cryptographic hash
 const HashSize = 32
 
-type Hash [HashSize]byte
+type Hash []byte
 
 func (val *Hash) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != HashSize {
 		return ErrBytesTooShort{Want: HashSize, Got: n}
 	}
-	copy(val[:], data)
+	*val = make([]byte, HashSize)
+	copy(*val, data)
 	return nil
 }
 
 // EthereumAddress represents an Ethereum address
 const EthereumAddressSize = 20
 
-type EthereumAddress [EthereumAddressSize]byte
+type EthereumAddress []byte
 
 func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != EthereumAddressSize {
 		return ErrBytesTooShort{Want: EthereumAddressSize, Got: n}
 	}
-	copy(val[:], data)
+	*val = make([]byte, EthereumAddressSize)
+	copy(*val, data)
 	return nil
 }
 
@@ -106,6 +110,7 @@ func addrFromHex(chain uint64, hexAddr string) ChainAddress {
 	hexAddr = strings.TrimPrefix(hexAddr, "0x")
 	decoded, err := hex.DecodeString(hexAddr)
 	check(err)
+	addr.Address = make([]byte, EthereumAddressSize)
 	n := copy(addr.Address[:], decoded)
 	if n != EthereumAddressSize {
 		panic(fmt.Sprintf("copy failed: %d != %d", n, EthereumAddressSize))
@@ -132,11 +137,13 @@ The complete Shop state
 */
 type Shop struct {
 	Manifest Manifest
-	Accounts map[EthereumAddress]Account
+	Accounts map[EthereumAddressArray]Account
 	Listings map[ObjectId]Listing
 	Tags     map[string]Tag `validate:"nonEmptyMapKeys"`
 	Orders   map[ObjectId]Order
 }
+
+type EthereumAddressArray [EthereumAddressSize]byte
 
 /*
 Tags schema
@@ -311,7 +318,7 @@ type Order struct {
 	State           OrderState      `validate:"required"`
 	InvoiceAddress  *AddressDetails `cbor:",omitempty"`
 	ShippingAddress *AddressDetails `cbor:",omitempty"`
-	CanceledAt      *time.Time      `cbor:",omitempty"`
+	CanceledAt      *uint64         `cbor:",omitempty"`
 	ChosenPayee     *Payee          `cbor:",omitempty"`
 	ChosenCurrency  *ChainAddress   `cbor:",omitempty"`
 	PaymentDetails  *PaymentDetails `cbor:",omitempty"`
@@ -394,9 +401,9 @@ func (s *OrderState) UnmarshalCBOR(data []byte) error {
 type AddressDetails struct {
 	Name         string  `validate:"required,notblank"`
 	Address1     string  `validate:"required,notblank"`
-	Address2     string  `cbor:",omitempty"`
+	Address2     *string `cbor:",omitempty"`
 	City         string  `validate:"required,notblank"`
-	PostalCode   string  `cbor:",omitempty"` // Malta does use postal codes
+	PostalCode   *string `cbor:",omitempty"` // Malta does use postal codes
 	Country      string  `validate:"required,notblank"`
 	EmailAddress string  `validate:"required,email"`
 	PhoneNumber  *string `cbor:",omitempty" validate:"omitempty,e164"`
@@ -404,9 +411,9 @@ type AddressDetails struct {
 
 type PaymentDetails struct {
 	PaymentID     Hash
-	Total         Uint256
-	ListingHashes []ipld.Cid `validate:"required,gt=0"`
-	TTL           uint64     `validate:"required,gt=0"` // The time to live in block
+	Total         uint64
+	ListingHashes []cid.Cid `validate:"required,gt=0"`
+	TTL           uint64    `validate:"required,gt=0"` // The time to live in block
 	ShopSignature Signature
 }
 

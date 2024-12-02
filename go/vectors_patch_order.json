@@ -11,9 +11,9 @@
     "InvoiceAddress": {
       "Name": "John Doe",
       "Address1": "123 Main St",
-      "Address2": "",
+      "Address2": null,
       "City": "Anytown",
-      "PostalCode": "",
+      "PostalCode": null,
       "Country": "US",
       "EmailAddress": "john.doe@example.com",
       "PhoneNumber": null
@@ -41,9 +41,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -87,9 +87,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -121,9 +121,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -155,9 +155,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -194,9 +194,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -234,9 +234,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -244,9 +244,9 @@
         "ShippingAddress": {
           "Name": "Jane Doe",
           "Address1": "321 Other St",
-          "Address2": "",
+          "Address2": null,
           "City": "Othertown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "jane.doe@example.com",
           "PhoneNumber": null
@@ -312,9 +312,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -357,9 +357,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -399,9 +399,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -411,40 +411,7 @@
         "ChosenPayee": null,
         "ChosenCurrency": null,
         "PaymentDetails": {
-          "PaymentID": [
-            1,
-            2,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
+          "PaymentID": "ARtNA92MAfEEkUPPnEyBfksWfx0bg+XG8PENiboee84=",
           "Total": 1234567890,
           "ListingHashes": [
             {
@@ -458,7 +425,7 @@
             }
           ],
           "TTL": 100,
-          "ShopSignature": "/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          "ShopSignature": "BxW+wFZjZ3ueDalv1krUQ+7a/oGhBOu68B9SwqrZQVVRQoA5fQ9oBcUmQC8kZMgdydzP4KaIVLpuVC4eRZRB6A=="
         },
         "TxDetails": null
       },
@@ -469,10 +436,10 @@
           1,
           "paymentDetails"
         ],
-        "Value": "pWNUVEwYZGVUb3RhbBpJlgLSaVBheW1lbnRJRFggAQIDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABtTGlzdGluZ0hhc2hlc4PYKkoAAZoFFAShwCPr2CpKAAGaBRQE9HoBMNgqSgABmgUUBIP7pDltU2hvcFNpZ25hdHVyZVhA/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        "Value": "pWNUVEwYZGVUb3RhbBpJlgLSaVBheW1lbnRJRFggARtNA92MAfEEkUPPnEyBfksWfx0bg+XG8PENiboee85tTGlzdGluZ0hhc2hlc4NJAZoFFAShwCPrSQGaBRQE9HoBMEkBmgUUBIP7pDltU2hvcFNpZ25hdHVyZVhABxW+wFZjZ3ueDalv1krUQ+7a/oGhBOu68B9SwqrZQVVRQoA5fQ9oBcUmQC8kZMgdydzP4KaIVLpuVC4eRZRB6A=="
       },
-      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW5QYXltZW50RGV0YWlsc6VjVFRMGGRlVG90YWwaSZYC0mlQYXltZW50SURYIAECAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbUxpc3RpbmdIYXNoZXOD2CpKAAGaBRQEocAj69gqSgABmgUUBPR6ATDYKkoAAZoFFASD+6Q5bVNob3BTaWduYXR1cmVYQP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "Hash": "/sWRlqQRHU8jU9hXGbiZ3B/fvCf0btYOCqS2nkWktgo="
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW5QYXltZW50RGV0YWlsc6VjVFRMGGRlVG90YWwaSZYC0mlQYXltZW50SURYIAEbTQPdjAHxBJFDz5xMgX5LFn8dG4PlxvDxDYm6HnvObUxpc3RpbmdIYXNoZXODSQGaBRQEocAj60kBmgUUBPR6ATBJAZoFFASD+6Q5bVNob3BTaWduYXR1cmVYQAcVvsBWY2d7ng2pb9ZK1EPu2v6BoQTruvAfUsKq2UFVUUKAOX0PaAXFJkAvJGTIHcncz+CmiFS6blQuHkWUQeg=",
+      "Hash": "DY/z0A1YIUt6MSFY86WBDav+a+NAqJMa1iPdr7HcIM0="
     },
     {
       "After": {
@@ -487,9 +454,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -500,74 +467,8 @@
         "ChosenCurrency": null,
         "PaymentDetails": null,
         "TxDetails": {
-          "TxHash": [
-            1,
-            2,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "BlockHash": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ]
+          "TxHash": "bDH8FUIuutKKr5CJwwZwL2dUC1PH7qi30pQQRLAnEA8=",
+          "BlockHash": "h+MYHuyqBIOaAW49Bd3IL/PWf49UU4oKqddgPTOIeMw="
         }
       },
       "Patch": {
@@ -577,10 +478,10 @@
           1,
           "txDetails"
         ],
-        "Value": "omZUeEhhc2hYIAECAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaUJsb2NrSGFzaFggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        "Value": "omZUeEhhc2hYIGwx/BVCLrrSiq+QicMGcC9nVAtTx+6ot9KUEESwJxAPaUJsb2NrSGFzaFggh+MYHuyqBIOaAW49Bd3IL/PWf49UU4oKqddgPTOIeMw="
       },
-      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBaVR4RGV0YWlsc6JmVHhIYXNoWCABAgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGlCbG9ja0hhc2hYIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
-      "Hash": "W+lzzgqyiJVnDccGA/wbeox63c8zPgw7nEOsXB11mtk="
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBaVR4RGV0YWlsc6JmVHhIYXNoWCBsMfwVQi660oqvkInDBnAvZ1QLU8fuqLfSlBBEsCcQD2lCbG9ja0hhc2hYIIfjGB7sqgSDmgFuPQXdyC/z1n+PVFOKCqnXYD0ziHjMbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "ocGMiOilb69MwOGBgK3aepoSMpF2FTD4gxwKo5/XTMs="
     },
     {
       "After": {
@@ -595,9 +496,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -640,9 +541,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -682,9 +583,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -694,40 +595,7 @@
         "ChosenPayee": null,
         "ChosenCurrency": null,
         "PaymentDetails": {
-          "PaymentID": [
-            1,
-            2,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
+          "PaymentID": "ARtNA92MAfEEkUPPnEyBfksWfx0bg+XG8PENiboee84=",
           "Total": 1234567890,
           "ListingHashes": [
             {
@@ -741,7 +609,7 @@
             }
           ],
           "TTL": 100,
-          "ShopSignature": "/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          "ShopSignature": "BxW+wFZjZ3ueDalv1krUQ+7a/oGhBOu68B9SwqrZQVVRQoA5fQ9oBcUmQC8kZMgdydzP4KaIVLpuVC4eRZRB6A=="
         },
         "TxDetails": null
       },
@@ -752,10 +620,10 @@
           1,
           "paymentDetails"
         ],
-        "Value": "pWNUVEwYZGVUb3RhbBpJlgLSaVBheW1lbnRJRFggAQIDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABtTGlzdGluZ0hhc2hlc4PYKkoAAZoFFAShwCPr2CpKAAGaBRQE9HoBMNgqSgABmgUUBIP7pDltU2hvcFNpZ25hdHVyZVhA/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        "Value": "pWNUVEwYZGVUb3RhbBpJlgLSaVBheW1lbnRJRFggARtNA92MAfEEkUPPnEyBfksWfx0bg+XG8PENiboee85tTGlzdGluZ0hhc2hlc4NJAZoFFAShwCPrSQGaBRQE9HoBMEkBmgUUBIP7pDltU2hvcFNpZ25hdHVyZVhABxW+wFZjZ3ueDalv1krUQ+7a/oGhBOu68B9SwqrZQVVRQoA5fQ9oBcUmQC8kZMgdydzP4KaIVLpuVC4eRZRB6A=="
       },
-      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW5QYXltZW50RGV0YWlsc6VjVFRMGGRlVG90YWwaSZYC0mlQYXltZW50SURYIAECAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbUxpc3RpbmdIYXNoZXOD2CpKAAGaBRQEocAj69gqSgABmgUUBPR6ATDYKkoAAZoFFASD+6Q5bVNob3BTaWduYXR1cmVYQP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "Hash": "/sWRlqQRHU8jU9hXGbiZ3B/fvCf0btYOCqS2nkWktgo="
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW5QYXltZW50RGV0YWlsc6VjVFRMGGRlVG90YWwaSZYC0mlQYXltZW50SURYIAEbTQPdjAHxBJFDz5xMgX5LFn8dG4PlxvDxDYm6HnvObUxpc3RpbmdIYXNoZXODSQGaBRQEocAj60kBmgUUBPR6ATBJAZoFFASD+6Q5bVNob3BTaWduYXR1cmVYQAcVvsBWY2d7ng2pb9ZK1EPu2v6BoQTruvAfUsKq2UFVUUKAOX0PaAXFJkAvJGTIHcncz+CmiFS6blQuHkWUQeg=",
+      "Hash": "DY/z0A1YIUt6MSFY86WBDav+a+NAqJMa1iPdr7HcIM0="
     },
     {
       "After": {
@@ -770,9 +638,9 @@
         "InvoiceAddress": {
           "Name": "John Doe",
           "Address1": "123 Main St",
-          "Address2": "",
+          "Address2": null,
           "City": "Anytown",
-          "PostalCode": "",
+          "PostalCode": null,
           "Country": "US",
           "EmailAddress": "john.doe@example.com",
           "PhoneNumber": null
@@ -783,74 +651,8 @@
         "ChosenCurrency": null,
         "PaymentDetails": null,
         "TxDetails": {
-          "TxHash": [
-            4,
-            5,
-            6,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "BlockHash": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ]
+          "TxHash": "0u2NdfgBroogbAf/mxBPDgBSONzRy6+ET9n0DWMXTFY=",
+          "BlockHash": "h+MYHuyqBIOaAW49Bd3IL/PWf49UU4oKqddgPTOIeMw="
         }
       },
       "Patch": {
@@ -860,10 +662,10 @@
           1,
           "txDetails"
         ],
-        "Value": "omZUeEhhc2hYIAQFBgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaUJsb2NrSGFzaFggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        "Value": "omZUeEhhc2hYINLtjXX4Aa6KIGwH/5sQTw4AUjjc0cuvhE/Z9A1jF0xWaUJsb2NrSGFzaFggh+MYHuyqBIOaAW49Bd3IL/PWf49UU4oKqddgPTOIeMw="
       },
-      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBaVR4RGV0YWlsc6JmVHhIYXNoWCAEBQYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGlCbG9ja0hhc2hYIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
-      "Hash": "QqNsxCF8RmysDheNyzx6sYAVQHocwtW32Dm9/VrmvAk="
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBaVR4RGV0YWlsc6JmVHhIYXNoWCDS7Y11+AGuiiBsB/+bEE8OAFI43NHLr4RP2fQNYxdMVmlCbG9ja0hhc2hYIIfjGB7sqgSDmgFuPQXdyC/z1n+PVFOKCqnXYD0ziHjMbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "a9gY1aHR6t4jbss6f3jnv28V9LRIrvpdhOdR0U+5sIo="
     }
   ]
 }
