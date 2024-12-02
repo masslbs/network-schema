@@ -410,24 +410,25 @@ type PaymentDetails struct {
 	ShopSignature Signature
 }
 
-type OrderPaid orderPaidHack
-
-// TODO: add either_or=TxHash,BlockHash
-type orderPaidHack struct {
+type OrderPaid struct {
 	TxHash    *Hash `cbor:",omitempty"`
-	BlockHash *Hash `cbor:",omitempty"`
+	BlockHash Hash  `cbor:",omitempty"`
 }
 
 func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
-	var tmp orderPaidHack
+	var tmp struct {
+		TxHash    *Hash `cbor:",omitempty"`
+		BlockHash *Hash `cbor:",omitempty"`
+	}
 	dec := DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&tmp)
 	if err != nil {
 		return err
 	}
-	if tmp.TxHash == nil && tmp.BlockHash == nil {
-		return fmt.Errorf("one of TxHash or BlockHash must be set")
+	if tmp.BlockHash == nil {
+		return fmt.Errorf("BlockHash must be set")
 	}
-	*op = OrderPaid(tmp)
+	op.BlockHash = *tmp.BlockHash
+	op.TxHash = tmp.TxHash
 	return nil
 }

@@ -1122,6 +1122,30 @@ func TestPatchOrder(t *testing.T) {
 				}, o.ChosenCurrency)
 			},
 		},
+
+		{
+			name:  "replace payment details",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "order", ID: 1, Fields: []string{"paymentDetails"}},
+			value: testPaymentDetails,
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.PaymentDetails)
+				a.Equal(testPaymentDetails.PaymentID, o.PaymentDetails.PaymentID)
+			},
+		},
+
+		{
+			name: "replace tx details",
+			op:   ReplaceOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"txDetails"}},
+			value: OrderPaid{
+				TxHash: &Hash{0x04, 0x05, 0x06},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.TxDetails)
+				a.Equal(&Hash{0x04, 0x05, 0x06}, o.TxDetails.TxHash)
+			},
+		},
 	}
 
 	var patcher Patcher
@@ -1180,6 +1204,82 @@ func TestPatchOrder(t *testing.T) {
 		encoded, err = json.MarshalIndent(vectors, "", "  ")
 		require.NoError(t, err)
 		os.WriteFile("vectors_patch_order.json", encoded, 0644)
+	}
+}
+
+func TestPatchOrderErrors(t *testing.T) {
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    any
+		errMatch string
+	}{
+		{
+			name:     "invalid path type",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "invalid", ID: 1, Fields: []string{"items"}},
+			errMatch: "invalid path type: invalid",
+		},
+		{
+			name:     "unsupported op",
+			op:       IncrementOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"items"}},
+			errMatch: "unsupported op: increment",
+		},
+		{
+			name:     "unsupported field",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"invalid"}},
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "invalid item index",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"items", "999"}},
+			value:    OrderedItem{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid item index format",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"items", "abc"}},
+			value:    OrderedItem{},
+			errMatch: "failed to convert index to int",
+		},
+		{
+			name:     "missing address field",
+			op:       AddOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"invoiceAddress"}},
+			errMatch: "Field validation for 'Name' failed on the 'required' tag",
+		},
+		{
+			name:     "invalid address field",
+			op:       AddOp,
+			path:     PatchPath{Type: "order", ID: 1, Fields: []string{"invoiceAddress", "invalid"}},
+			value:    "test",
+			errMatch: "unsupported field: invalid",
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assert.New(t)
+			r := require.New(t)
+
+			order := testOrder()
+
+			patch := createPatch(tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Order(&order, decodedPatch)
+			r.Error(err)
+			a.Contains(err.Error(), tc.errMatch)
+		})
 	}
 }
 

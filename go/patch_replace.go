@@ -308,6 +308,20 @@ func (existing *Order) PatchReplace(fields []string, value cbor.RawMessage) erro
 			return fmt.Errorf("failed to unmarshal currency: %w", err)
 		}
 		existing.ChosenCurrency = &currency
+	case "paymentDetails":
+		var paymentDetails PaymentDetails
+		err := Unmarshal(value, &paymentDetails)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal payment details: %w", err)
+		}
+		existing.PaymentDetails = &paymentDetails
+	case "txDetails":
+		var txDetails OrderPaid
+		err := Unmarshal(value, &txDetails)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal tx details: %w", err)
+		}
+		existing.TxDetails = &txDetails
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])
 	}
