@@ -200,3 +200,133 @@ func (existing *ListingVariations) PatchAdd(fields []string, value cbor.RawMessa
 		return fmt.Errorf("PatchAdd variations requires at least one field got %d", n)
 	}
 }
+
+// Order
+// =====
+
+func (existing *Order) PatchAdd(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("Order requires at least one field")
+	}
+	switch fields[0] {
+	case "items":
+		return existing.Items.PatchAdd(fields[1:], value)
+	case "invoiceAddress":
+		if len(fields) == 1 {
+			var tmp AddressDetails
+			err := Unmarshal(value, &tmp)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal address details: %w", err)
+			}
+			existing.InvoiceAddress = &tmp
+			return nil
+		}
+		return existing.InvoiceAddress.PatchAdd(fields[1:], value)
+	case "shippingAddress":
+		if len(fields) == 1 {
+			var tmp AddressDetails
+			err := Unmarshal(value, &tmp)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal address details: %w", err)
+			}
+			existing.ShippingAddress = &tmp
+			return nil
+		}
+		return existing.ShippingAddress.PatchAdd(fields[1:], value)
+	case "chosenPayee":
+		var payee Payee
+		err := Unmarshal(value, &payee)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal payee: %w", err)
+		}
+		existing.ChosenPayee = &payee
+		return nil
+	case "chosenCurrency":
+		var currency ChainAddress
+		err := Unmarshal(value, &currency)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal currency: %w", err)
+		}
+		existing.ChosenCurrency = &currency
+		return nil
+	case "paymentDetails":
+		var paymentDetails PaymentDetails
+		err := Unmarshal(value, &paymentDetails)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal payment details: %w", err)
+		}
+		existing.PaymentDetails = &paymentDetails
+		return nil
+	case "txDetails":
+		var txDetails OrderPaid
+		err := Unmarshal(value, &txDetails)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal tx details: %w", err)
+		}
+		existing.TxDetails = &txDetails
+		return nil
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+}
+
+func (existing *OrderedItems) PatchAdd(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, &existing)
+	}
+	if fields[0] == "-" {
+		var item OrderedItem
+		err := Unmarshal(value, &item)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal item: %w", err)
+		}
+		*existing = append(*existing, item)
+		return nil
+	}
+	index, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(*existing) {
+		return fmt.Errorf("index out of bounds: %d", index)
+	}
+	var item OrderedItem
+	err = Unmarshal(value, &item)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal item: %w", err)
+	}
+	(*existing)[index] = item
+	return nil
+}
+
+func (existing *AddressDetails) PatchAdd(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("AddressDetails requires at least one field")
+	}
+	var strValue string
+	err := Unmarshal(value, &strValue)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal value: %w", err)
+	}
+	switch fields[0] {
+	case "name":
+		existing.Name = strValue
+	case "address1":
+		existing.Address1 = strValue
+	case "address2":
+		existing.Address2 = strValue
+	case "city":
+		existing.City = strValue
+	case "postalCode":
+		existing.PostalCode = strValue
+	case "country":
+		existing.Country = strValue
+	case "emailAddress":
+		existing.EmailAddress = strValue
+	case "phoneNumber":
+		existing.PhoneNumber = &strValue
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+	return nil
+}

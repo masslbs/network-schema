@@ -121,6 +121,10 @@ func (existing *ListingOptions) PatchRemove(fields []string) error {
 		return fmt.Errorf("PatchRemove options requires at least one field")
 	}
 	if len(fields) == 1 {
+		_, has := (*existing)[fields[0]]
+		if !has {
+			return fmt.Errorf("option not found: %s", fields[0])
+		}
 		delete(*existing, fields[0])
 		return nil
 	}
@@ -143,5 +147,40 @@ func (existing *ListingVariations) PatchRemove(fields []string) error {
 		return fmt.Errorf("variation not found: %s", fields[0])
 	}
 	delete(*existing, fields[0])
+	return nil
+}
+
+// Order
+// =====
+
+func (existing *Order) PatchRemove(fields []string) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchRemove requires at least one field")
+	}
+	switch fields[0] {
+	case "items":
+		return existing.Items.PatchRemove(fields[1:])
+	case "invoiceAddress":
+		existing.InvoiceAddress = nil
+	case "shippingAddress":
+		existing.ShippingAddress = nil
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+	return nil
+}
+
+func (existing *OrderedItems) PatchRemove(fields []string) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("PatchRemove items requires at least one field")
+	}
+	index, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(*existing) {
+		return fmt.Errorf("index out of bounds: %d", index)
+	}
+	*existing = slices.Delete(*existing, index, index+1)
 	return nil
 }

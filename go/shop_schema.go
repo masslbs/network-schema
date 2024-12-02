@@ -307,7 +307,7 @@ type Account struct {
 Oder Schema
 */
 type Order struct {
-	Items           []OrderedItem   `validate:"required,gt=0"`
+	Items           OrderedItems    `validate:"required"`
 	State           OrderState      `validate:"required"`
 	InvoiceAddress  *AddressDetails `cbor:",omitempty"`
 	ShippingAddress *AddressDetails `cbor:",omitempty"`
@@ -317,6 +317,8 @@ type Order struct {
 	PaymentDetails  *PaymentDetails `cbor:",omitempty"`
 	TxDetails       *OrderPaid      `cbor:",omitempty"`
 }
+
+type OrderedItems []OrderedItem
 
 func OrderValidation(sl validator.StructLevel) {
 	order := sl.Current().Interface().(Order)

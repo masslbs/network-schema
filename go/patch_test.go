@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fission-codes/go-car-mirror/ipld"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/sha3"
@@ -221,6 +222,15 @@ func TestPatchListing(t *testing.T) {
 				}
 				a.Equal("https://http.cat/images/200.jpg", l.Metadata.Images[0])
 				a.Equal("https://http.cat/images/100.jpg", l.Metadata.Images[1])
+			},
+		},
+		{
+			name:  "replace all images",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "images"}},
+			value: []string{"https://http.cat/images/300.jpg", "https://http.cat/images/400.jpg"},
+			expected: func(a *assert.Assertions, l Listing) {
+				a.Equal([]string{"https://http.cat/images/300.jpg", "https://http.cat/images/400.jpg"}, l.Metadata.Images)
 			},
 		},
 		{
@@ -480,6 +490,92 @@ func TestPatchListing(t *testing.T) {
 	}
 }
 
+func TestPatchListingErrors(t *testing.T) {
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    interface{}
+		errMatch string
+	}{
+		{
+			name:     "invalid field path",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"invalid"}},
+			value:    "test",
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "remove non-existent metadata field",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"metadata", "nonexistent"}},
+			errMatch: "unsupported field: nonexistent",
+		},
+		{
+			name:     "invalid array index",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "999"}},
+			value:    ListingStockStatus{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "remove non-existent stock status",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"stockStatuses", "999"}},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid value type for price",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"price"}},
+			value:    "not a number",
+			errMatch: "failed to unmarshal price:",
+		},
+		{
+			name:     "invalid value type for viewState",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"viewState"}},
+			value:    123,
+			errMatch: "failed to unmarshal viewState:",
+		},
+		{
+			name:     "remove non-existent option",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "nonexistent"}},
+			errMatch: "option not found: nonexistent",
+		},
+		{
+			name:     "replace non-existent variation on an option",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "nonexistent"}},
+			errMatch: "variation not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent variation from an option",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "listing", ID: 1, Fields: []string{"options", "color", "variations", "nonexistent"}},
+			errMatch: "variation not found: nonexistent",
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			lis := testListing()
+
+			patch := createPatch(tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Listing(&lis, decodedPatch)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.errMatch)
+		})
+	}
+}
+
 func testManifest() Manifest {
 	return Manifest{
 		ShopId: *big.NewInt(1),
@@ -705,6 +801,385 @@ func TestPatchManifest(t *testing.T) {
 		err = enc.Encode(vectors)
 		require.NoError(t, err)
 		require.NoError(t, tempFile.Close())
+	}
+}
+
+func TestPatchManifestErrors(t *testing.T) {
+
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    any
+		errMatch string
+	}{
+		{
+			name:     "invalid path type",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "invalid", ID: 1, Fields: []string{"payees"}},
+			errMatch: "invalid path type: invalid",
+		},
+		{
+			name:     "unsupported op",
+			op:       IncrementOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"payees"}},
+			errMatch: "unsupported op: increment",
+		},
+		{
+			name:     "unsupported field",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"invalid"}},
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "replace non-existent payee",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"payees", "nonexistent"}},
+			value:    Payee{},
+			errMatch: "payee not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent payee",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"payees", "nonexistent"}},
+			errMatch: "payee not found: nonexistent",
+		},
+		{
+			name:     "replace non-existent shipping region",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"shippingRegions", "nonexistent"}},
+			value:    ShippingRegion{},
+			errMatch: "shipping region not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent shipping region",
+			op:       RemoveOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"shippingRegions", "nonexistent"}},
+			errMatch: "shipping region not found: nonexistent",
+		},
+		{
+			name:     "invalid index for acceptedCurrencies",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"acceptedCurrencies", "999"}},
+			value:    ChainAddress{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid value type for pricingCurrency",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: "manifest", ID: 1, Fields: []string{"pricingCurrency"}},
+			value:    "not a chain address",
+			errMatch: "failed to unmarshal currency:",
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assert.New(t)
+			r := require.New(t)
+
+			manifest := testManifest()
+
+			patch := createPatch(tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Manifest(&manifest, decodedPatch)
+			r.Error(err)
+			a.Contains(err.Error(), tc.errMatch)
+		})
+	}
+}
+
+func testOrder() Order {
+	return Order{
+		State: OrderStateOpen,
+		Items: []OrderedItem{
+			{
+				ListingID: 5555,
+				Quantity:  23,
+			},
+		},
+		InvoiceAddress: &AddressDetails{
+			Name:         "John Doe",
+			Address1:     "123 Main St",
+			City:         "Anytown",
+			Country:      "US",
+			EmailAddress: "john.doe@example.com",
+		},
+	}
+}
+
+func TestPatchOrder(t *testing.T) {
+
+	testPaymentDetails := PaymentDetails{
+		PaymentID: Hash{0x01, 0x02, 0x03},
+		Total:     *big.NewInt(1234567890),
+		ListingHashes: []ipld.Cid{
+			testHash(5),
+			testHash(6),
+			testHash(7),
+		},
+		TTL:           100,
+		ShopSignature: Signature{0xff},
+	}
+
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    interface{}
+		expected func(*assert.Assertions, Order)
+	}{
+		// item ops
+		// ========
+
+		{
+			name:  "replace quantity of an item",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "order", ID: 1, Fields: []string{"items", "0", "quantity"}},
+			value: uint32(42),
+			expected: func(a *assert.Assertions, o Order) {
+				a.Equal(uint32(42), o.Items[0].Quantity)
+			},
+		},
+		{
+			name: "add an item to an order",
+			op:   AddOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"items", "-"}},
+			value: OrderedItem{
+				ListingID: 5555,
+				Quantity:  23,
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				if !a.Len(o.Items, 2, "expected 2 items %+v", o.Items) {
+					return
+				}
+				a.Equal(uint32(23), o.Items[1].Quantity)
+				a.Equal(ObjectId(5555), o.Items[1].ListingID)
+			},
+		},
+		{
+			name: "remove an item from an order",
+			op:   RemoveOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"items", "0"}},
+			expected: func(a *assert.Assertions, o Order) {
+				a.Len(o.Items, 0)
+			},
+		},
+		{
+			name:  "remove all items from an order",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: "order", ID: 1, Fields: []string{"items"}},
+			value: []OrderedItem{},
+			expected: func(a *assert.Assertions, o Order) {
+				a.Len(o.Items, 0)
+			},
+		},
+
+		// add ops
+		// =======
+
+		{
+			name:  "set invoice address name",
+			op:    AddOp,
+			path:  PatchPath{Type: "order", ID: 1, Fields: []string{"invoiceAddress", "name"}},
+			value: "John Doe",
+			expected: func(a *assert.Assertions, o Order) {
+				a.Nil(o.ShippingAddress)
+				if !a.NotNil(o.InvoiceAddress) {
+					return
+				}
+				a.Equal("123 Main St", o.InvoiceAddress.Address1)
+				a.Equal("Anytown", o.InvoiceAddress.City)
+				a.Equal("John Doe", o.InvoiceAddress.Name)
+			},
+		},
+		{
+			name: "set shipping address",
+			op:   AddOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"shippingAddress"}},
+			value: &AddressDetails{
+				Name:         "Jane Doe",
+				Address1:     "321 Other St",
+				City:         "Othertown",
+				Country:      "US",
+				EmailAddress: "jane.doe@example.com",
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				if !a.NotNil(o.ShippingAddress) {
+					return
+				}
+				a.Equal("321 Other St", o.ShippingAddress.Address1)
+				a.Equal("Othertown", o.ShippingAddress.City)
+			},
+		},
+		{
+			name: "remove invoice address",
+			op:   RemoveOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"invoiceAddress"}},
+			expected: func(a *assert.Assertions, o Order) {
+				a.Nil(o.InvoiceAddress)
+			},
+		},
+		{
+			name: "choose payee",
+			op:   AddOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"chosenPayee"}},
+			value: Payee{
+				Address: ChainAddress{
+					ChainID: 1337,
+					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
+				},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.ChosenPayee)
+				a.Equal(ChainAddress{
+					ChainID: 1337,
+					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
+				}, o.ChosenPayee.Address)
+			},
+		},
+		{
+			name: "choose currency",
+			op:   AddOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"chosenCurrency"}},
+			value: ChainAddress{
+				ChainID: 1337,
+				Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.ChosenCurrency)
+				a.EqualValues(&ChainAddress{
+					ChainID: 1337,
+					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
+				}, o.ChosenCurrency)
+			},
+		},
+		{
+			name:  "add payment details",
+			op:    AddOp,
+			path:  PatchPath{Type: "order", ID: 1, Fields: []string{"paymentDetails"}},
+			value: testPaymentDetails,
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.PaymentDetails)
+				a.Equal(testPaymentDetails.PaymentID, o.PaymentDetails.PaymentID)
+				a.Equal(testPaymentDetails.Total, o.PaymentDetails.Total)
+				a.Equal(testPaymentDetails.ListingHashes, o.PaymentDetails.ListingHashes)
+				a.Equal(testPaymentDetails.TTL, o.PaymentDetails.TTL)
+				a.Equal(testPaymentDetails.ShopSignature, o.PaymentDetails.ShopSignature)
+			},
+		},
+		{
+			name: "add tx details",
+			op:   AddOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"txDetails"}},
+			value: OrderPaid{
+				TxHash: &Hash{0x01, 0x02, 0x03},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.TxDetails)
+				a.Equal(&Hash{0x01, 0x02, 0x03}, o.TxDetails.TxHash)
+			},
+		},
+
+		// replace ops
+		// ===========
+		{
+			name: "replace payee",
+			op:   ReplaceOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"chosenPayee"}},
+			value: Payee{
+				Address: ChainAddress{
+					ChainID: 1338,
+					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+				},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.ChosenPayee)
+				a.Equal(ChainAddress{
+					ChainID: 1338,
+					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+				}, o.ChosenPayee.Address)
+			},
+		},
+		{
+			name: "replace currency",
+			op:   ReplaceOp,
+			path: PatchPath{Type: "order", ID: 1, Fields: []string{"chosenCurrency"}},
+			value: ChainAddress{
+				ChainID: 1338,
+				Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+			},
+			expected: func(a *assert.Assertions, o Order) {
+				a.NotNil(o.ChosenCurrency)
+				a.EqualValues(&ChainAddress{
+					ChainID: 1338,
+					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+				}, o.ChosenCurrency)
+			},
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	type vectorEntry struct {
+		After   Order
+		Patch   Patch
+		Encoded []byte
+		Hash    []byte
+	}
+
+	type vector struct {
+		Before  Order
+		Encoded []byte
+		Hash    []byte
+		Patches []vectorEntry
+	}
+	var vectors vector
+	var err error
+	vectors.Before = testOrder()
+	vectors.Encoded, err = Marshal(vectors.Before)
+	require.NoError(t, err)
+	vectors.Hash = hash(vectors.Encoded)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := require.New(t)
+			a := assert.New(t)
+
+			order := testOrder()
+
+			patch := createPatch(tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Order(&order, decodedPatch)
+			r.NoError(err)
+			tc.expected(a, order)
+
+			var v = vectorEntry{
+				After: order,
+				Patch: patch,
+			}
+			v.Encoded, err = Marshal(order)
+			require.NoError(t, err)
+			v.Hash = hash(v.Encoded)
+			vectors.Patches = append(vectors.Patches, v)
+		})
+	}
+
+	if !t.Failed() {
+		encoded, err := Marshal(vectors)
+		require.NoError(t, err)
+		os.WriteFile("vectors_patch_order.cbor", encoded, 0644)
+		encoded, err = json.MarshalIndent(vectors, "", "  ")
+		require.NoError(t, err)
+		os.WriteFile("vectors_patch_order.json", encoded, 0644)
 	}
 }
 

@@ -60,7 +60,6 @@ func (existing Payees) PatchReplace(fields []string, value cbor.RawMessage) erro
 	if len(fields) == 0 {
 		return Unmarshal(value, &existing)
 	}
-
 	if len(fields) != 1 {
 		return fmt.Errorf("Payees requires exactly one field")
 	}
@@ -68,7 +67,6 @@ func (existing Payees) PatchReplace(fields []string, value cbor.RawMessage) erro
 	if !has {
 		return fmt.Errorf("payee not found: %s", fields[0])
 	}
-
 	var payee Payee
 	err := Unmarshal(value, &payee)
 	if err != nil {
@@ -84,6 +82,10 @@ func (existing ShippingRegions) PatchReplace(fields []string, value cbor.RawMess
 	}
 	if len(fields) != 1 {
 		return fmt.Errorf("ShippingRegions requires exactly one field")
+	}
+	_, has := existing[fields[0]]
+	if !has {
+		return fmt.Errorf("shipping region not found: %s", fields[0])
 	}
 	var region ShippingRegion
 	err := Unmarshal(value, &region)
@@ -158,6 +160,7 @@ func (existing *Listing) PatchReplace(fields []string, value cbor.RawMessage) er
 					return fmt.Errorf("failed to unmarshal inStock: %w", err)
 				}
 				existing.StockStatuses[index].InStock = &inStock
+				existing.StockStatuses[index].ExpectedInStockBy = nil
 			default:
 				return fmt.Errorf("unsupported field: %s", fields[2])
 			}
@@ -187,6 +190,13 @@ func (existing *ListingMetadata) PatchReplace(fields []string, value cbor.RawMes
 			return fmt.Errorf("failed to unmarshal title: %w", err)
 		}
 		existing.Title = title
+	case "images":
+		var images []string
+		err := Unmarshal(value, &images)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal images: %w", err)
+		}
+		existing.Images = images
 	default:
 		return fmt.Errorf("unsupported field: %s", fields[0])
 	}
@@ -271,5 +281,61 @@ func (existing *ListingVariations) PatchReplace(fields []string, value cbor.RawM
 		return fmt.Errorf("unsupported field: %s", fields[1])
 	}
 	(*existing)[fields[0]] = variation
+	return nil
+}
+
+// Order
+// =====
+
+func (existing *Order) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return fmt.Errorf("Order requires at least one field")
+	}
+	switch fields[0] {
+	case "items":
+		return existing.Items.PatchReplace(fields[1:], value)
+	case "chosenPayee":
+		var payee Payee
+		err := Unmarshal(value, &payee)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal payee: %w", err)
+		}
+		existing.ChosenPayee = &payee
+	case "chosenCurrency":
+		var currency ChainAddress
+		err := Unmarshal(value, &currency)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal currency: %w", err)
+		}
+		existing.ChosenCurrency = &currency
+	default:
+		return fmt.Errorf("unsupported field: %s", fields[0])
+	}
+	return nil
+}
+
+func (existing *OrderedItems) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, &existing)
+	}
+	index, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(*existing) {
+		return fmt.Errorf("index out of bounds: %d", index)
+	}
+	if len(fields) == 1 {
+		return Unmarshal(value, &(*existing)[index])
+	}
+	switch fields[1] {
+	case "quantity":
+		var quantity uint32
+		err := Unmarshal(value, &quantity)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal quantity: %w", err)
+		}
+		(*existing)[index].Quantity = quantity
+	}
 	return nil
 }

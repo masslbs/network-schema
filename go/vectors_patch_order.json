@@ -1,0 +1,640 @@
+{
+  "Before": {
+    "Items": [
+      {
+        "ListingID": 5555,
+        "VariationIDs": null,
+        "Quantity": 23
+      }
+    ],
+    "State": 1,
+    "InvoiceAddress": {
+      "Name": "John Doe",
+      "Address1": "123 Main St",
+      "Address2": "",
+      "City": "Anytown",
+      "PostalCode": "",
+      "Country": "US",
+      "EmailAddress": "john.doe@example.com",
+      "PhoneNumber": null
+    },
+    "ShippingAddress": null,
+    "CanceledAt": null,
+    "ChosenPayee": null,
+    "ChosenCurrency": null,
+    "PaymentDetails": null,
+    "TxDetails": null
+  },
+  "Encoded": "o2VJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+  "Hash": "H8cJh+Q1R7c+S8Kz/D5c7Pmcu32IB5FhqdKc9OoPJn0=",
+  "Patches": [
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 42
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "order",
+          1,
+          "items",
+          "0",
+          "quantity"
+        ],
+        "Value": "GCo="
+      },
+      "Encoded": "o2VJdGVtc4GiaFF1YW50aXR5GCppTGlzdGluZ0lEGRWzZVN0YXRlAW5JbnZvaWNlQWRkcmVzc6VkQ2l0eWdBbnl0b3duZE5hbWVoSm9obiBEb2VnQ291bnRyeWJVU2hBZGRyZXNzMWsxMjMgTWFpbiBTdGxFbWFpbEFkZHJlc3N0am9obi5kb2VAZXhhbXBsZS5jb20=",
+      "Hash": "MSMgjzAzZk1MkNTcTGiSfqhPj+WdbJ6H9LPGSLKyjR4="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          },
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "items",
+          "-"
+        ],
+        "Value": "omhRdWFudGl0eRdpTGlzdGluZ0lEGRWz"
+      },
+      "Encoded": "o2VJdGVtc4KiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbOiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "N+dqtI5RBv2kkZ7U/UuvDsGRx5CZiTcNnT9qT4CvSm8="
+    },
+    {
+      "After": {
+        "Items": [],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "order",
+          1,
+          "items",
+          "0"
+        ],
+        "Value": "9g=="
+      },
+      "Encoded": "o2VJdGVtc4BlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "vPJDMJCc3cnNsVZrXxQ3iYiCDIRHfS+38wuM4azxzjE="
+    },
+    {
+      "After": {
+        "Items": [],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "order",
+          1,
+          "items"
+        ],
+        "Value": "gA=="
+      },
+      "Encoded": "o2VJdGVtc4BlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "vPJDMJCc3cnNsVZrXxQ3iYiCDIRHfS+38wuM4azxzjE="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "invoiceAddress",
+          "name"
+        ],
+        "Value": "aEpvaG4gRG9l"
+      },
+      "Encoded": "o2VJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "H8cJh+Q1R7c+S8Kz/D5c7Pmcu32IB5FhqdKc9OoPJn0="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": {
+          "Name": "Jane Doe",
+          "Address1": "321 Other St",
+          "Address2": "",
+          "City": "Othertown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "jane.doe@example.com",
+          "PhoneNumber": null
+        },
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "shippingAddress"
+        ],
+        "Value": "pWRDaXR5aU90aGVydG93bmROYW1laEphbmUgRG9lZ0NvdW50cnliVVNoQWRkcmVzczFsMzIxIE90aGVyIFN0bEVtYWlsQWRkcmVzc3RqYW5lLmRvZUBleGFtcGxlLmNvbQ=="
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW9TaGlwcGluZ0FkZHJlc3OlZENpdHlpT3RoZXJ0b3duZE5hbWVoSmFuZSBEb2VnQ291bnRyeWJVU2hBZGRyZXNzMWwzMjEgT3RoZXIgU3RsRW1haWxBZGRyZXNzdGphbmUuZG9lQGV4YW1wbGUuY29t",
+      "Hash": "YoHDVXitKpYg1shXUjQsvl3DED47khYezXJ5EIz1V5Q="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": null,
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "remove",
+        "Path": [
+          "order",
+          1,
+          "invoiceAddress"
+        ],
+        "Value": "9g=="
+      },
+      "Encoded": "omVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUB",
+      "Hash": "UPdSMADT/cO6Dkjf9AqxRmE3PkbHSu6lwlNaUjrT1EA="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": {
+          "Address": {
+            "ChainID": 1337,
+            "Address": "EjRWeJASNFZ4kBI0VniQEjRWeJA="
+          },
+          "CallAsContract": false
+        },
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "chosenPayee"
+        ],
+        "Value": "omdBZGRyZXNzomdBZGRyZXNzVBI0VniQEjRWeJASNFZ4kBI0VniQZ0NoYWluSUQZBTluQ2FsbEFzQ29udHJhY3T0"
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBa0Nob3NlblBheWVlomdBZGRyZXNzomdBZGRyZXNzVBI0VniQEjRWeJASNFZ4kBI0VniQZ0NoYWluSUQZBTluQ2FsbEFzQ29udHJhY3T0bkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "M7cO7v+lqyUhB9zzxxi42P1bnqurOB9n1ToPHeQ4dM8="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": {
+          "ChainID": 1337,
+          "Address": "EjRWeJASNFZ4kBI0VniQEjRWeJA="
+        },
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "chosenCurrency"
+        ],
+        "Value": "omdBZGRyZXNzVBI0VniQEjRWeJASNFZ4kBI0VniQZ0NoYWluSUQZBTk="
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkNob3NlbkN1cnJlbmN5omdBZGRyZXNzVBI0VniQEjRWeJASNFZ4kBI0VniQZ0NoYWluSUQZBTluSW52b2ljZUFkZHJlc3OlZENpdHlnQW55dG93bmROYW1laEpvaG4gRG9lZ0NvdW50cnliVVNoQWRkcmVzczFrMTIzIE1haW4gU3RsRW1haWxBZGRyZXNzdGpvaG4uZG9lQGV4YW1wbGUuY29t",
+      "Hash": "8DQWco2tcMxaUxGd5nuqjQ6L6j7qQLLMWO0kE6bnUmc="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": {
+          "PaymentID": [
+            1,
+            2,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "Total": 1234567890,
+          "ListingHashes": [
+            {
+              "/": "bagnakfaeuhach2y"
+            },
+            {
+              "/": "bagnakfae6r5acma"
+            },
+            {
+              "/": "bagnakfaeqp52ioi"
+            }
+          ],
+          "TTL": 100,
+          "ShopSignature": "/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        },
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "paymentDetails"
+        ],
+        "Value": "pWNUVEwYZGVUb3RhbBpJlgLSaVBheW1lbnRJRFggAQIDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABtTGlzdGluZ0hhc2hlc4PYKkoAAZoFFAShwCPr2CpKAAGaBRQE9HoBMNgqSgABmgUUBIP7pDltU2hvcFNpZ25hdHVyZVhA/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbW5QYXltZW50RGV0YWlsc6VjVFRMGGRlVG90YWwaSZYC0mlQYXltZW50SURYIAECAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbUxpc3RpbmdIYXNoZXOD2CpKAAGaBRQEocAj69gqSgABmgUUBPR6ATDYKkoAAZoFFASD+6Q5bVNob3BTaWduYXR1cmVYQP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "Hash": "/sWRlqQRHU8jU9hXGbiZ3B/fvCf0btYOCqS2nkWktgo="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": {
+          "TxHash": [
+            1,
+            2,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "BlockHash": null
+        }
+      },
+      "Patch": {
+        "Op": "add",
+        "Path": [
+          "order",
+          1,
+          "txDetails"
+        ],
+        "Value": "oWZUeEhhc2hYIAECAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBaVR4RGV0YWlsc6FmVHhIYXNoWCABAgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG5JbnZvaWNlQWRkcmVzc6VkQ2l0eWdBbnl0b3duZE5hbWVoSm9obiBEb2VnQ291bnRyeWJVU2hBZGRyZXNzMWsxMjMgTWFpbiBTdGxFbWFpbEFkZHJlc3N0am9obi5kb2VAZXhhbXBsZS5jb20=",
+      "Hash": "MpTp7FIubWmtj2+rCeT7l1RkKl6n7c/9B+AwQ+x7SiM="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": {
+          "Address": {
+            "ChainID": 1338,
+            "Address": "ESIzRFVmd4iZABEiM0RVZneImQA="
+          },
+          "CallAsContract": false
+        },
+        "ChosenCurrency": null,
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "order",
+          1,
+          "chosenPayee"
+        ],
+        "Value": "omdBZGRyZXNzomdBZGRyZXNzVBEiM0RVZneImQARIjNEVWZ3iJkAZ0NoYWluSUQZBTpuQ2FsbEFzQ29udHJhY3T0"
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBa0Nob3NlblBheWVlomdBZGRyZXNzomdBZGRyZXNzVBEiM0RVZneImQARIjNEVWZ3iJkAZ0NoYWluSUQZBTpuQ2FsbEFzQ29udHJhY3T0bkludm9pY2VBZGRyZXNzpWRDaXR5Z0FueXRvd25kTmFtZWhKb2huIERvZWdDb3VudHJ5YlVTaEFkZHJlc3MxazEyMyBNYWluIFN0bEVtYWlsQWRkcmVzc3Rqb2huLmRvZUBleGFtcGxlLmNvbQ==",
+      "Hash": "ThV58eDM+ayniH+e1pOMDC3FTyZ0Nzx8TqU/mNJ1jVc="
+    },
+    {
+      "After": {
+        "Items": [
+          {
+            "ListingID": 5555,
+            "VariationIDs": null,
+            "Quantity": 23
+          }
+        ],
+        "State": 1,
+        "InvoiceAddress": {
+          "Name": "John Doe",
+          "Address1": "123 Main St",
+          "Address2": "",
+          "City": "Anytown",
+          "PostalCode": "",
+          "Country": "US",
+          "EmailAddress": "john.doe@example.com",
+          "PhoneNumber": null
+        },
+        "ShippingAddress": null,
+        "CanceledAt": null,
+        "ChosenPayee": null,
+        "ChosenCurrency": {
+          "ChainID": 1338,
+          "Address": "ESIzRFVmd4iZABEiM0RVZneImQA="
+        },
+        "PaymentDetails": null,
+        "TxDetails": null
+      },
+      "Patch": {
+        "Op": "replace",
+        "Path": [
+          "order",
+          1,
+          "chosenCurrency"
+        ],
+        "Value": "omdBZGRyZXNzVBEiM0RVZneImQARIjNEVWZ3iJkAZ0NoYWluSUQZBTo="
+      },
+      "Encoded": "pGVJdGVtc4GiaFF1YW50aXR5F2lMaXN0aW5nSUQZFbNlU3RhdGUBbkNob3NlbkN1cnJlbmN5omdBZGRyZXNzVBEiM0RVZneImQARIjNEVWZ3iJkAZ0NoYWluSUQZBTpuSW52b2ljZUFkZHJlc3OlZENpdHlnQW55dG93bmROYW1laEpvaG4gRG9lZ0NvdW50cnliVVNoQWRkcmVzczFrMTIzIE1haW4gU3RsRW1haWxBZGRyZXNzdGpvaG4uZG9lQGV4YW1wbGUuY29t",
+      "Hash": "3XkVgpftOCVRU9DFA/ep7kEToxMNmaWmC0xZsbcOXNk="
+    }
+  ]
+}

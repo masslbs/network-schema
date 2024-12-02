@@ -80,6 +80,9 @@ type Patcher struct {
 
 func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
 	var err error
+	if patch.Path.Type != "manifest" {
+		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+	}
 	switch patch.Op {
 	case ReplaceOp:
 		err = in.PatchReplace(patch.Path.Fields, patch.Value)
@@ -98,13 +101,35 @@ func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
 
 func (p *Patcher) Listing(in *Listing, patch Patch) error {
 	var err error
-	switch patch.Op {
+	if patch.Path.Type != "listing" {
+		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
 	}
 	switch patch.Op {
 	case ReplaceOp:
 		err = in.PatchReplace(patch.Path.Fields, patch.Value)
 	case AddOp:
 		err = in.PatchAdd(patch.Path.Fields, patch.Value)
+	case RemoveOp:
+		err = in.PatchRemove(patch.Path.Fields)
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	if err != nil {
+		return err
+	}
+	return p.validator.Struct(in)
+}
+
+func (p *Patcher) Order(in *Order, patch Patch) error {
+	var err error
+	if patch.Path.Type != "order" {
+		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+	}
+	switch patch.Op {
+	case AddOp:
+		err = in.PatchAdd(patch.Path.Fields, patch.Value)
+	case ReplaceOp:
+		err = in.PatchReplace(patch.Path.Fields, patch.Value)
 	case RemoveOp:
 		err = in.PatchRemove(patch.Path.Fields)
 	default:
