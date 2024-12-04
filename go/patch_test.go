@@ -1194,6 +1194,7 @@ func TestPatchOrder(t *testing.T) {
 			}
 			v.Encoded, err = Marshal(order)
 			require.NoError(t, err)
+			t.Log(pretty(v.Encoded))
 			v.Hash = hash(v.Encoded)
 			vectors.Patches = append(vectors.Patches, v)
 		})

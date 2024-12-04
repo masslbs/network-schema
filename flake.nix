@@ -5,7 +5,7 @@
 {
   description = "Mass Market Contracts";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
   };
 
@@ -39,27 +39,29 @@
         self = pkgs.python3;
       };
 
-      protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
-        pname = "protobuf-to-dict";
-        version = "0.3.1";
-        src = fetchGit {
-          url = "https://github.com/masslbs/protobuf-to-dict.git";
-          rev = "39d7ec2a3a72b5938fe9bddbc593d210bccb64b8";
-          ref = "patch-reqs";
-        };
-        propagatedBuildInputs = [
-          pkgs.python3Packages.pip
-          pkgs.python3Packages.six
-          pkgs.python3Packages.nose
-          pkgs.python3Packages.dateutil
-        ];
-        doCheck = false;
-      };
+      # TODO:
+      # error: nose has been removed since it has been deprecated and unmaintained for almost a decade and does not work on Python 3.12; please switch to pytest or another test runner/framework
+      # protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
+      #   pname = "protobuf-to-dict";
+      #   version = "0.3.1";
+      #   src = fetchGit {
+      #     url = "https://github.com/masslbs/protobuf-to-dict.git";
+      #     rev = "39d7ec2a3a72b5938fe9bddbc593d210bccb64b8";
+      #     ref = "patch-reqs";
+      #   };
+      #   propagatedBuildInputs = [
+      #     pkgs.python3Packages.pip
+      #     pkgs.python3Packages.six
+      #     pkgs.python3Packages.nose
+      #     pkgs.python3Packages.dateutil
+      #   ];
+      #   doCheck = false;
+      # };
 
       mass-python = pinnedPython.withPackages (ps:
         with ps; [
           protobuf
-          protobuf_to_dict
+          # protobuf_to_dict
           web3
           safe-pysha3
           # packaging massmarket_hash_event
@@ -74,7 +76,7 @@
       );
 
       buildInputs = with pkgs; [
-        go
+        go_1_23
         go-outline
         gopls
         gopkgs
