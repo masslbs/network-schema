@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
-# V3 (2024-xx-yy) DRAFT
+# V3 (2024-11-12) DRAFT
 
 - Deprecates V2
 - Remove need for manual encoding.txt / introduces envelope.proto
