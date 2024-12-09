@@ -21,6 +21,7 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/ipld/go-ipld-prime/node/bindnode"
 	ipldSchema "github.com/ipld/go-ipld-prime/schema"
+	gengo "github.com/ipld/go-ipld-prime/schema/gen/go"
 	"github.com/ipld/go-ipld-prime/storage/memstore"
 	"github.com/multiformats/go-multiaddr"
 	mh "github.com/multiformats/go-multihash"
@@ -33,8 +34,10 @@ var ts *ipldSchema.TypeSystem
 func main() {
 	var err error
 	ts, err = ipld.LoadSchemaBytes([]byte(orderSchema))
-	if err != nil {
-		panic(err)
+	check(err)
+	for _, errs := range ts.ValidateGraph() {
+		fmt.Printf("validation error: %v\n", errs)
+		return
 	}
 
 	switch os.Args[1] {
@@ -45,6 +48,8 @@ func main() {
 		ipldWrite()
 	case "direct":
 		directCbor()
+	case "generate":
+		generate()
 	default:
 		panic("unknown command")
 	}
@@ -82,6 +87,23 @@ func directCbor() {
 	err = dec.Decode(&order)
 	check(err)
 	fmt.Printf("%+v\n", order)
+}
+
+func generate() {
+	adjCfg := &gengo.AdjunctCfg{
+		CfgUnionMemlayout:         map[ipldSchema.TypeName]string{},
+		FieldSymbolLowerOverrides: map[gengo.FieldTuple]string{
+			// {TypeName: "Tag", FieldName: "type"}: "typ",
+		},
+	}
+
+	anyType, ok := ts.GetTypes()["Any"]
+	if !ok {
+		panic("Any type not found")
+	}
+	fmt.Printf("Any type: %v\n", anyType)
+
+	gengo.Generate(".", "main", *ts, adjCfg)
 }
 
 func ipldSchemaRead() {
@@ -196,41 +218,14 @@ func ipldStore() {
 	fmt.Printf("concrete type: `%T`\n", lnk)
 }
 
-func testOrder() schema.Order {
-	var order schema.Order
-	order.Items = schema.OrderedItems{
-		schema.OrderedItem{
-			ListingID: 782193,
-			Quantity:  1,
-		},
-		schema.OrderedItem{
-			ListingID:    782194,
-			Quantity:     2,
-			VariationIDs: []string{"red", "blue"},
-		},
-	}
-	order.PaymentDetails = &schema.PaymentDetails{
-		TTL:       81238,
-		PaymentID: schema.Hash{0x01, 0x02, 0x03},
-		ListingHashes: []cid.Cid{
-			testCID(1),
-			testCID(2),
-			testCID(3),
-		},
-	}
-	order.InvoiceAddress = &schema.AddressDetails{
-		Name: "John Doe",
-	}
-	return order
-}
-
 const SoftBlockLimit = 1024 * 1024 // https://github.com/ipfs/kubo/issues/7421#issuecomment-910833499
 
 func ipldWrite() {
-	order := testOrder()
+	value := testListing(23)
 
-	schemaType := ts.TypeByName("Order")
-	node := bindnode.Wrap(&order, schemaType)
+	schemaType := ts.TypeByName("Listing")
+
+	node := bindnode.Wrap(&value, schemaType)
 
 	var buf bytes.Buffer
 	err := dagcbor.Encode(node, &buf)
@@ -273,64 +268,6 @@ func ipldWrite() {
 	err = b.Commit()
 	check(err)
 }
-
-var orderSchema = `
-type Order struct {
-	Items           [OrderedItem]
-	State           Int
-	InvoiceAddress  optional AddressDetails
-	ShippingAddress optional AddressDetails
-	CanceledAt      optional Int
-	ChosenPayee     optional Payee
-	ChosenCurrency  optional ChainAddress
-	PaymentDetails  optional PaymentDetails
-	TxDetails       optional OrderPaid
-}
-
-type OrderedItem struct {
-	ListingID    Int
-	VariationIDs optional [String]
-	Quantity     Int
-}
-
-type AddressDetails struct {
-	Name         String
-	Address1     String
-	Address2     optional String
-	City         String
-	PostalCode   optional String
-	Country      String
-	EmailAddress String
-	PhoneNumber  optional String
-}
-
-type PaymentDetails struct {
-	PaymentID     Bytes
-	Total         Int
-	ListingHashes [Link]
-	TTL           Int
-	ShopSignature Bytes
-}
-
-type OrderPaid struct {
-	TxHash    optional Bytes
-	BlockHash Bytes
-}
-
-type ChainAddress struct {
-	ChainId   Int
-	Address   Bytes
-}
-type Time struct {
-	Location  Int
-	BlockNum  Int
-	TxIndex  Int
-}
-
-type Payee struct {
-	Address        ChainAddress
-	CallAsContract Bool
-}`
 
 func testCID(i uint) cid.Cid {
 	h, err := mh.Sum([]byte(fmt.Sprintf("TEST-%d", i)), mh.SHA3, 8)

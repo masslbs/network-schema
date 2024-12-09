@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -93,8 +92,7 @@ func testListing() Listing {
 	lis.Metadata.Title = "test Listing"
 	lis.Metadata.Description = "short desc"
 	lis.Metadata.Images = []string{"https://http.cat/images/100.jpg"}
-	price := big.NewInt(12345)
-	lis.Price = *price
+	lis.Price = 12345
 	lis.Options = ListingOptions{
 		"color": {
 			Title: "Color",
@@ -175,9 +173,9 @@ func TestPatchListing(t *testing.T) {
 			name:  "replace price",
 			op:    ReplaceOp,
 			path:  PatchPath{Type: "listing", ID: 1, Fields: []string{"price"}},
-			value: *big.NewInt(66666),
+			value: uint64(66666),
 			expected: func(r *assert.Assertions, l Listing) {
-				r.Equal(*big.NewInt(66666), l.Price)
+				r.Equal(uint64(66666), l.Price)
 			},
 		},
 		{
@@ -578,7 +576,7 @@ func TestPatchListingErrors(t *testing.T) {
 
 func testManifest() Manifest {
 	return Manifest{
-		ShopId: *big.NewInt(1),
+		ShopId: uint64(1),
 		Payees: map[string]Payee{
 			"default": {
 				CallAsContract: false,

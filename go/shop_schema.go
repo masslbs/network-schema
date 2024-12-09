@@ -9,7 +9,6 @@ import (
 	"encoding"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -96,7 +95,7 @@ var (
 )
 
 // Uint256 represents a 256-bit unsigned integer
-type Uint256 = big.Int
+type Uint256 = uint64 // TODO: figure out how to represent these in ipld
 
 // An ethereum address with a chain ID attached
 type ChainAddress struct {
@@ -138,9 +137,20 @@ The complete Shop state
 type Shop struct {
 	Manifest Manifest
 	Accounts map[EthereumAddressArray]Account
-	Listings map[ObjectId]Listing
-	Tags     map[string]Tag `validate:"nonEmptyMapKeys"`
-	Orders   map[ObjectId]Order
+	Listings map[ObjectId]Listing // hamt
+	Tags     map[string]Tag       `validate:"nonEmptyMapKeys"`
+	Private  cid.Cid              // links to (enrypted?) ShopPrivate
+}
+
+type ShopPrivate struct {
+	Orders    map[ObjectId]Order // hamt
+	Inventory map[CombinedID]uint32
+}
+
+// helper type for a composite key for inventory
+type CombinedID struct {
+	ListingID    ObjectId
+	VariationIDs string // concatenated with a comma
 }
 
 type EthereumAddressArray [EthereumAddressSize]byte

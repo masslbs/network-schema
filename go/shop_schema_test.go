@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"testing"
 	"time"
 
@@ -53,8 +52,7 @@ func TestMissingFields(t *testing.T) {
 		ViewState ListingViewState
 	}
 	var fl FakeListing
-	twentythree := big.NewInt(230000)
-	fl.Price = *twentythree
+	fl.Price = 230000
 	fl.ViewState = ListingViewStateDeleted
 
 	var buf bytes.Buffer
@@ -78,7 +76,7 @@ func TestMissingFields(t *testing.T) {
 		}
 		ViewState ListingViewState
 	}
-	missingDesc.Price = *twentythree
+	missingDesc.Price = 230000
 	missingDesc.ViewState = ListingViewStatePublished
 	missingDesc.Metadata.Title = "test"
 
@@ -97,8 +95,6 @@ func TestMissingFields(t *testing.T) {
 
 func TestCreateAllTypes(t *testing.T) {
 
-	bigId := big.NewInt(12345)
-
 	testAddress := &AddressDetails{
 		Name:         "test",
 		Address1:     "test",
@@ -116,7 +112,7 @@ func TestCreateAllTypes(t *testing.T) {
 	}{
 
 		{Manifest{
-			ShopId: *bigId,
+			ShopId: uint64(1),
 			Payees: map[string]Payee{
 				"ethereum": {
 					CallAsContract: true,
@@ -129,11 +125,11 @@ func TestCreateAllTypes(t *testing.T) {
 				"default": {
 					PriceModifiers: map[string]PriceModifier{
 						"discount": {
-							ModificationPrecents: big.NewInt(95),
+							ModificationPrecents: uint64ptr(95),
 						},
 						"static": {
 							ModificationAbsolute: &ModificationAbsolute{
-								Amount: *big.NewInt(161),
+								Amount: uint64(161),
 								Plus:   false,
 							},
 						},
@@ -149,7 +145,7 @@ func TestCreateAllTypes(t *testing.T) {
 
 		{Listing{
 			ID:        1,
-			Price:     *big.NewInt(12345),
+			Price:     uint64(12345),
 			ViewState: ListingViewStatePublished,
 			Metadata: ListingMetadata{
 				Title:       "test Listing",
@@ -166,7 +162,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Description: "short desc",
 							},
 							PriceModifier: PriceModifier{
-								ModificationPrecents: big.NewInt(95),
+								ModificationPrecents: uint64ptr(95),
 							},
 						},
 						"G": {
@@ -176,7 +172,7 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 							PriceModifier: PriceModifier{
 								ModificationAbsolute: &ModificationAbsolute{
-									Amount: *big.NewInt(161),
+									Amount: uint64(161),
 									Plus:   false,
 								},
 							},
@@ -360,4 +356,8 @@ func strptr(s string) *string {
 
 func boolptr(b bool) *bool {
 	return &b
+}
+
+func uint64ptr(i uint64) *uint64 {
+	return &i
 }
