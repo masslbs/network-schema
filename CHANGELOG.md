@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
-# V3 (2024-11-12) DRAFT
+# V3 (2024-11-12) DevCon '24 relase, shipping regions and currency management
 
 - Deprecates V2
 - Remove need for manual encoding.txt / introduces envelope.proto
