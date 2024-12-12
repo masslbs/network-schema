@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 import { assertEquals } from "jsr:@std/assert";
 import { testDecode, testEncode } from "./main.ts";
 import sha3 from "npm:js-sha3";
