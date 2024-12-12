@@ -6,8 +6,7 @@ package schema
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
+	"encoding/hex"
 	"math"
 	"math/big"
 	"testing"
@@ -22,10 +21,10 @@ import (
 func TestMapOrdering(t *testing.T) {
 	r := require.New(t)
 	var shop Shop
-	shop.Accounts = make(Accounts)
-	shop.Listings = make(Listings)
-	shop.Orders = make(Orders)
-	shop.Tags = make(Tags)
+	shop.Accounts.Trie = NewTrie[Account]()
+	shop.Listings.Trie = NewTrie[Listing]()
+	shop.Orders.Trie = NewTrie[Order]()
+	shop.Tags.Trie = NewTrie[Tag]()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -39,32 +38,52 @@ func TestMapOrdering(t *testing.T) {
 		0xa5, // map(5)
 		0x64, // text(4)
 		'T', 'a', 'g', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x66, // text(6)
 		'O', 'r', 'd', 'e', 'r', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'A', 'c', 'c', 'o', 'u', 'n', 't', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'L', 'i', 's', 't', 'i', 'n', 'g', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa5, // map(5)
-		0x66, 0x50, 0x61, 0x79, 0x65, 0x65, 0x73, 0xf6, 0x66, 0x53, 0x68, 0x6f, 0x70, 0x49, 0x64, 0x00, 0x6f, 0x50, 0x72, 0x69, 0x63, 0x69, 0x6e, 0x67, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x79, 0xa2, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x67, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x44, 0x00, 0x6f, 0x53, 0x68, 0x69, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x67, 0x69, 0x6f, 0x6e, 0x73, 0xf6, 0x72, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x69, 0x65, 0x73, 0xf6,
+		0xa4, // map(4)
+		0x66, // text(6);
+		'P', 'a', 'y', 'e', 'e', 's',
+		0xf6, // primitive(22)
+		0x66, // text(6)
+		'S', 'h', 'o', 'p', 'I', 'd',
+		0x00, // unsigned(0)
+		0x6f, // text(15)
+		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
+		0xa2, // map(2)
+		0x67, // text(7)
+		'A', 'd', 'd', 'r', 'e', 's', 's',
+		0x54, // bytes(20)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x67, // text(7)
+		'C', 'h', 'a', 'i', 'n', 'I', 'D',
+		0x00, // unsigned(0)
+		0x72, // text(18)
+		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
+		0xf6, // primitive(22)
 	}
-	r.Equal(len(want), buf.Len(), "encoded shop should be the same length")
-
 	got := buf.Bytes()
-	r.Equal(want, got, "encoded shop fields should be in alphabetical order")
+	gotHex := hex.EncodeToString(got)
+	t.Log("Got:", gotHex)
+	r.Equal(len(want), len(got), "encoded shop should be the same length")
+
+	r.Equal(want, got)
 }
 
 // Defines the structure of a vector file.
-type vectorFile[T any] struct {
-	Patches []vectorEntry[T]
+type vectorFileOkay[T any] struct {
+	Patches []vectorEntryOkay[T]
 }
-type vectorEntry[T any] struct {
+type vectorEntryOkay[T any] struct {
 	Name          string
 	Patch         Patch
 	Before, After vectorSnapshot[T]
@@ -74,13 +93,22 @@ type vectorSnapshot[T any] struct {
 	Encoded []byte
 	Hash    []byte
 }
+type vectorFileError[T any] struct {
+	Patches []vectorEntryError[T]
+}
+type vectorEntryError[T any] struct {
+	Name   string
+	Patch  Patch
+	Before vectorSnapshot[T]
+	Error  string
+}
 
 // This vector exercises the mutations of the shop object.
 // Mutations of objects in the shop (listing, order, etc) are tested seperatly.
 // The vectors file is constructed slightly differently to the other vectors files.
 // Instead of starting with the same state every time ("Start" value),
 // we keep the same state for all the patches.
-func TestGenerateVectorsShop(t *testing.T) {
+func TestGenerateVectorsShopOkay(t *testing.T) {
 	r := require.New(t)
 
 	var (
@@ -133,46 +161,90 @@ func TestGenerateVectorsShop(t *testing.T) {
 			PricingCurrency: testUsdc,
 		}
 		s.Manifest.ShippingRegions = make(ShippingRegions)
-		s.Accounts = make(Accounts)
-		s.Listings = make(Listings)
-		s.Tags = make(Tags)
-		s.Orders = make(Orders)
+		s.Accounts.Trie = NewTrie[Account]()
+		s.Listings.Trie = NewTrie[Listing]()
+		s.Tags.Trie = NewTrie[Tag]()
+		s.Orders.Trie = NewTrie[Order]()
 		return s
 	}
 
-	var patches = []Patch{
+	var testCases = []struct {
+		Name  string
+		Op    OpString
+		Path  PatchPath
+		Value []byte
+		Check func(*require.Assertions, Shop)
+	}{
 		// manifest
 		{
+			Name:  "add-payee",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "yet-another-payee"}},
 			Value: mustEncode(t, yetAnotherPayee),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(yetAnotherPayee, state.Manifest.Payees["yet-another-payee"])
+			},
 		},
 		{
+			Name:  "add-shipping-region",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "germany"}},
 			Value: mustEncode(t, ShippingRegion{Country: "DE"}),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(ShippingRegion{Country: "DE"}, state.Manifest.ShippingRegions["germany"])
+			},
 		},
 		{
+			Name: "remove-payee",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "with-escrow"}},
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(2, len(state.Manifest.Payees))
+				_, has := state.Manifest.Payees["with-escrow"]
+				r.False(has)
+				_, has = state.Manifest.Payees["default"]
+				r.True(has)
+				_, has = state.Manifest.Payees["yet-another-payee"]
+				r.True(has)
+			},
 		},
 		// accounts
 		{
+			Name:  "add-account",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr},
 			Value: mustEncode(t, testAcc1),
+			Check: func(r *require.Assertions, state Shop) {
+				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				r.True(ok)
+				r.Equal(testAcc1, acc)
+			},
 		},
 		{
+			Name: "remove-keycard",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
+			Check: func(r *require.Assertions, state Shop) {
+				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				r.True(ok)
+				r.Len(acc.KeyCards, 2)
+			},
 		},
 		{
+			Name:  "add-guest-account",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &guestAccAddr},
 			Value: mustEncode(t, testAcc2),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(2, state.Accounts.Size())
+				acc, ok := state.Accounts.Get(guestAccAddr[:])
+				r.True(ok)
+				r.Equal(testAcc2, acc)
+			},
 		},
 		// listing
 		{
+			Name: "add-listing",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23)},
 			Value: mustEncode(t, Listing{
@@ -186,16 +258,19 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name:  "add-listing-image",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "-"}},
 			Value: mustEncode(t, "https://http.cat/images/100.jpg"),
 		},
 		{
+			Name:  "replace-listing-image",
 			Op:    "replace",
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "0"}},
 			Value: mustEncode(t, "https://http.cat/images/200.jpg"),
 		},
 		{
+			Name: "add-listing2",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
@@ -209,6 +284,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "replace-listing",
 			Op:   "replace",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
@@ -222,6 +298,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "add-deleted-listing",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 			Value: mustEncode(t, Listing{
@@ -235,27 +312,32 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "remove-deleted-listing",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 		},
 		// Tags
 		{
+			Name:  "add-tag",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag")},
 			Value: mustEncode(t, Tag{Name: "test-tag"}),
 		},
 		{
+			Name:  "add-listing-to-tag",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(23)),
 		},
 		{
+			Name:  "add-listing-to-tag2",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(42)),
 		},
 		// orders
 		{
+			Name: "add-order",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 1)},
 			Value: mustEncode(t, Order{
@@ -267,6 +349,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "add-order2",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
 			Value: mustEncode(t, Order{
@@ -278,6 +361,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "remove-order",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
 		},
@@ -286,13 +370,18 @@ func TestGenerateVectorsShop(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFile[Shop]
+	var vectors vectorFileOkay[Shop]
 
 	var state = testShop()
-	for i, patch := range patches {
-		t.Run(fmt.Sprintf("patch-%d", i), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			r := require.New(t)
-			var entry = vectorEntry[Shop]{
+			patch := Patch{
+				Op:    testCase.Op,
+				Path:  testCase.Path,
+				Value: testCase.Value,
+			}
+			var entry = vectorEntryOkay[Shop]{
 				Name:  t.Name(),
 				Patch: patch,
 			}
@@ -310,6 +399,10 @@ func TestGenerateVectorsShop(t *testing.T) {
 
 			err := patcher.Shop(&state, patch)
 			r.NoError(err)
+
+			if testCase.Check != nil {
+				testCase.Check(r, state)
+			}
 
 			afterState := clone.Clone(state)
 			afterEncoded := mustEncode(t, afterState)
@@ -332,26 +425,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 	r.NotEmpty(state.Tags)
 	r.NotEmpty(state.Orders)
 
-	if !t.Failed() {
-		var buf bytes.Buffer
-		enc := DefaultEncoder(&buf)
-		err := enc.Encode(vectors)
-		r.NoError(err)
-		written := int64(buf.Len())
-
-		f := openTestFile(t, "vectors_patch_shop.cbor")
-		defer f.Close()
-		n, err := buf.WriteTo(f)
-		r.NoError(err)
-		r.EqualValues(n, written)
-
-		f = openTestFile(t, "vectors_patch_shop.json")
-		r.NoError(err)
-		jsonEnc := json.NewEncoder(f)
-		jsonEnc.SetIndent("", "  ")
-		err = jsonEnc.Encode(vectors)
-		r.NoError(err)
-	}
+	writeVectors(t, vectors)
 }
 
 func testManifest() Manifest {
@@ -388,7 +462,7 @@ func testManifest() Manifest {
 	}
 }
 
-func TestGenerateVectorsManifest(t *testing.T) {
+func TestGenerateVectorsManifestOkay(t *testing.T) {
 	testPayee := Payee{
 		CallAsContract: true,
 		Address: ChainAddress{
@@ -519,7 +593,7 @@ func TestGenerateVectorsManifest(t *testing.T) {
 	}
 
 	var err error
-	var vectors vectorFile[Manifest]
+	var vectors vectorFileOkay[Manifest]
 
 	// we use the same before for all test cases
 	var before = vectorSnapshot[Manifest]{
@@ -545,7 +619,7 @@ func TestGenerateVectorsManifest(t *testing.T) {
 			r.NoError(err)
 			tc.expected(a, manifest)
 
-			var entry vectorEntry[Manifest]
+			var entry vectorEntryOkay[Manifest]
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Before = before
@@ -560,19 +634,101 @@ func TestGenerateVectorsManifest(t *testing.T) {
 		})
 	}
 
-	if !t.Failed() {
-		tempFile := openTestFile(t, "vectors_patch_manifest.json")
-		jsonEnc := json.NewEncoder(tempFile)
-		jsonEnc.SetIndent("", "  ")
-		err = jsonEnc.Encode(vectors)
-		require.NoError(t, err)
-		require.NoError(t, tempFile.Close())
-		tempFile = openTestFile(t, "vectors_patch_manifest.cbor")
-		enc := DefaultEncoder(tempFile)
-		err = enc.Encode(vectors)
-		require.NoError(t, err)
-		require.NoError(t, tempFile.Close())
+	writeVectors(t, vectors)
+}
+
+func TestGenerateVectorsManifestError(t *testing.T) {
+
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    any
+		errMatch string
+	}{
+		{
+			name:     "unsupported op",
+			op:       IncrementOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees"}},
+			errMatch: "unsupported op: increment",
+		},
+		{
+			name:     "unsupported field",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"invalid"}},
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "replace non-existent payee",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "nonexistent"}},
+			value:    Payee{},
+			errMatch: "payee not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent payee",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "nonexistent"}},
+			errMatch: "payee not found: nonexistent",
+		},
+		{
+			name:     "replace non-existent shipping region",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "nonexistent"}},
+			value:    ShippingRegion{},
+			errMatch: "shipping region not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent shipping region",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "nonexistent"}},
+			errMatch: "shipping region not found: nonexistent",
+		},
+		{
+			name:     "invalid index for acceptedCurrencies",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "999"}},
+			value:    ChainAddress{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid value type for pricingCurrency",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"pricingCurrency"}},
+			value:    "not a chain address",
+			errMatch: "failed to unmarshal currency:",
+		},
 	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileError[Manifest]
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assert.New(t)
+			r := require.New(t)
+
+			manifest := testManifest()
+
+			patch := createPatch(t, tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Manifest(&manifest, decodedPatch)
+			r.Error(err)
+			a.Contains(err.Error(), tc.errMatch)
+
+			var entry vectorEntryError[Manifest]
+			entry.Name = t.Name()
+			entry.Patch = patch
+			entry.Error = err.Error()
+			vectors.Patches = append(vectors.Patches, entry)
+		})
+	}
+
+	writeVectors(t, vectors)
 }
 
 func testListing() Listing {
@@ -613,7 +769,7 @@ func testListing() Listing {
 	return lis
 }
 
-func TestGenerateVectorsListing(t *testing.T) {
+func TestGenerateVectorsListingOkay(t *testing.T) {
 	testColorOption := ListingOption{
 		Title: "Color",
 		Variations: map[string]ListingVariation{
@@ -919,8 +1075,7 @@ func TestGenerateVectorsListing(t *testing.T) {
 		},
 	}
 
-	var vectors vectorFile[Listing]
-	var err error
+	var vectors vectorFileOkay[Listing]
 	var before = vectorSnapshot[Listing]{
 		Value:   testListing(),
 		Encoded: mustEncode(t, testListing()),
@@ -947,7 +1102,7 @@ func TestGenerateVectorsListing(t *testing.T) {
 			r.NoError(err)
 			tc.expected(a, lis)
 
-			var entry vectorEntry[Listing]
+			var entry vectorEntryOkay[Listing]
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Before = before
@@ -961,19 +1116,103 @@ func TestGenerateVectorsListing(t *testing.T) {
 		})
 	}
 
-	if !t.Failed() {
-		tempFile := openTestFile(t, "vectors_patch_listing.json")
-		jsonEnc := json.NewEncoder(tempFile)
-		jsonEnc.SetIndent("", "  ")
-		err = jsonEnc.Encode(vectors)
-		require.NoError(t, err)
-		tempFile.Close()
-		tempFile = openTestFile(t, "vectors_patch_listing.cbor")
-		cborEnc := DefaultEncoder(tempFile)
-		err = cborEnc.Encode(vectors)
-		require.NoError(t, err)
-		tempFile.Close()
+	writeVectors(t, vectors)
+}
+
+func TestGenerateVectorsListingError(t *testing.T) {
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    interface{}
+		errMatch string
+	}{
+		{
+			name:     "invalid field path",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"invalid"}},
+			value:    "test",
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "remove non-existent metadata field",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"metadata", "nonexistent"}},
+			errMatch: "unsupported field: nonexistent",
+		},
+		{
+			name:     "invalid array index",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"stockStatuses", "999"}},
+			value:    ListingStockStatus{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "remove non-existent stock status",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"stockStatuses", "999"}},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid value type for price",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"price"}},
+			value:    "not a number",
+			errMatch: "failed to unmarshal price:",
+		},
+		{
+			name:     "invalid value type for viewState",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"viewState"}},
+			value:    123,
+			errMatch: "failed to unmarshal viewState:",
+		},
+		{
+			name:     "remove non-existent option",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"options", "nonexistent"}},
+			errMatch: "option not found: nonexistent",
+		},
+		{
+			name:     "replace non-existent variation on an option",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"options", "color", "variations", "nonexistent"}},
+			errMatch: "variation not found: nonexistent",
+		},
+		{
+			name:     "remove non-existent variation from an option",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"options", "color", "variations", "nonexistent"}},
+			errMatch: "variation not found: nonexistent",
+		},
 	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileError[Listing]
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			lis := testListing()
+
+			patch := createPatch(t, tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Listing(&lis, decodedPatch)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.errMatch)
+
+			var entry vectorEntryError[Listing]
+			entry.Name = t.Name()
+			entry.Patch = patch
+			entry.Error = tc.errMatch
+			vectors.Patches = append(vectors.Patches, entry)
+		})
+	}
+
+	writeVectors(t, vectors)
 }
 
 func testOrder() Order {
@@ -996,7 +1235,7 @@ func testOrder() Order {
 	}
 }
 
-func TestGenerateVectorsOrder(t *testing.T) {
+func TestGenerateVectorsOrderOkay(t *testing.T) {
 
 	testPaymentDetails := PaymentDetails{
 		PaymentID: Hash{0x01, 0x02, 0x03},
@@ -1234,7 +1473,7 @@ func TestGenerateVectorsOrder(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFile[Order]
+	var vectors vectorFileOkay[Order]
 	encodedBefore := mustEncode(t, testOrder())
 	var before = vectorSnapshot[Order]{
 		Value:   testOrder(),
@@ -1258,7 +1497,7 @@ func TestGenerateVectorsOrder(t *testing.T) {
 			tc.expected(a, order)
 
 			encodedAfter := mustEncode(t, order)
-			var entry = vectorEntry[Order]{
+			var entry = vectorEntryOkay[Order]{
 				Name:   tc.name,
 				Before: before,
 				Patch:  patch,
@@ -1272,18 +1511,85 @@ func TestGenerateVectorsOrder(t *testing.T) {
 		})
 	}
 
-	if !t.Failed() {
-		encoded, err := Marshal(vectors)
-		require.NoError(t, err)
-		f := openTestFile(t, "vectors_patch_order.cbor")
-		defer f.Close()
-		f.Write(encoded)
+	writeVectors(t, vectors)
+}
 
-		encoded, err = json.MarshalIndent(vectors, "", "  ")
-		require.NoError(t, err)
-		f = openTestFile(t, "vectors_patch_order.json")
-		defer f.Close()
-		f.Write(encoded)
-
+func TestGenerateVectorsOrderError(t *testing.T) {
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    any
+		errMatch string
+	}{
+		{
+			name:     "unsupported op",
+			op:       IncrementOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items"}},
+			errMatch: "unsupported op: increment",
+		},
+		{
+			name:     "unsupported field",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invalid"}},
+			errMatch: "unsupported field: invalid",
+		},
+		{
+			name:     "invalid item index",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "999"}},
+			value:    OrderedItem{},
+			errMatch: "index out of bounds: 999",
+		},
+		{
+			name:     "invalid item index format",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "abc"}},
+			value:    OrderedItem{},
+			errMatch: "failed to convert index to int",
+		},
+		{
+			name:     "missing address field",
+			op:       AddOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress"}},
+			errMatch: "Field validation for 'Name' failed on the 'required' tag",
+		},
+		{
+			name:     "invalid address field",
+			op:       AddOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress", "invalid"}},
+			value:    "test",
+			errMatch: "unsupported field: invalid",
+		},
 	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileError[Order]
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assert.New(t)
+			r := require.New(t)
+
+			order := testOrder()
+
+			patch := createPatch(t, tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Order(&order, decodedPatch)
+			r.Error(err)
+			a.Contains(err.Error(), tc.errMatch)
+
+			var entry vectorEntryError[Order]
+			entry.Name = t.Name()
+			entry.Patch = patch
+			entry.Error = err.Error()
+			vectors.Patches = append(vectors.Patches, entry)
+		})
+	}
+
+	writeVectors(t, vectors)
 }

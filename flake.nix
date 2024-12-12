@@ -10,7 +10,6 @@
     gomod2nix = {
       url = "github:tweag/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.utils.follows = "utils";
     };
   };
 
@@ -76,6 +75,7 @@
           build
           twine
           cbor2
+          matplotlib
         ]
       );
 

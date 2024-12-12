@@ -65,6 +65,8 @@ func DefaultValidator() *validator.Validate {
 	validate.RegisterValidation("notblank", validators.NotBlank)
 	validate.RegisterAlias("nonEmptyMapKeys", "dive,keys,required,notblank,endkeys,required")
 	validate.RegisterStructValidation(OrderValidation, Order{})
+	// we cant "nonEmptyMapKeys" via struct tags, since the library cant iterate through the HAMT
+	validate.RegisterStructValidation(HAMTValidation, Tags{}, Accounts{}, Listings{}, Orders{})
 	return validate
 }
 

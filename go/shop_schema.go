@@ -7,6 +7,7 @@ package schema
 import (
 	"bytes"
 	"encoding"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/ipfs/go-cid"
+	"golang.org/x/crypto/sha3"
 )
 
 type ErrBytesTooShort struct {
@@ -131,20 +133,181 @@ type Payee struct {
 The complete Shop state
 */
 type Shop struct {
-	Tags     Tags   `validate:"nonEmptyMapKeys"`
-	Orders   Orders `validate:"nonEmptyMapKeys"`
+	Tags     Tags
+	Orders   Orders
 	Accounts Accounts
-	Listings Listings `validate:"nonEmptyMapKeys"`
+	Listings Listings
 	Manifest Manifest `validate:"required"`
 }
 
-type Accounts map[EthereumAddress]Account
+type Accounts struct {
+	*Trie[Account]
+}
 
-type Listings map[ObjectId]Listing
+type Listings struct {
+	*Trie[Listing]
+}
 
-type Tags map[string]Tag
+func (l *Listings) Get(id ObjectId) (Listing, bool) {
+	buf := idToBytes(id)
+	lis, ok := l.Trie.Get(buf)
+	return lis, ok
+}
 
-type Orders map[ObjectId]Order
+func (l *Listings) Insert(id ObjectId, lis Listing) error {
+	buf := idToBytes(id)
+	return l.Trie.Insert(buf, lis)
+}
+
+func (l *Listings) Delete(id ObjectId) error {
+	buf := idToBytes(id)
+	return l.Trie.Delete(buf)
+}
+
+func idToBytes(id ObjectId) []byte {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(id))
+	return buf
+}
+
+func bytesToId(buf []byte) ObjectId {
+	if len(buf) != 8 {
+		panic(fmt.Sprintf("expected 8 bytes, got %d", len(buf)))
+	}
+	return ObjectId(binary.BigEndian.Uint64(buf))
+}
+
+type Tags struct {
+	*Trie[Tag]
+}
+
+func (t *Tags) Get(name string) (Tag, bool) {
+	buf := []byte(name)
+	tag, ok := t.Trie.Get(buf)
+	return tag, ok
+}
+
+func (t *Tags) Insert(name string, tag Tag) error {
+	buf := []byte(name)
+	return t.Trie.Insert(buf, tag)
+}
+
+func (t *Tags) Delete(name string) error {
+	buf := []byte(name)
+	return t.Trie.Delete(buf)
+}
+
+type Orders struct {
+	*Trie[Order]
+}
+
+func (l *Orders) Get(id ObjectId) (Order, bool) {
+	buf := idToBytes(id)
+	val, ok := l.Trie.Get(buf)
+	return val, ok
+}
+
+func (l *Orders) Insert(id ObjectId, val Order) error {
+	buf := idToBytes(id)
+	return l.Trie.Insert(buf, val)
+}
+
+func (l *Orders) Delete(id ObjectId) error {
+	buf := idToBytes(id)
+	return l.Trie.Delete(buf)
+}
+
+func HAMTValidation(sl validator.StructLevel) {
+	hamt := sl.Current().Interface()
+	val := sl.Validator()
+	switch tval := hamt.(type) {
+	case Accounts:
+		tval.All(func(key []byte, value Account) bool {
+			if len(key) != EthereumAddressSize {
+				sl.ReportError(value, "key", "key", "tooShort", "")
+				return true
+			}
+			err := val.Struct(value)
+			if err != nil {
+				sl.ReportError(value, string(key), "value", err.Error(), "")
+			}
+			return true
+		})
+	case Listings:
+		tval.All(func(key []byte, value Listing) bool {
+			if len(key) < 8 {
+				sl.ReportError(value, "key", "key", "tooShort", "")
+				return true
+			}
+			id := bytesToId(key)
+			if id == 0 {
+				sl.ReportError(value, "key", "key", "notZero", "")
+				return true
+			}
+			err := val.Struct(value)
+			if err != nil {
+				sl.ReportError(value, string(key), "value", err.Error(), "")
+			}
+			return true
+		})
+	case Orders:
+		tval.All(func(key []byte, value Order) bool {
+			if len(key) < 8 {
+				sl.ReportError(value, "key", "key", "tooShort", "")
+				return true
+			}
+			id := bytesToId(key)
+			if id == 0 {
+				sl.ReportError(value, "key", "key", "notZero", "")
+				return true
+			}
+			err := val.Struct(value)
+			if err != nil {
+				sl.ReportError(value, string(key), "value", err.Error(), "")
+			}
+			return true
+		})
+	case Tags:
+		tval.All(func(key []byte, value Tag) bool {
+			if len(key) == 0 {
+				sl.ReportError(value, "key", "key", "tooShort", "")
+				return true
+			}
+			err := val.Struct(value)
+			if err != nil {
+				sl.ReportError(value, string(key), "value", err.Error(), "")
+			}
+			return true
+		})
+	default:
+		panic(fmt.Sprintf("unknown hamt type: %T", tval))
+	}
+}
+
+func (s *Shop) Hash() (Hash, error) {
+	h := sha3.NewLegacyKeccak256()
+	tagsHash, err := s.Tags.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	h.Write(tagsHash)
+
+	ordersHash, err := s.Orders.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	h.Write(ordersHash)
+
+	accountsHash, err := s.Accounts.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	h.Write(accountsHash)
+
+	err = DefaultEncoder(h).Encode(s.Manifest)
+	check(err)
+	return Hash(h.Sum(nil)), nil
+}
 
 /*
 /*
@@ -441,32 +604,4 @@ func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
 	op.BlockHash = *tmp.BlockHash
 	op.TxHash = tmp.TxHash
 	return nil
-}
-
-// the CBOR library does not know how to encode custom map types.
-// so we need to cast them a bit.
-
-func (a Accounts) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[EthereumAddress]Account(a))
-}
-func (s ShippingRegions) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[string]ShippingRegion(s))
-}
-func (p Payees) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[string]Payee(p))
-}
-func (l Listings) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[uint64]Listing(l))
-}
-func (lis ListingVariations) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[string]ListingVariation(lis))
-}
-func (lis ListingOptions) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[string]ListingOption(lis))
-}
-func (t Tags) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[string]Tag(t))
-}
-func (o Orders) MarshalCBOR() ([]byte, error) {
-	return Marshal(map[uint64]Order(o))
 }

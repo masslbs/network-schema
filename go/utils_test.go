@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -31,6 +32,26 @@ func openTestFile(t testing.TB, fileName string) *os.File {
 		t.Fatal(err)
 	}
 	return file
+}
+
+func writeVectors(t *testing.T, vectors any) {
+	if t.Failed() {
+		t.Logf("skipping vector write due to test failure")
+		return
+	}
+
+	baseName := strings.TrimPrefix(t.Name(), "TestGenerateVectors")
+	tempFile := openTestFile(t, baseName+".json")
+	jsonEnc := json.NewEncoder(tempFile)
+	jsonEnc.SetIndent("", "  ")
+	err := jsonEnc.Encode(vectors)
+	require.NoError(t, err)
+	require.NoError(t, tempFile.Close())
+	tempFile = openTestFile(t, baseName+".cbor")
+	enc := DefaultEncoder(tempFile)
+	err = enc.Encode(vectors)
+	require.NoError(t, err)
+	require.NoError(t, tempFile.Close())
 }
 
 func mustEncode(t *testing.T, v any) cbor.RawMessage {
@@ -109,10 +130,11 @@ func (sig Signature) MarshalJSON() ([]byte, error) {
 
 func (accs Accounts) MarshalJSON() ([]byte, error) {
 	// Convert account/userWallet addresses to hex strings for JSON encoding
-	hexAccs := make(map[string]Account, len(accs))
-	for addr, acc := range accs {
-		hexAccs[hex.EncodeToString(addr[:])] = acc
-	}
+	hexAccs := make(map[string]Account, accs.Size())
+	accs.All(func(addr []byte, acc Account) bool {
+		hexAccs[hex.EncodeToString(addr)] = acc
+		return true
+	})
 	return json.Marshal(hexAccs)
 }
 

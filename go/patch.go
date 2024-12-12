@@ -205,7 +205,6 @@ func (p *Patcher) Shop(in *Shop, patch Patch) error {
 	switch patch.Path.Type {
 	case ObjectTypeManifest:
 		err = p.Manifest(&in.Manifest, patch)
-
 	case ObjectTypeAccount:
 		err = p.Accounts(in.Accounts, patch)
 	case ObjectTypeListing:
@@ -253,10 +252,7 @@ func (p *Patcher) Accounts(in Accounts, patch Patch) error {
 		return fmt.Errorf("account patch needs an ID")
 	}
 	accID := *patch.Path.AccountID
-	// TODO: ipld dag-cbor might make these complicated...
-	// mapKey := hex.EncodeToString(accID[:])
-	mapKey := accID
-	acc, ok := in[mapKey]
+	acc, ok := in.Trie.Get(accID[:])
 	switch patch.Op {
 	case AddOp:
 		if ok {
@@ -266,13 +262,19 @@ func (p *Patcher) Accounts(in Accounts, patch Patch) error {
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal account: %w", err)
 		}
-		in[mapKey] = acc
+		err = in.Trie.Insert(accID[:], acc)
+		if err != nil {
+			return fmt.Errorf("failed to insert account %s: %w", accID, err)
+		}
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("account %s not found", accID)
 		}
 		if len(patch.Path.Fields) == 0 {
-			delete(in, mapKey)
+			err = in.Trie.Delete(accID[:])
+			if err != nil {
+				return fmt.Errorf("failed to delete account %s: %w", accID, err)
+			}
 		} else {
 			if patch.Path.Fields[0] != "keyCards" {
 				return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
@@ -285,6 +287,10 @@ func (p *Patcher) Accounts(in Accounts, patch Patch) error {
 				return fmt.Errorf("index out of bounds: %d", idx)
 			}
 			acc.KeyCards = slices.Delete(acc.KeyCards, idx, idx+1)
+			err = in.Trie.Insert(accID[:], acc)
+			if err != nil {
+				return fmt.Errorf("failed to insert account %s: %w", accID, err)
+			}
 		}
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
@@ -297,7 +303,7 @@ func (p *Patcher) Listings(listings Listings, patch Patch) error {
 		return fmt.Errorf("listing patch needs an ID")
 	}
 	objId := *patch.Path.ObjectID
-	lis, ok := listings[objId]
+	lis, ok := listings.Get(objId)
 	switch patch.Op {
 	case AddOp:
 		var err error
@@ -315,7 +321,10 @@ func (p *Patcher) Listings(listings Listings, patch Patch) error {
 		if err != nil {
 			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
 		}
-		listings[objId] = lis
+		err = listings.Insert(objId, lis)
+		if err != nil {
+			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
+		}
 	case ReplaceOp:
 		if !ok {
 			return fmt.Errorf("listing %d not found", objId)
@@ -329,12 +338,18 @@ func (p *Patcher) Listings(listings Listings, patch Patch) error {
 		if err != nil {
 			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
 		}
-		listings[objId] = lis
+		err = listings.Insert(objId, lis)
+		if err != nil {
+			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
+		}
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("listing %d not found", objId)
 		}
-		delete(listings, objId)
+		err := listings.Delete(objId)
+		if err != nil {
+			return fmt.Errorf("failed to delete Listing %d: %w", objId, err)
+		}
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
@@ -368,7 +383,7 @@ func (p *Patcher) Tags(in Tags, patch Patch) error {
 	}
 
 	tagName := *patch.Path.TagName
-	tag, ok := in[tagName]
+	tag, ok := in.Get(tagName)
 	switch patch.Op {
 	case AddOp:
 		var err error
@@ -386,12 +401,18 @@ func (p *Patcher) Tags(in Tags, patch Patch) error {
 		if err != nil {
 			return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
 		}
-		in[tagName] = tag
+		err = in.Insert(tagName, tag)
+		if err != nil {
+			return fmt.Errorf("failed to insert Tag %s: %w", tagName, err)
+		}
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("tag %s not found", tagName)
 		}
-		delete(in, tagName)
+		err := in.Delete(tagName)
+		if err != nil {
+			return fmt.Errorf("failed to delete Tag %s: %w", tagName, err)
+		}
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
@@ -426,7 +447,7 @@ func (p *Patcher) Orders(in Orders, patch Patch) error {
 		return fmt.Errorf("order patch needs an ID")
 	}
 	objId := *patch.Path.ObjectID
-	order, ok := in[objId]
+	order, ok := in.Get(objId)
 	switch patch.Op {
 	case AddOp:
 		if ok {
@@ -436,12 +457,18 @@ func (p *Patcher) Orders(in Orders, patch Patch) error {
 		if err != nil {
 			return fmt.Errorf("failed to patch Order %d: %w", objId, err)
 		}
-		in[objId] = order
+		err = in.Insert(objId, order)
+		if err != nil {
+			return fmt.Errorf("failed to insert Order %d: %w", objId, err)
+		}
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("order %d not found", objId)
 		}
-		delete(in, objId)
+		err := in.Delete(objId)
+		if err != nil {
+			return fmt.Errorf("failed to delete Order %d: %w", objId, err)
+		}
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
