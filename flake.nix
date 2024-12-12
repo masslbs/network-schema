@@ -76,6 +76,7 @@
           build
           twine
           cbor2
+          matplotlib
         ]
       );
 

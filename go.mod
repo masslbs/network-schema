@@ -7,6 +7,7 @@ module github.com/masslbs/network-schema
 go 1.22.6
 
 require (
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/huandu/go-clone/generic v1.7.2
