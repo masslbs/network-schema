@@ -23,43 +23,48 @@
 // The client and relay must agree on the VERSION before starting the protocol.
 // In the case of WebSocket, the VERSION can be compared via the URL.
 // The relay must close the connection if the VERSION isn't supported.
-//
-// As of this version, the protocol is grouped into 4 areas:
-// 1) the transport (this file)
-// 2) authentication for establishing access rights
-// 3) shop specific requets
-// 4) shop events
-//
+
 syntax = "proto3";
 
 package market.mass;
 
+import "authentication.proto";
 import "base_types.proto";
-import "google/protobuf/any.proto";
+import "error.proto";
+import "shop_requests.proto";
+import "subscription.proto";
+import "transport.proto";
 
-// ====================
-// Event syncronization
-// ====================
+// Envelope is how client and server exchange requests and responses.
+message Envelope {
+  RequestId request_id = 1;
+  oneof message {
+    GenericResponse response = 2;
 
-message SignedEvent {
-  google.protobuf.Any event = 1;
-  Signature signature = 2; // EIP-191 of any.value
-}
+    // write operation
+    EventWriteRequest event_write_request = 3;
 
-// Used by authenticated clients to write events to the relay.
-// Requires prior successful authentication.
-message EventWriteRequest {
-  repeated SignedEvent events = 1;
-}
+    // subscriptions
+    SubscriptionRequest subscription_request = 4;
+    SubscriptionCancelRequest subscription_cancel_request = 5;
+    SubscriptionPushRequest subscription_push_request = 6;
 
-// Sent by the relay to signal the number of unpushed events.
-message SyncStatusRequest {
-  uint64 unpushed_events = 1;
-}
+    // sync state information
+    SyncStatusRequest sync_status_request = 7;
+    PingRequest ping_request = 8;
 
-// Sent by the relay to check for the clients liveness.
-// The client needs to respond with a PingResponse.
-// The relay will close the connection if the client doesn't respond 3 times.
-message PingRequest {
-  // empty
+    // shop requests
+    GetBlobUploadURLRequest get_blob_upload_url_request = 9;
+
+    // authentification messages
+    AuthenticateRequest auth_request = 10;
+    ChallengeSolvedRequest challenge_solution_request = 11;
+  }
+
+  message GenericResponse {
+    oneof response {
+      Error error = 1;
+      bytes payload = 2;
+    }
+  }
 }

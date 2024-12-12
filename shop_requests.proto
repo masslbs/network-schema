@@ -6,37 +6,11 @@ syntax = "proto3";
 
 package market.mass;
 
-import "error.proto";
-import "shop.proto";
-
-// Initiate check out of a cart
-message CommitItemsToOrderRequest {
-  bytes request_id = 1;
-  bytes order_id = 2;
-  ShopCurrency currency = 3;
-  string payee_name = 4;
-}
-
-// Returns an error if the cart is already finalized.
-// No error blocks further changes to a cart and starts the payment process.
-message CommitItemsToOrderResponse {
-  bytes request_id = 1;
-  Error error = 2;
-
-  bytes order_finalized_id = 3;
-}
-
 // Get an URL to upload a blob to.
 // This exists for future-proofing the protocol
 // and reduce stress on the websocket connection.
-message GetBlobUploadURLRequest {
-  bytes request_id = 1;
-}
-
-// Returns a single-use URL to upload a blob to.
+// GenericResponse returns a single-use URL to upload a blob to.
 // The HTTP response will contain the blob's IPFS path.
-message GetBlobUploadURLResponse {
-  bytes request_id = 1;
-  Error error = 2;
-  string url = 3;
+message GetBlobUploadURLRequest {
+  // empty
 }

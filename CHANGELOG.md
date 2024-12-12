@@ -4,6 +4,20 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V3 (2024-11-12) DevCon '24 relase, shipping regions and currency management
+
+- Deprecates V2
+- Remove need for manual encoding.txt / introduces envelope.proto
+- Introduces event subscriptions, no implicit push of events
+- Authentication is only necessary for clients that want to write events.
+- Introduces base_types.proto to differentiate various `bytes`
+- Rename _item_ to _listing_
+- Tags are only used for categories, introduce seperate view states for listings
+- Add variations to listings and orders
+- Added order modifiers for shipping and taxes
+- Remove shop manifest metadata in favour of NFT metadata
+- Replace all price handling with Uint256 values
+
 # V2 (2024-07-17) EthCC '24 relase, guest testing checkout
 
 - Deprecates V1

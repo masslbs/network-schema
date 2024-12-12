@@ -6,243 +6,216 @@ syntax = "proto3";
 
 package market.mass;
 
-import "shop.proto";
+import "base_types.proto";
+import "google/protobuf/timestamp.proto";
 
 // First genisis message of a shop.
 // Has to be the first message that is written and can only be written once.
-// Use UpdateShopManifest to make changes.
-message ShopManifest {
-  // The event_id is a unique identifier for an event.
-  // Currently it's 32 bytes of random data.
-  // It also functions as a nonce for The events signature.
-  // The global identifier of an Item should also include the shop_token_id.
-  // hash(shop_token_id:signature) might suffice then with a smaller nonce.
-  bytes event_id = 1;
+// Can be used to represent the current state of a shop's
+message Manifest {
+  // shop metadata lives in the NFT
+  Uint256 token_id = 1;
 
-  // The NFT Token ID used in ShopReg.registerShop().
-  // Checkout will ownerOf() this to determine the addr for PurchaseFactory.
-  bytes shop_token_id = 2;
+  // currency managment
+  repeated Payee payees = 2;
+  repeated ShopCurrency accepted_currencies = 3;
 
-  // the system tag used to list active items
-  bytes published_tag_id = 3;
+  // the currency listings are priced in
+  ShopCurrency pricing_currency = 4;
 
-  // shop metadata
-  string name = 4;
-  string description = 5;
-  string profile_picture_url = 6;
-  string domain = 7; // Website URL of the shop
-
-  // accepted currencies and payout address is controlled via UpdateShopManifest
+  repeated ShippingRegion shipping_regions = 5;
 }
 
-// Used to update the shop manifest.
-// The Field enum determines the field to be updated and the value to be used.
-message UpdateShopManifest {
-  // See ShopManifest for details
-  bytes event_id = 1;
+// State transition for the manifest
+message UpdateManifest {
+  optional Payee add_payee = 1;
+  optional Payee remove_payee = 2;
 
-  // shop metadata
-  optional string name = 2;
-  optional string description = 3;
-  optional string profile_picture_url = 4;
-  optional string domain = 5;
+  repeated ShopCurrency add_accepted_currencies = 3;
+  repeated ShopCurrency remove_accepted_currencies = 4;
 
-  optional bytes published_tag_id = 6;
+  optional ShopCurrency set_pricing_currency = 5;
 
-  message Payee {
-    // user handle, like "escrow" or "direct", used during checkout
-    string name = 1;
-    bytes addr = 2;
-    uint64 chain_id = 3;
-
-    // controls how the payment is reaches the payee.
-    // true:  forwarded via pay() method
-    // false: normal transfer
-    // See also:
-    // https://github.com/masslbs/contracts/
-    // commit: 377aba24796e029945696350db581ec1f65da657
-    // file: src/IPayments.sol#L90-L95.
-    bool call_as_contract = 4;
-  };
-
-  optional Payee add_payee = 7;
-  optional Payee remove_payee = 8;
-
-  repeated ShopCurrency add_accepted_currencies = 9;
-  repeated ShopCurrency remove_accepted_currencies = 10;
-  optional ShopCurrency set_base_currency = 11;
+  repeated ShippingRegion add_shipping_regions = 6;
+  repeated string remove_shipping_regions = 7; // by name
 }
 
-// Creates an item in the shop.
-message CreateItem {
-  // See ShopManifest for details
-  bytes event_id = 1;
+message Account {
+  oneof action {
+    // this message is created by the relay when it sees an address being
+    // added as a clerk
+    OnchainAction add = 1;
 
-  // decimal number as a string.
-  // numbers need to be always formatted to 2 decimal places.
-  // the demcimal place must use a dot ('.') as the separator.
-  string price = 2;
+    // this message is created by the relay when it sees a clerk's address
+    // being deleted.
+    OnchainAction remove = 2;
 
-  // should be valid JSON
-  // TODO: make a json schmea with minimal/required fields
-  bytes metadata = 3;
+    KeyCardEnroll enroll_keycard = 3;
+    PublicKey revoke_keycard = 4;
+  }
+
+  // OnchainAction messages mirror the events emitted by
+  // the ShopReg smart-contract to the event log of a shop.
+  message OnchainAction {
+    EthereumAddress account_address = 1;
+    Hash tx = 2; // the hash of the transaction that alterd the contract state
+  }
+
+  // Binds the keycard to a wallet address of the user
+  message KeyCardEnroll {
+    PublicKey keycard_pubkey = 1;
+    // TODO: move to docs
+    // What to do about checkouts of guest keycards?
+    // - set to zero address
+    // - expose  secret key during checkout for recovering access to order
+    EthereumAddress user_wallet = 2;
+  }
 }
 
-// UpdateItem changes the price or metadata of an item.
-// Follows the same pattern as UpdateManifest.
-message UpdateItem {
-  // See ShopManifest for details
-  bytes event_id = 1;
-  bytes item_id = 2; // the event_id of the CreateItem event
-
-  optional string price = 3;
-  optional bytes metadata = 4;
+// Used to create a listing
+// as well as repersent the latest value after some updates
+message Listing {
+  ObjectId id = 1;
+  Uint256 price = 2;
+  ListingMetadata metadata = 3;
+  ListingViewState view_state = 4;
+  repeated ListingOption options = 5;
+  // one for each combination of variations
+  repeated ListingStockStatus stock_statuses = 6;
 }
 
-// Creates a tag in the shop.
-// These can be used to group items into categories.
-// There are also a couple of system-level tags, like published.
-// Thse are used to filter items in the shop.
-message CreateTag {
-  // See ShopManifest for details
-  bytes event_id = 1;
+// State transition of a listing
+message UpdateListing {
+  ObjectId id = 1;
+
+  optional Uint256 price = 2;
+  optional ListingMetadata metadata = 3;
+  optional ListingViewState view_state = 4;
+
+  repeated ListingOption add_options = 5;
+  repeated ObjectId remove_option_ids = 6;
+
+  repeated AddVariation add_variations = 7;
+  repeated ObjectId remove_variation_ids = 8;
+
+  repeated ListingStockStatus stock_updates = 9;
+
+  message AddVariation {
+    ObjectId option_id = 1;
+    ListingVariation variation = 2;
+  }
+}
+
+// the inventory number to add or subtract from a listing
+// Seprated from listing, since this is private
+message ChangeInventory {
+  ObjectId id = 1;
+  // each variation must belong to a different option
+  repeated ObjectId variation_ids = 2;
+  sint32 diff = 3;
+}
+
+// Creates a tag in the shop
+// also used to represent the current value
+message Tag {
+  ObjectId id = 1;
   string name = 2;
+  repeated ObjectId listing_ids = 3;
+  bool deleted = 4;
 }
 
+// These can be used to group items into categories.
 message UpdateTag {
-  // See ShopManifest for details
-  bytes event_id = 1;
-  bytes tag_id = 2;
-
-  optional bytes add_item_id = 3;
-  optional bytes remove_item_id = 4;
+  ObjectId id = 1;
+  optional string rename = 2;
+  repeated ObjectId add_listing_ids = 3;
+  repeated ObjectId remove_listing_ids = 4;
   optional bool delete = 5;
-  optional string rename = 6;
 }
 
-// private shop information
-// =========================
-
-// ChangeStock is used to update the stock of on or more items.
-// Created by the relay after an order has been paied for.
-message ChangeStock {
-  // See ShopManifest for details
-  bytes event_id = 1;
-
-  // length needs to match the length of the diff field
-  repeated bytes item_ids = 2;
-  repeated sint32 diffs = 3;
-
-  // (optional) only set by the relay.
-  // signals payment completion after a CommitOrderRequest
-  bytes order_id = 4;
-  bytes tx_hash = 5;
-}
-
-// created by the relay when a user enrolls a key card
-message NewKeyCard {
-  // See ShopManifest for details
-  bytes event_id = 1;
-  bytes user_wallet_addr = 2;
-  bytes card_public_key = 3;
-  bool is_guest = 4;
-}
-
-// CreateOrder is used to create a new order.
 message CreateOrder {
-  // See ShopManifest for details
-  bytes event_id = 1;
+  ObjectId id = 1;
 }
 
 message UpdateOrder {
-  // See ShopManifest for details
-  bytes event_id = 1;
-  bytes order_id = 2;
+  ObjectId id = 1;
 
   oneof action {
+    Cancel cancel = 2;
     ChangeItems change_items = 3;
-    ItemsFinalized items_finalized = 4;
-    OrderCanceled order_canceled = 5;
-    AddressDetails update_shipping_details = 6;
-  };
 
-  // ChangeItems is used to add or remove items from an order.
-  // Only valid before the items were finalized.
+    // starting checkout, items locked, payment timer running
+    CommitItems commit_items = 4;
+
+    AddressDetails set_invoice_address = 5;
+    // no shipping addr assumes invoice addrq
+    AddressDetails set_shipping_address = 6;
+
+    // invoice address needs to be filled in before it can be payed
+    ChoosePaymentMethod choose_payment = 7;
+    PaymentDetails set_payment_details = 8;
+
+    OrderTransaction add_payment_tx = 9;
+
+    string set_shipping_status = 10;
+  }
+
+  // Either created by a relay for an order that hasn't been payed in time.
+  // Or when the customer steps back from the purchase.
+  // This frees up the items locked up in the commited order.
+  message Cancel {
+    // empty
+  }
+
+  // only valid before items were commited to the order
   message ChangeItems {
-    bytes item_id = 1;
-    sint32 quantity = 2;
-  };
+    repeated OrderedItem adds = 1;
+    repeated OrderedItem removes = 2;
+  }
 
-  // Created by the relay after a CommitOrderRequest.
-  // It signals that an order is about to be payed,
-  // and can not be changed anymore.
-  message ItemsFinalized {
-    // for verification. Compare against getPaymentId(PaymentReq)
-    bytes payment_id = 1;
+  message CommitItems {
+    // empty
+  }
 
-    string sub_total = 2;
-    string sales_tax = 3;
-    string total = 4; // = subtotal + sales_tax
-
-    // PaymentRequest fields that are not obvious to the caller
-    string ttl = 5;
-    bytes order_hash = 6;
-    bytes currency_addr = 7;
-    bytes total_in_crypto = 8; // big-endian uint256
-    bytes payee_addr = 9;
-    bool is_payment_endpoint = 10;
-    bytes shop_signature = 11;
-    // end of PaymentRequest data
-  };
-
-  // Either created by a relay for an order that haven't been payed in time.
-  // Or by a clerk, for eg. when the customer steps back from the purchase.
-  // This frees up the items locked up in the finalized order.
-  message OrderCanceled {
-    uint64 timestamp = 1;
-  };
-
-  message AddressDetails {
-    string name = 1;
-    string address1 = 2;
-    string address2 = 3;
-    string city = 4;
-    string postal_code = 5;
-    string country = 6;
-    string phone_number = 7;
-  };
+  // Created by a customer when they are ready to purchase an order
+  // This is followed by a PaymentDetails message
+  message ChoosePaymentMethod {
+    // has to be an accepted currency on the manifest
+    ShopCurrency currency = 1;
+    Payee payee = 2;
+  }
 }
 
 // ShopEvent is the transport wrapper for a single event in a shop.
-//
-// For signatures we use https://eips.ethereum.org/EIPS/eip-712.
-// The structured data definition are specified in `typedData.json`.
-// The KeyCard keypair is used to sign or verify the data.
-// The Set of all valid keys is all NewKeyCard events
-// plus the Relays assigned on the ShopReg smart contract.
-//
-// Special care must be taken for Events with optional and union fields.
-// Specifically these are `UpdateManifest`, `UpdateItem` and `ChangeStock`.
-// Some implementations of `eth_signTypedData` are fine with `null` fields,
-// while others aren't.
-// Therefore, the structured data specification
-// needs to be pruned from fields that are not set.
 message ShopEvent {
+  // The nonce must be unique for each event a keycard creates.
+  // The sequence values need to increase monotonicly.
+  // Since PB can't discern between the 0 value and
+  // a missing field it should start with 1.
+  uint64 nonce = 1;
+
+  // Every signed event must be tied to a shop id. This allow the
+  // event to processed outside the context of the currenct connection.
+  Uint256 shop_id = 2;
+
+  // the time when this event was created.
+  // The relay should reject any events from the future
+  google.protobuf.Timestamp timestamp = 3;
+
   oneof union {
-    ShopManifest shop_manifest = 2;
-    UpdateShopManifest update_shop_manifest = 3;
+    Manifest manifest = 4;
+    UpdateManifest update_manifest = 5;
+    Account account = 6;
 
-    CreateItem create_item = 4;
-    UpdateItem update_item = 5;
+    Listing listing = 7;
+    UpdateListing update_listing = 8;
 
-    CreateTag create_tag = 6;
-    UpdateTag update_tag = 7;
+    ChangeInventory change_inventory = 9;
 
-    CreateOrder create_order = 8;
-    UpdateOrder update_order = 9;
+    Tag tag = 10;
+    UpdateTag update_tag = 11;
 
-    ChangeStock change_stock = 12;
-
-    NewKeyCard new_key_card = 13;
+    CreateOrder create_order = 12;
+    UpdateOrder update_order = 13;
   }
 }
