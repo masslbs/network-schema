@@ -108,7 +108,7 @@ func TestCreateAllTypes(t *testing.T) {
 		EmailAddress: "test@foo.bar",
 		PhoneNumber:  strptr("+21911223344"),
 	}
-	expectedInStockBy := time.Unix(9999999999, 0)
+	expectedInStockBy := time.Unix(9999999999, 0).UTC()
 
 	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {

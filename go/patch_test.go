@@ -221,7 +221,7 @@ func TestPatchListing(t *testing.T) {
 			},
 		},
 	}
-	testTimeFuture := time.Unix(10000000000, 0)
+	testTimeFuture := time.Unix(10000000000, 0).UTC()
 
 	testCases := []struct {
 		name     string
