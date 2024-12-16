@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -328,14 +327,13 @@ func TestEncodeShop(t *testing.T) {
 	r.NoError(err)
 	written := int64(buf.Len())
 
-	f, err := os.OpenFile("vectors_patch_shop.cbor", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	r.NoError(err)
+	f := openTestFile("vectors_patch_shop.cbor")
 	defer f.Close()
 	n, err := buf.WriteTo(f)
 	r.NoError(err)
 	r.EqualValues(n, written)
 
-	f, err = os.OpenFile("vectors_patch_shop.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	f = openTestFile("vectors_patch_shop.json")
 	r.NoError(err)
 	jsonEnc := json.NewEncoder(f)
 	jsonEnc.SetIndent("", "  ")
