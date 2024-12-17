@@ -12,6 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func mustEncode(t testing.TB, v any) []byte {
+	buf := bytes.NewBuffer(nil)
+	enc, err := DefaultEncoder(buf)
+	require.NoError(t, err)
+	err = enc.Encode(v)
+	require.NoError(t, err)
+	return buf.Bytes()
+}
+
 // Helper function to create a copy of a trie through serialization
 func copyTrie(t *Trie) (*Trie, error) {
 	data, err := t.MarshalCBOR()
@@ -27,25 +36,28 @@ func TestHAMT(t *testing.T) {
 	r := require.New(t)
 	trie := NewTrie()
 
+	dataAlice := mustEncode(t, "Alice")
+	data30 := mustEncode(t, 30)
+
 	// Insert some values
-	err := trie.Insert([]byte("name"), []byte("Alice"))
+	err := trie.Insert([]byte("name"), dataAlice)
 	r.NoError(err)
 
 	trie1, err := copyTrie(trie)
 	r.NoError(err)
 
-	err = trie1.Insert([]byte("age"), []byte("30"))
+	err = trie1.Insert([]byte("age"), data30)
 	r.NoError(err)
 	r.Equal(2, trie1.Size())
 
 	// Verify insertions
 	val, ok := trie1.Get([]byte("name"))
 	r.True(ok)
-	r.Equal([]byte("Alice"), val)
+	r.Equal(dataAlice, val)
 
 	val, ok = trie1.Get([]byte("age"))
 	r.True(ok)
-	r.Equal([]byte("30"), val)
+	r.Equal(data30, val)
 
 	// Original trie should be unchanged
 	val, ok = trie.Get([]byte("age"))
@@ -56,34 +68,50 @@ func TestHAMT(t *testing.T) {
 func TestHAMTComplexOperations(t *testing.T) {
 	r := require.New(t)
 
+	var values = [][]byte{
+		mustEncode(t, 0),
+		mustEncode(t, 1),
+		mustEncode(t, 2),
+		mustEncode(t, 3),
+		mustEncode(t, 4),
+	}
+
+	var newValues = [][]byte{
+		mustEncode(t, "new-0"),
+		mustEncode(t, "new-1"),
+		mustEncode(t, "new-2"),
+		mustEncode(t, "new-3"),
+		mustEncode(t, "new-4"),
+	}
+
 	// Create initial trie with multiple values
 	trie := NewTrie()
-	err := trie.Insert([]byte("a"), []byte("1"))
+	err := trie.Insert([]byte("a"), values[0])
 	r.NoError(err)
-	err = trie.Insert([]byte("b"), []byte("2"))
+	err = trie.Insert([]byte("b"), values[1])
 	r.NoError(err)
-	err = trie.Insert([]byte("c"), []byte("3"))
+	err = trie.Insert([]byte("c"), values[2])
 	r.NoError(err)
-	err = trie.Insert([]byte("d"), []byte("4"))
+	err = trie.Insert([]byte("d"), values[3])
 	r.NoError(err)
 	r.Equal(4, trie.Size())
 
 	// Test replacing existing values
 	trie2, err := copyTrie(trie)
 	r.NoError(err)
-	err = trie2.Insert([]byte("b"), []byte("new-2"))
+	err = trie2.Insert([]byte("b"), newValues[1])
 	r.NoError(err)
 	r.Equal(4, trie2.Size())
 
 	// Verify original is unchanged
 	val, ok := trie.Get([]byte("b"))
 	r.True(ok)
-	r.Equal([]byte("2"), val)
+	r.Equal(values[1], val)
 
 	// Verify new value in new trie
 	val, ok = trie2.Get([]byte("b"))
 	r.True(ok)
-	r.Equal([]byte("new-2"), val)
+	r.Equal(newValues[1], val)
 
 	// Test deleting values
 	trie3, err := copyTrie(trie2)
@@ -99,11 +127,11 @@ func TestHAMTComplexOperations(t *testing.T) {
 	// Other values should remain
 	val, ok = trie3.Get([]byte("b"))
 	r.True(ok)
-	r.Equal([]byte("new-2"), val)
+	r.Equal(newValues[1], val)
 
 	val, ok = trie3.Get([]byte("c"))
 	r.True(ok)
-	r.Equal([]byte("3"), val)
+	r.Equal(values[2], val)
 
 	// Test deleting non-existent key
 	trie4, err := copyTrie(trie3)
@@ -120,17 +148,17 @@ func TestHAMTComplexOperations(t *testing.T) {
 	r.NoError(err)
 	err = trie5.Delete([]byte("c"))
 	r.NoError(err)
-	err = trie5.Insert([]byte("x"), []byte("10"))
+	err = trie5.Insert([]byte("x"), mustEncode(t, 10))
 	r.NoError(err)
 	r.Equal(2, trie5.Size())
 
 	val, ok = trie5.Get([]byte("d"))
 	r.True(ok)
-	r.Equal([]byte("4"), val)
+	r.Equal(values[3], val)
 
 	val, ok = trie5.Get([]byte("x"))
 	r.True(ok)
-	r.Equal([]byte("10"), val)
+	r.Equal(mustEncode(t, 10), val)
 
 	// Test that older versions of the trie are not affected by new operations
 	trie6, err := copyTrie(trie5)
@@ -232,35 +260,26 @@ func TestCBORSerialization(t *testing.T) {
 	r.NoError(err)
 	r.Equal(0, decoded.Size())
 
-	// Add some test data
-	err = trie.Insert([]byte("key1"), []byte("value1"))
-	r.NoError(err)
-	err = trie.Insert([]byte("key2"), []byte("value2"))
-	r.NoError(err)
-	err = trie.Insert([]byte("key3"), []byte("value3"))
-	r.NoError(err)
-
-	// Serialize the trie
-	data, err = trie.MarshalCBOR()
-	r.NoError(err)
-
-	t.Logf("filled trie:\n%x", data)
-
-	// Create a new trie and deserialize into it
-	newTrie := NewTrie()
-	err = newTrie.UnmarshalCBOR(data)
-	r.NoError(err)
-
-	// Verify the contents
 	testCases := []struct {
 		key      []byte
 		expected []byte
 	}{
-		{[]byte("key1"), []byte("value1")},
-		{[]byte("key2"), []byte("value2")},
-		{[]byte("key3"), []byte("value3")},
+		{[]byte("key1"), mustEncode(t, "1")},
+		{[]byte("key2"), mustEncode(t, "2")},
+		{[]byte("key3"), mustEncode(t, "3")},
 	}
 
+	// Add some test data
+	for _, tc := range testCases {
+		err = trie.Insert(tc.key, tc.expected)
+		r.NoError(err)
+	}
+
+	// Serialize the trie
+	newTrie, err := copyTrie(trie)
+	r.NoError(err)
+
+	// Verify the contents
 	for _, tc := range testCases {
 		value, found := newTrie.Get(tc.key)
 		r.True(found)
