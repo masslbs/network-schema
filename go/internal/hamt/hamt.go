@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/cespare/xxhash/v2"
-	schema "github.com/masslbs/network-schema/go"
+	"github.com/fxamacker/cbor/v2"
 )
 
 const (
@@ -94,7 +94,7 @@ type Node struct {
 type Entry struct {
 	_     struct{} `cbor:",toarray"`
 	Key   []byte
-	Value []byte
+	Value cbor.RawMessage
 	Node  *Node
 }
 
@@ -109,12 +109,12 @@ func NewTrie() *Trie {
 // MarshalCBOR marshals the HAMT into a CBOR encoded byte slice
 func (t *Trie) MarshalCBOR() ([]byte, error) {
 	// use the schema package to inherit the canonical encoding options
-	return schema.Marshal(t.root)
+	return Marshal(t.root)
 }
 
 // UnmarshalCBOR unmarshals a CBOR encoded byte slice into a HAMT
 func (t *Trie) UnmarshalCBOR(data []byte) error {
-	if err := schema.Unmarshal(data, &t.root); err != nil {
+	if err := Unmarshal(data, &t.root); err != nil {
 		return err
 	}
 

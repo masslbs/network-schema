@@ -449,12 +449,7 @@ func TestLargeScaleInsertGetDelete(t *testing.T) {
 func BenchmarkTrieOperations(b *testing.B) {
 	type KeyGenerator func(i int) []byte
 
-	randomKeys := func(seed int64) func(int) []byte {
-		my_rand := rand.New(rand.NewSource(seed))
-		return func(i int) []byte {
-			return []byte(fmt.Sprintf("key-%d", my_rand.Int()))
-		}
-	}
+	my_rand := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// a difference between these would show a problem with the hash function
 	keyDistributions := map[string]KeyGenerator{
@@ -464,7 +459,9 @@ func BenchmarkTrieOperations(b *testing.B) {
 		"sparse": func(i int) []byte {
 			return []byte(fmt.Sprintf("key-%d", i*1000))
 		},
-		"random": randomKeys(time.Now().UnixNano()),
+		"random": func(i int) []byte {
+			return []byte(fmt.Sprintf("key-%d", my_rand.Int()))
+		},
 	}
 
 	init_size := []int{1000, 10_000, 100_000, 1_000_000}
