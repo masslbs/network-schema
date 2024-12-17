@@ -14,12 +14,8 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
 )
-
-// use a single instance of Validate, it caches struct info
-var validate = DefaultValidator()
 
 func TestSignatureIncomplete(t *testing.T) {
 	r := require.New(t)
@@ -320,30 +316,9 @@ func TestCreateAllTypes(t *testing.T) {
 	}
 }
 
-// utils
-
 func decode[T any](data []byte) (T, error) {
 	var t T
 	dec := DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&t)
 	return t, err
-}
-
-func testHash(i uint) cid.Cid {
-	h, err := mh.Sum([]byte(fmt.Sprintf("TEST-%d", i)), mh.SHA3, 4)
-	check(err)
-	// TODO: check what the codec number should be
-	return cid.NewCidV1(666, h)
-}
-
-func strptr(s string) *string {
-	return &s
-}
-
-func boolptr(b bool) *bool {
-	return &b
-}
-
-func uint64ptr(i uint64) *uint64 {
-	return &i
 }
