@@ -327,13 +327,13 @@ func TestEncodeShop(t *testing.T) {
 	r.NoError(err)
 	written := int64(buf.Len())
 
-	f := openTestFile("vectors_patch_shop.cbor")
+	f := openTestFile(t, "vectors_patch_shop.cbor")
 	defer f.Close()
 	n, err := buf.WriteTo(f)
 	r.NoError(err)
 	r.EqualValues(n, written)
 
-	f = openTestFile("vectors_patch_shop.json")
+	f = openTestFile(t, "vectors_patch_shop.json")
 	r.NoError(err)
 	jsonEnc := json.NewEncoder(f)
 	jsonEnc.SetIndent("", "  ")

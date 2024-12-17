@@ -542,13 +542,13 @@ func TestPatchListing(t *testing.T) {
 	}
 
 	if !t.Failed() {
-		tempFile := openTestFile("vectors_patch_listing.json")
+		tempFile := openTestFile(t, "vectors_patch_listing.json")
 		jsonEnc := json.NewEncoder(tempFile)
 		jsonEnc.SetIndent("", "  ")
 		err = jsonEnc.Encode(vectors)
 		require.NoError(t, err)
 		tempFile.Close()
-		tempFile = openTestFile("vectors_patch_listing.cbor")
+		tempFile = openTestFile(t, "vectors_patch_listing.cbor")
 		cborEnc := DefaultEncoder(tempFile)
 		err = cborEnc.Encode(vectors)
 		require.NoError(t, err)
@@ -856,13 +856,13 @@ func TestPatchManifest(t *testing.T) {
 	}
 
 	if !t.Failed() {
-		tempFile := openTestFile("vectors_patch_manifest.json")
+		tempFile := openTestFile(t, "vectors_patch_manifest.json")
 		jsonEnc := json.NewEncoder(tempFile)
 		jsonEnc.SetIndent("", "  ")
 		err = jsonEnc.Encode(vectors)
 		require.NoError(t, err)
 		require.NoError(t, tempFile.Close())
-		tempFile = openTestFile("vectors_patch_manifest.cbor")
+		tempFile = openTestFile(t, "vectors_patch_manifest.cbor")
 		enc := DefaultEncoder(tempFile)
 		err = enc.Encode(vectors)
 		require.NoError(t, err)
@@ -1261,13 +1261,13 @@ func TestPatchOrder(t *testing.T) {
 	if !t.Failed() {
 		encoded, err := Marshal(vectors)
 		require.NoError(t, err)
-		f := openTestFile("vectors_patch_order.cbor")
+		f := openTestFile(t, "vectors_patch_order.cbor")
 		defer f.Close()
 		f.Write(encoded)
 
 		encoded, err = json.MarshalIndent(vectors, "", "  ")
 		require.NoError(t, err)
-		f = openTestFile("vectors_patch_order.json")
+		f = openTestFile(t, "vectors_patch_order.json")
 		defer f.Close()
 		f.Write(encoded)
 
