@@ -3,21 +3,27 @@
 # SPDX-License-Identifier: MIT
 
 {
-  description = "Mass Market Contracts";
+  description = "Mass Market Network Schema";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
     utils.url = "github:numtide/flake-utils";
+    gomod2nix = {
+      url = "github:tweag/gomod2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs = {
     nixpkgs,
     utils,
+    gomod2nix,
     ...
   }:
     utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ ];
+        overlays = [ gomod2nix.overlays.default ];
       };
 
       # web3 needs parsimonious v0.9.0
@@ -86,9 +92,7 @@
         godef
         clang
         cbor-diag
-
         deno
-
         buf
         black
         reuse
@@ -96,15 +100,27 @@
         protolint
         pyright
         mass-python
+        gomod2nix.packages.${system}.default
       ];
     in {
       devShell = pkgs.mkShell {
         inherit buildInputs;
-
         shellHook = ''
+          gomod2nix generate
           export PYTHON=${mass-python}/bin/python
           export PYTHONPATH=$PYTHONPATH:$PWD/python
         '';
       };
+      packages.default = pkgs.buildGoApplication {
+          name = "MassMarket Test Vectors";
+          modules = ./gomod2nix.toml;
+          buildInputs = [ pkgs.go ];
+          src = ./.;
+          buildPhase = ''
+            cd ./go
+            mkdir -p $out
+            TEST_DATA_OUT=$out go test
+            '';
+        };
     });
 }
