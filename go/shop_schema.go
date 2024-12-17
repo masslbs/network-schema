@@ -7,14 +7,21 @@ package schema
 import (
 	"bytes"
 	"encoding"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/ipfs/go-cid"
+	"github.com/ipld/go-ipld-prime/codec/dagcbor"
+	"github.com/ipld/go-ipld-prime/node/bindnode"
+	ipldSchema "github.com/ipld/go-ipld-prime/schema"
+	"github.com/masslbs/network-schema/go/internal/hamt"
+	"github.com/multiformats/go-multicodec"
 )
 
 type ErrBytesTooShort struct {
@@ -136,6 +143,173 @@ type Shop struct {
 	Accounts Accounts
 	Listings Listings `validate:"nonEmptyMapKeys"`
 	Manifest Manifest `validate:"required"`
+}
+
+type serializedShop struct {
+	Tags     *hamt.Trie
+	Orders   *hamt.Trie
+	Accounts *hamt.Trie
+	Listings *hamt.Trie
+	Manifest Manifest
+
+	cids []cid.Cid
+}
+
+var (
+	cidBuilder = cid.V1Builder{
+		Codec:    uint64(multicodec.DagCbor),
+		MhType:   uint64(multicodec.Keccak256),
+		MhLength: -1,
+	}
+)
+
+func (shop Shop) Serialize() ([]byte, error) {
+	var (
+		ser serializedShop
+		buf bytes.Buffer
+		enc = DefaultEncoder(&buf)
+		err error
+	)
+	ser.Manifest = shop.Manifest
+
+	ser.Tags = hamt.NewTrie()
+	// Sort tags by key for deterministic serialization
+	tagKeys := make([]string, 0, len(shop.Tags))
+	for k := range shop.Tags {
+		tagKeys = append(tagKeys, k)
+	}
+	slices.Sort(tagKeys)
+	for _, k := range tagKeys {
+		v := shop.Tags[k]
+		err = enc.Encode(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode tag: %w", err)
+		}
+
+		cid, err := cidBuilder.Sum(buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cid: %w", err)
+		}
+		ser.cids = append(ser.cids, cid)
+		// TODO: store in some block store
+		buf.Reset()
+		err = dagcbor.Encode(bindnode.Wrap(&cid, &ipldSchema.TypeLink{}), &buf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cid: %w", err)
+		}
+		err = ser.Tags.Insert([]byte(k), buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert tag: %w", err)
+		}
+
+		buf.Reset()
+	}
+
+	ser.Orders = hamt.NewTrie()
+	objectIdKeys := make([]uint64, len(shop.Orders))
+	i := 0
+	for k := range shop.Orders {
+		objectIdKeys[i] = k
+		i++
+	}
+	slices.Sort(objectIdKeys)
+	for _, k := range objectIdKeys {
+		v := shop.Orders[k]
+		err = enc.Encode(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode order: %w", err)
+		}
+		var trieKey = make([]byte, 8)
+		binary.BigEndian.PutUint64(trieKey, k)
+
+		cid, err := cidBuilder.Sum(buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cid: %w", err)
+		}
+		ser.cids = append(ser.cids, cid)
+		// TODO: store in some block store
+		buf.Reset()
+		err = dagcbor.Encode(bindnode.Wrap(&cid, &ipldSchema.TypeLink{}), &buf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cid: %w", err)
+		}
+		err = ser.Orders.Insert(trieKey, buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert order: %w", err)
+		}
+		buf.Reset()
+	}
+
+	ser.Accounts = hamt.NewTrie()
+	accountKeys := make([]EthereumAddress, len(shop.Accounts))
+	i = 0
+	for k := range shop.Accounts {
+		accountKeys[i] = k
+		i++
+	}
+	slices.SortFunc(accountKeys, func(a, b EthereumAddress) int {
+		return bytes.Compare(a[:], b[:])
+	})
+	for _, k := range accountKeys {
+		v := shop.Accounts[k]
+		err = enc.Encode(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode account: %w", err)
+		}
+		cid, err := cidBuilder.Sum(buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cid: %w", err)
+		}
+		ser.cids = append(ser.cids, cid)
+		// TODO: store in some block store
+		buf.Reset()
+		err = dagcbor.Encode(bindnode.Wrap(&cid, &ipldSchema.TypeLink{}), &buf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cid: %w", err)
+		}
+		err = ser.Accounts.Insert(k[:], buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert account: %w", err)
+		}
+		buf.Reset()
+	}
+
+	ser.Listings = hamt.NewTrie()
+	objectIdKeys = make([]ObjectId, len(shop.Listings))
+	i = 0
+	for k := range shop.Listings {
+		objectIdKeys[i] = k
+		i++
+	}
+	slices.Sort(objectIdKeys)
+	for _, k := range objectIdKeys {
+		v := shop.Listings[k]
+		err = enc.Encode(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode listing: %w", err)
+		}
+		var trieKey = make([]byte, 8)
+		binary.BigEndian.PutUint64(trieKey, k)
+		cid, err := cidBuilder.Sum(buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cid: %w", err)
+		}
+		ser.cids = append(ser.cids, cid)
+		// TODO: store in some block store
+		buf.Reset()
+		err = dagcbor.Encode(bindnode.Wrap(&cid, &ipldSchema.TypeLink{}), &buf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cid: %w", err)
+		}
+		err = ser.Listings.Insert(trieKey, buf.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert listing: %w", err)
+		}
+		buf.Reset()
+	}
+
+	fmt.Println("CIDs:", ser.cids)
+	return Marshal(ser)
 }
 
 type Accounts map[EthereumAddress]Account
