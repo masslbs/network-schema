@@ -4,5 +4,6 @@
 
 __pycache__
 .DS_Store
+.direnv
 python/dist
 python/massmarket_hash_event.egg-info

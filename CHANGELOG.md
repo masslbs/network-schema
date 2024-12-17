@@ -4,6 +4,23 @@ SPDX-FileCopyrightText: 2024 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
+# V4 (2024-12-12) DRAFT
+
+- Start implementing shop event types in CBOR
+  - this enables canonical encoding of events
+  - which will also pave the way for a merkle tree of events
+- TODO: encode other enums, not just viewState?
+- Dicey: uses binary map keys (arrays and ints)
+   - TODO: survey other cbor libraries
+- required checks via go-playground/validator
+- patch vectors for
+   - the whole shop
+   - listings, orders seperatly
+- encode path.path as []any with different types for p[1]
+    - listings/orders use numerical objectId
+    - tags use their name (string)
+    - shop.accounts uses the ethereum wallet ([20]byte)
+
 # V3 (2024-11-12) DevCon '24 relase, shipping regions and currency management
 
 - Deprecates V2
