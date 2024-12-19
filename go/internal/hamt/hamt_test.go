@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package hamt
 
 import (
@@ -12,26 +16,6 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
-
-func mustEncode(t testing.TB, v any) cbor.RawMessage {
-	buf := bytes.NewBuffer(nil)
-	enc, err := DefaultEncoder(buf)
-	require.NoError(t, err)
-	err = enc.Encode(v)
-	require.NoError(t, err)
-	return buf.Bytes()
-}
-
-// Helper function to create a copy of a trie through serialization
-func copyTrie[V HAMTValues](t *Trie[V]) (*Trie[V], error) {
-	data, err := t.MarshalCBOR()
-	if err != nil {
-		return nil, err
-	}
-	newTrie := NewTrie[V]()
-	err = newTrie.UnmarshalCBOR(data)
-	return newTrie, err
-}
 
 func TestHAMT(t *testing.T) {
 	r := require.New(t)
@@ -263,7 +247,6 @@ func TestCBORSerialization(t *testing.T) {
 	// empty trie should (de-)serialize to
 	data, err := trie.MarshalCBOR()
 	r.NoError(err)
-	t.Logf("empty trie:\n%x", data)
 	r.Equal("8200f6", hex.EncodeToString(data))
 
 	var decoded = NewTrie[string]()
@@ -377,20 +360,6 @@ func TestTrieSizeTracking(t *testing.T) {
 	err = trie.Delete([]byte("non-existent"))
 	r.NoError(err)
 	r.Equal(1, trie.Size()) // Size should not change
-}
-
-// test-only helper function to collect depths of all nodes in the trie
-func (n *Node[V]) collectDepths(currentDepth int, depths *[]int) {
-	if n == nil {
-		return
-	}
-	for _, e := range n.Entries {
-		if e.Node == nil {
-			*depths = append(*depths, currentDepth)
-		} else {
-			e.Node.collectDepths(currentDepth+1, depths)
-		}
-	}
 }
 
 func TestTrieDepth(t *testing.T) {
@@ -638,6 +607,40 @@ func BenchmarkTrieOperations(b *testing.B) {
 					}
 				})
 			})
+		}
+	}
+}
+
+func mustEncode(t testing.TB, v any) cbor.RawMessage {
+	buf := bytes.NewBuffer(nil)
+	enc, err := DefaultEncoder(buf)
+	require.NoError(t, err)
+	err = enc.Encode(v)
+	require.NoError(t, err)
+	return buf.Bytes()
+}
+
+// Helper function to create a copy of a trie through serialization
+func copyTrie[V any](t *Trie[V]) (*Trie[V], error) {
+	data, err := t.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+	newTrie := NewTrie[V]()
+	err = newTrie.UnmarshalCBOR(data)
+	return newTrie, err
+}
+
+// test-only helper function to collect depths of all nodes in the trie
+func (n *Node[V]) collectDepths(currentDepth int, depths *[]int) {
+	if n == nil {
+		return
+	}
+	for _, e := range n.Entries {
+		if e.Node == nil {
+			*depths = append(*depths, currentDepth)
+		} else {
+			e.Node.collectDepths(currentDepth+1, depths)
 		}
 	}
 }
