@@ -6,8 +6,8 @@ package schema
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/big"
 	"testing"
@@ -15,6 +15,7 @@ import (
 
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/ipfs/go-cid"
+	"github.com/masslbs/network-schema/go/internal/hamt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,10 +23,10 @@ import (
 func TestMapOrdering(t *testing.T) {
 	r := require.New(t)
 	var shop Shop
-	shop.Accounts = make(Accounts)
-	shop.Listings = make(Listings)
-	shop.Orders = make(Orders)
-	shop.Tags = make(Tags)
+	shop.Accounts.Trie = hamt.NewTrie[Account]()
+	shop.Listings.Trie = hamt.NewTrie[Listing]()
+	shop.Orders.Trie = hamt.NewTrie[Order]()
+	shop.Tags.Trie = hamt.NewTrie[Tag]()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -39,25 +40,45 @@ func TestMapOrdering(t *testing.T) {
 		0xa5, // map(5)
 		0x64, // text(4)
 		'T', 'a', 'g', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x66, // text(6)
 		'O', 'r', 'd', 'e', 'r', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'A', 'c', 'c', 'o', 'u', 'n', 't', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'L', 'i', 's', 't', 'i', 'n', 'g', 's',
-		0xa0, // map(0)
+		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa5, // map(5)
-		0x66, 0x50, 0x61, 0x79, 0x65, 0x65, 0x73, 0xf6, 0x66, 0x53, 0x68, 0x6f, 0x70, 0x49, 0x64, 0x00, 0x6f, 0x50, 0x72, 0x69, 0x63, 0x69, 0x6e, 0x67, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x79, 0xa2, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x67, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x44, 0x00, 0x6f, 0x53, 0x68, 0x69, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x67, 0x69, 0x6f, 0x6e, 0x73, 0xf6, 0x72, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x69, 0x65, 0x73, 0xf6,
+		0xa4, // map(4)
+		0x66, // text(6);
+		'P', 'a', 'y', 'e', 'e', 's',
+		0xf6, // primitive(22)
+		0x66, // text(6)
+		'S', 'h', 'o', 'p', 'I', 'd',
+		0x00, // unsigned(0)
+		0x6f, // text(15)
+		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
+		0xa2, // map(2)
+		0x67, // text(7)
+		'A', 'd', 'd', 'r', 'e', 's', 's',
+		0x54, // bytes(20)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x67, // text(7)
+		'C', 'h', 'a', 'i', 'n', 'I', 'D',
+		0x00, // unsigned(0)
+		0x72, // text(18)
+		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
+		0xf6, // primitive(22)
 	}
-	r.Equal(len(want), buf.Len(), "encoded shop should be the same length")
-
 	got := buf.Bytes()
-	r.Equal(want, got, "encoded shop fields should be in alphabetical order")
+	gotHex := hex.EncodeToString(got)
+	t.Log("Got:", gotHex)
+	r.Equal(len(want), len(got), "encoded shop should be the same length")
+
+	r.Equal(want, got)
 }
 
 // Defines the structure of a vector file.
@@ -133,46 +154,90 @@ func TestGenerateVectorsShop(t *testing.T) {
 			PricingCurrency: testUsdc,
 		}
 		s.Manifest.ShippingRegions = make(ShippingRegions)
-		s.Accounts = make(Accounts)
-		s.Listings = make(Listings)
-		s.Tags = make(Tags)
-		s.Orders = make(Orders)
+		s.Accounts.Trie = hamt.NewTrie[Account]()
+		s.Listings.Trie = hamt.NewTrie[Listing]()
+		s.Tags.Trie = hamt.NewTrie[Tag]()
+		s.Orders.Trie = hamt.NewTrie[Order]()
 		return s
 	}
 
-	var patches = []Patch{
+	var testCases = []struct {
+		Name  string
+		Op    OpString
+		Path  PatchPath
+		Value []byte
+		Check func(*require.Assertions, Shop)
+	}{
 		// manifest
 		{
+			Name:  "add-payee",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "yet-another-payee"}},
 			Value: mustEncode(t, yetAnotherPayee),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(yetAnotherPayee, state.Manifest.Payees["yet-another-payee"])
+			},
 		},
 		{
+			Name:  "add-shipping-region",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "germany"}},
 			Value: mustEncode(t, ShippingRegion{Country: "DE"}),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(ShippingRegion{Country: "DE"}, state.Manifest.ShippingRegions["germany"])
+			},
 		},
 		{
+			Name: "remove-payee",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "with-escrow"}},
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(2, len(state.Manifest.Payees))
+				_, has := state.Manifest.Payees["with-escrow"]
+				r.False(has)
+				_, has = state.Manifest.Payees["default"]
+				r.True(has)
+				_, has = state.Manifest.Payees["yet-another-payee"]
+				r.True(has)
+			},
 		},
 		// accounts
 		{
+			Name:  "add-account",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr},
 			Value: mustEncode(t, testAcc1),
+			Check: func(r *require.Assertions, state Shop) {
+				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				r.True(ok)
+				r.Equal(testAcc1, acc)
+			},
 		},
 		{
+			Name: "remove-keycard",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
+			Check: func(r *require.Assertions, state Shop) {
+				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				r.True(ok)
+				r.Len(acc.KeyCards, 2)
+			},
 		},
 		{
+			Name:  "add-guest-account",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &guestAccAddr},
 			Value: mustEncode(t, testAcc2),
+			Check: func(r *require.Assertions, state Shop) {
+				r.Equal(2, state.Accounts.Size())
+				acc, ok := state.Accounts.Get(guestAccAddr[:])
+				r.True(ok)
+				r.Equal(testAcc2, acc)
+			},
 		},
 		// listing
 		{
+			Name: "add-listing",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23)},
 			Value: mustEncode(t, Listing{
@@ -186,16 +251,19 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name:  "add-listing-image",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "-"}},
 			Value: mustEncode(t, "https://http.cat/images/100.jpg"),
 		},
 		{
+			Name:  "replace-listing-image",
 			Op:    "replace",
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "0"}},
 			Value: mustEncode(t, "https://http.cat/images/200.jpg"),
 		},
 		{
+			Name: "add-listing2",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
@@ -209,6 +277,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "replace-listing",
 			Op:   "replace",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
@@ -222,6 +291,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "add-deleted-listing",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 			Value: mustEncode(t, Listing{
@@ -235,27 +305,32 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "remove-deleted-listing",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 		},
 		// Tags
 		{
+			Name:  "add-tag",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag")},
 			Value: mustEncode(t, Tag{Name: "test-tag"}),
 		},
 		{
+			Name:  "add-listing-to-tag",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(23)),
 		},
 		{
+			Name:  "add-listing-to-tag2",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(42)),
 		},
 		// orders
 		{
+			Name: "add-order",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 1)},
 			Value: mustEncode(t, Order{
@@ -267,6 +342,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "add-order2",
 			Op:   "add",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
 			Value: mustEncode(t, Order{
@@ -278,6 +354,7 @@ func TestGenerateVectorsShop(t *testing.T) {
 			}),
 		},
 		{
+			Name: "remove-order",
 			Op:   "remove",
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
 		},
@@ -289,9 +366,14 @@ func TestGenerateVectorsShop(t *testing.T) {
 	var vectors vectorFile[Shop]
 
 	var state = testShop()
-	for i, patch := range patches {
-		t.Run(fmt.Sprintf("patch-%d", i), func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
 			r := require.New(t)
+			patch := Patch{
+				Op:    testCase.Op,
+				Path:  testCase.Path,
+				Value: testCase.Value,
+			}
 			var entry = vectorEntry[Shop]{
 				Name:  t.Name(),
 				Patch: patch,
@@ -310,6 +392,10 @@ func TestGenerateVectorsShop(t *testing.T) {
 
 			err := patcher.Shop(&state, patch)
 			r.NoError(err)
+
+			if testCase.Check != nil {
+				testCase.Check(r, state)
+			}
 
 			afterState := clone.Clone(state)
 			afterEncoded := mustEncode(t, afterState)

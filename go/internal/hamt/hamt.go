@@ -2,13 +2,12 @@ package hamt
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
+	"io"
 	"math/bits"
 	"slices"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/fxamacker/cbor/v2"
 )
 
 const (
@@ -78,50 +77,53 @@ func hashKeyWithSeedFunc(key []byte, seed uint64) uint64 {
 }
 
 // Trie represents a persistent HAMT
-type Trie struct {
-	root *Node
+type Trie[V any] struct {
+	root *Node[V]
 	size int
 }
 
 // Node is a node in the HAMT
-type Node struct {
+type Node[V any] struct {
 	_       struct{} `cbor:",toarray"`
 	Bitmap  uint32
-	Entries []Entry
+	Entries []Entry[V]
+
+	// not serialized
+	hash []byte
 }
 
 // Entry is either a leaf node (Node == nil) or a branch node (Node != nil)
-type Entry struct {
+type Entry[V any] struct {
 	_     struct{} `cbor:",toarray"`
 	Key   []byte
-	Value cbor.RawMessage
-	Node  *Node
+	Value V
+	Node  *Node[V]
 }
 
 // NewTrie creates a new empty HAMT
-func NewTrie() *Trie {
-	return &Trie{
-		root: &Node{},
+func NewTrie[V any]() *Trie[V] {
+	return &Trie[V]{
+		root: &Node[V]{},
 		size: 0,
 	}
 }
 
 // MarshalCBOR marshals the HAMT into a CBOR encoded byte slice
-func (t *Trie) MarshalCBOR() ([]byte, error) {
+func (t *Trie[V]) MarshalCBOR() ([]byte, error) {
 	// use the schema package to inherit the canonical encoding options
 	return Marshal(t.root)
 }
 
 // UnmarshalCBOR unmarshals a CBOR encoded byte slice into a HAMT
-func (t *Trie) UnmarshalCBOR(data []byte) error {
+func (t *Trie[V]) UnmarshalCBOR(data []byte) error {
 	if err := Unmarshal(data, &t.root); err != nil {
 		return err
 	}
 
 	// Recalculate size
 	size := 0
-	var countEntries func(*Node)
-	countEntries = func(n *Node) {
+	var countEntries func(*Node[V])
+	countEntries = func(n *Node[V]) {
 		if n == nil {
 			return
 		}
@@ -140,9 +142,9 @@ func (t *Trie) UnmarshalCBOR(data []byte) error {
 }
 
 // Insert inserts a key-value pair into the HAMT
-func (t *Trie) Insert(key []byte, value []byte) error {
+func (t *Trie[V]) Insert(key []byte, value V) error {
 	if t.root == nil {
-		t.root = &Node{}
+		t.root = &Node[V]{}
 	}
 
 	inserted, err := t.root.insert(key, value, newHashState(key))
@@ -156,7 +158,8 @@ func (t *Trie) Insert(key []byte, value []byte) error {
 	return nil
 }
 
-func (n *Node) insert(key []byte, value []byte, hs *hashState) (bool, error) {
+func (n *Node[V]) insert(key []byte, value V, hs *hashState) (bool, error) {
+	var nilValue V
 	if hs.consumed >= maxDepth*bitsPerStep {
 		return n.insertFallback(key, value)
 	}
@@ -171,12 +174,14 @@ func (n *Node) insert(key []byte, value []byte, hs *hashState) (bool, error) {
 	// if the position is not occupied, insert the new entry
 	if n.Bitmap&(1<<idx) == 0 {
 		n.Bitmap |= (1 << idx) // flip bit to 1
-		n.Entries = append(n.Entries, Entry{})
+		n.Entries = append(n.Entries, Entry[V]{})
 		// shift entries to the right to make space for the new entry
 		if pos < len(n.Entries)-1 {
 			copy(n.Entries[pos+1:], n.Entries[pos:])
 		}
-		n.Entries[pos] = Entry{Key: key, Value: value}
+		n.Entries[pos] = Entry[V]{Key: key, Value: value}
+		// invalidate the cached hash since we are mutating the node
+		n.hash = nil
 		return true, nil
 	}
 
@@ -185,16 +190,35 @@ func (n *Node) insert(key []byte, value []byte, hs *hashState) (bool, error) {
 	if entry.Node == nil {
 		// if it's not a branch node, check if the key is already in the entry
 		if bytes.Equal(entry.Key, key) {
-			if bytes.Equal(entry.Value, value) {
+			var currentHash []byte
+			if n.hash != nil {
+				currentHash = n.hash
+			} else {
+				var h1 = newHashFn()
+				err := n.encodeValue(entry.Value, h1)
+				if err != nil {
+					return false, err
+				}
+				currentHash = h1.Sum(nil)
+			}
+			var h2 = newHashFn()
+			err := n.encodeValue(value, h2)
+			if err != nil {
+				return false, err
+			}
+			newHash := h2.Sum(nil)
+			if bytes.Equal(currentHash, newHash) {
 				return false, nil
 			}
 			// update the value directly
 			entry.Value = value
+			// invalidate the cached hash since we are mutating the node
+			n.hash = nil
 			return false, nil
 		}
 
 		// not a branch node yet, so create a new branch node
-		branch := &Node{}
+		branch := &Node[V]{}
 
 		// create a new hash state for the existing key
 		oldHS := &hashState{
@@ -223,16 +247,24 @@ func (n *Node) insert(key []byte, value []byte, hs *hashState) (bool, error) {
 		// update the current node
 		entry.Node = branch
 		entry.Key = nil
-		entry.Value = nil
+		entry.Value = nilValue
+
+		// invalidate the cached hash since we are mutating the node
+		n.hash = nil
 		return true, nil
 	}
 
 	// it is a branch node, so recursively insert the new entry
-	return entry.Node.insert(key, value, hs)
+	inserted, err := entry.Node.insert(key, value, hs)
+	if inserted {
+		// invalidate the cached hash since we are mutating the node
+		n.hash = nil
+	}
+	return inserted, err
 }
 
 // insertFallback is used when the hash state has consumed all bits
-func (n *Node) insertFallback(key []byte, value []byte) (bool, error) {
+func (n *Node[V]) insertFallback(key []byte, value V) (bool, error) {
 	for i, e := range n.Entries {
 		if bytes.Equal(e.Key, key) {
 			n.Entries[i].Value = value
@@ -241,27 +273,31 @@ func (n *Node) insertFallback(key []byte, value []byte) (bool, error) {
 	}
 
 	// if the key is not found, append it to the entries
-	n.Entries = append(n.Entries, Entry{Key: key, Value: value})
+	n.Entries = append(n.Entries, Entry[V]{Key: key, Value: value})
+	// invalidate the cached hash since we are mutating the node
+	n.hash = nil
 	return true, nil
 }
 
 // Get retrieves the value associated with a key from the HAMT
-func (t *Trie) Get(key []byte) ([]byte, bool) {
+func (t *Trie[V]) Get(key []byte) (V, bool) {
 	if t.root == nil {
-		return nil, false
+		var nilValue V
+		return nilValue, false
 	}
 	return t.root.Find(key)
 }
 
 // Find finds a given entry in the trie
-func (n *Node) Find(key []byte) ([]byte, bool) {
+func (n *Node[V]) Find(key []byte) (V, bool) {
+	var nilValue V
 	hs := newHashState(key)
 	currentNode := n
 
 	// iterate instead of recursion calls to avoid stack overflow
 	for {
 		if currentNode == nil {
-			return nil, false
+			return nilValue, false
 		}
 
 		// are we at max depth?
@@ -272,13 +308,13 @@ func (n *Node) Find(key []byte) ([]byte, bool) {
 		// figure out which position in the entries array to look for the key
 		idx := hs.next()
 		if currentNode.Bitmap&(1<<idx) == 0 {
-			return nil, false
+			return nilValue, false
 		}
 
 		// figure out which position in the entries array the key is at
 		pos := bits.OnesCount32(currentNode.Bitmap & ((1 << idx) - 1))
 		if pos >= len(currentNode.Entries) { // invalid position
-			return nil, false
+			return nilValue, false
 		}
 		entry := &currentNode.Entries[pos]
 
@@ -287,7 +323,7 @@ func (n *Node) Find(key []byte) ([]byte, bool) {
 			if bytes.Equal(entry.Key, key) {
 				return entry.Value, true
 			}
-			return nil, false
+			return nilValue, false
 		}
 
 		// if the entry is a branch node, recursively search the branch
@@ -296,7 +332,7 @@ func (n *Node) Find(key []byte) ([]byte, bool) {
 }
 
 // findFallback is used when the hash state has consumed all bits
-func (n *Node) findFallback(key []byte) ([]byte, bool) {
+func (n *Node[V]) findFallback(key []byte) (V, bool) {
 	for _, e := range n.Entries {
 		if e.Node == nil && bytes.Equal(e.Key, key) {
 			return e.Value, true
@@ -306,48 +342,12 @@ func (n *Node) findFallback(key []byte) ([]byte, bool) {
 			}
 		}
 	}
-	return nil, false
-}
-
-// Size returns the number of entries in the HAMT
-func (t *Trie) Size() int {
-	return t.size
-}
-
-// Hash hashes the whole HAMT
-func (t *Trie) Hash() []byte {
-	if t.root == nil {
-		return nilHash
-	}
-	return t.root.Hash()
-}
-
-func (n *Node) Hash() []byte {
-	h := newHashFn()
-	if n == nil {
-		return h.Sum(nil)
-	}
-
-	// Hash bitmap
-	var bitmapBytes [4]byte
-	binary.BigEndian.PutUint32(bitmapBytes[:], n.Bitmap)
-	h.Write(bitmapBytes[:])
-
-	// Hash entries in order
-	for _, e := range n.Entries {
-		if e.Node == nil {
-			h.Write(e.Key)
-			h.Write(e.Value)
-		} else {
-			h.Write(e.Node.Hash())
-		}
-	}
-
-	return h.Sum(nil)
+	var nilValue V
+	return nilValue, false
 }
 
 // Delete deletes a key from the HAMT
-func (t *Trie) Delete(key []byte) error {
+func (t *Trie[V]) Delete(key []byte) error {
 	if t.root == nil {
 		return nil
 	}
@@ -361,7 +361,7 @@ func (t *Trie) Delete(key []byte) error {
 	return nil
 }
 
-func (n *Node) delete(key []byte, hs *hashState) (bool, error) {
+func (n *Node[V]) delete(key []byte, hs *hashState) (bool, error) {
 	// are we at max depth?
 	if hs.consumed >= maxDepth*bitsPerStep {
 		return n.deleteFallback(key)
@@ -374,6 +374,10 @@ func (n *Node) delete(key []byte, hs *hashState) (bool, error) {
 	}
 
 	pos := bits.OnesCount32(n.Bitmap & ((1 << idx) - 1))
+	if pos >= len(n.Entries) {
+		return false, fmt.Errorf("pos for idx %d out of range: %d", idx, pos)
+	}
+
 	entry := &n.Entries[pos]
 
 	// if the entry is not a branch node, check if the key is in the entry
@@ -381,6 +385,9 @@ func (n *Node) delete(key []byte, hs *hashState) (bool, error) {
 		if !bytes.Equal(entry.Key, key) {
 			return false, nil
 		}
+
+		// invalidate hash since we are mutating the node
+		n.hash = nil
 
 		// Remove entry in place
 		n.Bitmap &= ^(1 << idx)
@@ -409,15 +416,99 @@ func (n *Node) delete(key []byte, hs *hashState) (bool, error) {
 		entry.Node = nil
 	}
 
+	// invalidate hash since we are mutating the node
+	n.hash = nil
+
 	return true, nil
 }
 
-func (n *Node) deleteFallback(key []byte) (bool, error) {
+func (n *Node[V]) deleteFallback(key []byte) (bool, error) {
 	for i, e := range n.Entries {
 		if e.Node == nil && bytes.Equal(e.Key, key) {
 			n.Entries = slices.Delete(n.Entries, i, i+1)
+			// invalidate the cached hash since we are mutating the node
+			n.hash = nil
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+// Size returns the number of entries in the HAMT
+func (t *Trie[V]) Size() int {
+	return t.size
+}
+
+// Hash hashes the whole HAMT
+func (t *Trie[V]) Hash() ([]byte, error) {
+	if t.root == nil {
+		return nilHash, nil
+	}
+	return t.root.Hash()
+}
+
+func (n *Node[V]) Hash() ([]byte, error) {
+	h := newHashFn()
+	if n == nil {
+		return h.Sum(nil), nil
+	}
+
+	if n.hash != nil {
+		return n.hash, nil
+	}
+
+	// Hash entries in order
+	for _, e := range n.Entries {
+		if e.Node == nil {
+			h.Write(e.Key)
+			err := n.encodeValue(e.Value, h)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			hash, err := e.Node.Hash()
+			if err != nil {
+				return nil, err
+			}
+			h.Write(hash)
+		}
+	}
+
+	n.hash = h.Sum(nil)
+	return n.hash, nil
+}
+
+func (n *Node[V]) encodeValue(v V, w io.Writer) error {
+	enc, err := DefaultEncoder(w)
+	if err != nil {
+		return err
+	}
+	return enc.Encode(v)
+}
+
+// All iterates over all key-value pairs in the trie
+// The iteration stops if fn returns false.
+func (t *Trie[V]) All(fn func([]byte, V) bool) {
+	if t.root == nil {
+		return
+	}
+	t.root.all(fn)
+}
+
+func (n *Node[V]) all(fn func([]byte, V) bool) bool {
+	if n == nil {
+		return true
+	}
+	for _, e := range n.Entries {
+		if e.Node == nil {
+			if !fn(e.Key, e.Value) {
+				return false
+			}
+		} else {
+			if !e.Node.all(fn) {
+				return false
+			}
+		}
+	}
+	return true
 }
