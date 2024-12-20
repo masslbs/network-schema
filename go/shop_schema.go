@@ -16,7 +16,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/ipfs/go-cid"
-	"github.com/masslbs/network-schema/go/internal/hamt"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -142,11 +141,11 @@ type Shop struct {
 }
 
 type Accounts struct {
-	*hamt.Trie[Account]
+	*Trie[Account]
 }
 
 type Listings struct {
-	*hamt.Trie[Listing]
+	*Trie[Listing]
 }
 
 func (l *Listings) Get(id ObjectId) (Listing, bool) {
@@ -179,7 +178,7 @@ func bytesToId(buf []byte) ObjectId {
 }
 
 type Tags struct {
-	*hamt.Trie[Tag]
+	*Trie[Tag]
 }
 
 func (t *Tags) Get(name string) (Tag, bool) {
@@ -199,7 +198,7 @@ func (t *Tags) Delete(name string) error {
 }
 
 type Orders struct {
-	*hamt.Trie[Order]
+	*Trie[Order]
 }
 
 func (l *Orders) Get(id ObjectId) (Order, bool) {
@@ -221,9 +220,9 @@ func (l *Orders) Delete(id ObjectId) error {
 func HAMTValidation(sl validator.StructLevel) {
 	hamt := sl.Current().Interface()
 	val := sl.Validator()
-	switch hamt := hamt.(type) {
+	switch tval := hamt.(type) {
 	case Accounts:
-		hamt.All(func(key []byte, value Account) bool {
+		tval.All(func(key []byte, value Account) bool {
 			if len(key) != EthereumAddressSize {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
@@ -235,7 +234,7 @@ func HAMTValidation(sl validator.StructLevel) {
 			return true
 		})
 	case Listings:
-		hamt.All(func(key []byte, value Listing) bool {
+		tval.All(func(key []byte, value Listing) bool {
 			if len(key) < 8 {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
@@ -252,7 +251,7 @@ func HAMTValidation(sl validator.StructLevel) {
 			return true
 		})
 	case Orders:
-		hamt.All(func(key []byte, value Order) bool {
+		tval.All(func(key []byte, value Order) bool {
 			if len(key) < 8 {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
@@ -269,7 +268,7 @@ func HAMTValidation(sl validator.StructLevel) {
 			return true
 		})
 	case Tags:
-		hamt.All(func(key []byte, value Tag) bool {
+		tval.All(func(key []byte, value Tag) bool {
 			if len(key) == 0 {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
@@ -281,7 +280,7 @@ func HAMTValidation(sl validator.StructLevel) {
 			return true
 		})
 	default:
-		panic(fmt.Sprintf("unknown hamt type: %T", hamt))
+		panic(fmt.Sprintf("unknown hamt type: %T", tval))
 	}
 }
 

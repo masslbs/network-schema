@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package hamt
+package schema
 
 import (
 	"bytes"
@@ -609,15 +609,6 @@ func BenchmarkTrieOperations(b *testing.B) {
 			})
 		}
 	}
-}
-
-func mustEncode(t testing.TB, v any) cbor.RawMessage {
-	buf := bytes.NewBuffer(nil)
-	enc, err := DefaultEncoder(buf)
-	require.NoError(t, err)
-	err = enc.Encode(v)
-	require.NoError(t, err)
-	return buf.Bytes()
 }
 
 // Helper function to create a copy of a trie through serialization

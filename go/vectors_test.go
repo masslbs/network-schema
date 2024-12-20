@@ -15,7 +15,6 @@ import (
 
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/ipfs/go-cid"
-	"github.com/masslbs/network-schema/go/internal/hamt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,10 +22,10 @@ import (
 func TestMapOrdering(t *testing.T) {
 	r := require.New(t)
 	var shop Shop
-	shop.Accounts.Trie = hamt.NewTrie[Account]()
-	shop.Listings.Trie = hamt.NewTrie[Listing]()
-	shop.Orders.Trie = hamt.NewTrie[Order]()
-	shop.Tags.Trie = hamt.NewTrie[Tag]()
+	shop.Accounts.Trie = NewTrie[Account]()
+	shop.Listings.Trie = NewTrie[Listing]()
+	shop.Orders.Trie = NewTrie[Order]()
+	shop.Tags.Trie = NewTrie[Tag]()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -154,10 +153,10 @@ func TestGenerateVectorsShop(t *testing.T) {
 			PricingCurrency: testUsdc,
 		}
 		s.Manifest.ShippingRegions = make(ShippingRegions)
-		s.Accounts.Trie = hamt.NewTrie[Account]()
-		s.Listings.Trie = hamt.NewTrie[Listing]()
-		s.Tags.Trie = hamt.NewTrie[Tag]()
-		s.Orders.Trie = hamt.NewTrie[Order]()
+		s.Accounts.Trie = NewTrie[Account]()
+		s.Listings.Trie = NewTrie[Listing]()
+		s.Tags.Trie = NewTrie[Tag]()
+		s.Orders.Trie = NewTrie[Order]()
 		return s
 	}
 

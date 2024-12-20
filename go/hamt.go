@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package hamt
+package schema
 
 import (
 	"bytes"
@@ -483,10 +483,7 @@ func (n *Node[V]) Hash() ([]byte, error) {
 }
 
 func (n *Node[V]) encodeValue(v V, w io.Writer) error {
-	enc, err := DefaultEncoder(w)
-	if err != nil {
-		return err
-	}
+	enc := DefaultEncoder(w)
 	return enc.Encode(v)
 }
 
