@@ -13,16 +13,10 @@ package schema
 
 import (
 	"fmt"
-	"slices"
-	"strconv"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
 )
-
-type Write struct {
-	Patches []Patch
-}
 
 type Patch struct {
 	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
@@ -200,6 +194,7 @@ type Patcher struct {
 	validator *validator.Validate
 }
 
+// Patch applies a patch to a Shop, routing to the appropriate sub-patcher based on path.Type
 func (p *Patcher) Shop(in *Shop, patch Patch) error {
 	var err error
 	switch patch.Path.Type {
@@ -216,282 +211,268 @@ func (p *Patcher) Shop(in *Shop, patch Patch) error {
 	default:
 		return fmt.Errorf("unsupported path type: %s", patch.Path.Type)
 	}
-	if err != nil {
-		return err
-	}
-	return p.validator.Struct(in)
+	return err
 }
 
+// Manifest patches a Manifest object using the new PatchField approach
 func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
-	var err error
 	if patch.Path.Type != ObjectTypeManifest {
 		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
 	}
-	switch patch.Op {
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+
+	// For empty fields, handle entire manifest replacement
+	if len(patch.Path.Fields) == 0 {
+		switch patch.Op {
+		case ReplaceOp:
+			var newManifest Manifest
+			if err := Unmarshal(patch.Value, &newManifest); err != nil {
+				return fmt.Errorf("failed to unmarshal manifest: %w", err)
+			}
+			*in = newManifest
+		default:
+			return fmt.Errorf("unsupported op for entire manifest: %s", patch.Op)
+		}
+	} else {
+		fmt.Printf("patching manifest: %s %v %x\n", patch.Op, patch.Path.Fields, patch.Value)
+		// Use PatchField for field-specific operations
+		if err := PatchField(in, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
+	fmt.Println("validating manifest")
 	return p.validator.Struct(in)
 }
 
-func (p *Patcher) Accounts(in Accounts, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeAccount {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+// Listings patches a Listings collection or individual Listing
+func (p *Patcher) Listings(listings Listings, patch Patch) error {
+	if patch.Path.ObjectID == nil {
+		return fmt.Errorf("listing patch needs an ID")
 	}
+	objID := *patch.Path.ObjectID
+	lis, ok := listings.Get(objID)
+
+	switch patch.Op {
+	case AddOp:
+		if len(patch.Path.Fields) == 0 {
+			if ok {
+				return fmt.Errorf("listing %d already exists", objID)
+			}
+			if err := Unmarshal(patch.Value, &lis); err != nil {
+				return fmt.Errorf("failed to unmarshal new listing: %w", err)
+			}
+		} else {
+			if !ok {
+				return fmt.Errorf("listing %d not found", objID)
+			}
+			if err := PatchField(&lis, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching listing %d: %w", objID, err)
+			}
+		}
+		if err := listings.Insert(objID, lis); err != nil {
+			return fmt.Errorf("failed to insert listing %d: %w", objID, err)
+		}
+
+	case ReplaceOp:
+		if !ok {
+			return fmt.Errorf("listing %d not found", objID)
+		}
+		if len(patch.Path.Fields) == 0 {
+			if err := Unmarshal(patch.Value, &lis); err != nil {
+				return fmt.Errorf("failed to unmarshal replacement listing: %w", err)
+			}
+		} else {
+			if err := PatchField(&lis, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching listing %d: %w", objID, err)
+			}
+		}
+		if err := listings.Insert(objID, lis); err != nil {
+			return fmt.Errorf("failed to update listing %d: %w", objID, err)
+		}
+
+	case RemoveOp:
+		if !ok {
+			return fmt.Errorf("listing %d not found", objID)
+		}
+		if len(patch.Path.Fields) == 0 {
+			if err := listings.Delete(objID); err != nil {
+				return fmt.Errorf("failed to delete listing %d: %w", objID, err)
+			}
+		} else {
+			if err := PatchField(&lis, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching listing %d: %w", objID, err)
+			}
+			if err := listings.Insert(objID, lis); err != nil {
+				return fmt.Errorf("failed to update listing %d: %w", objID, err)
+			}
+		}
+
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+
+	return p.validator.Struct(&lis)
+}
+
+// Orders patches an Orders collection or individual Order
+func (p *Patcher) Orders(orders Orders, patch Patch) error {
+	if patch.Path.ObjectID == nil {
+		return fmt.Errorf("order patch needs an ID")
+	}
+	objID := *patch.Path.ObjectID
+	ord, ok := orders.Get(objID)
+
+	switch patch.Op {
+	case AddOp:
+		if len(patch.Path.Fields) == 0 {
+			if ok {
+				return fmt.Errorf("order %d already exists", objID)
+			}
+			if err := Unmarshal(patch.Value, &ord); err != nil {
+				return fmt.Errorf("failed to unmarshal new order: %w", err)
+			}
+		} else {
+			if !ok {
+				return fmt.Errorf("order %d not found", objID)
+			}
+			if err := PatchField(&ord, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching order %d: %w", objID, err)
+			}
+		}
+		if err := orders.Insert(objID, ord); err != nil {
+			return fmt.Errorf("failed to insert order %d: %w", objID, err)
+		}
+
+	case ReplaceOp:
+		if !ok {
+			return fmt.Errorf("order %d not found", objID)
+		}
+		if len(patch.Path.Fields) == 0 {
+			if err := Unmarshal(patch.Value, &ord); err != nil {
+				return fmt.Errorf("failed to unmarshal replacement order: %w", err)
+			}
+		} else {
+			if err := PatchField(&ord, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching order %d: %w", objID, err)
+			}
+		}
+		if err := orders.Insert(objID, ord); err != nil {
+			return fmt.Errorf("failed to update order %d: %w", objID, err)
+		}
+
+	case RemoveOp:
+		if !ok {
+			return fmt.Errorf("order %d not found", objID)
+		}
+		if len(patch.Path.Fields) == 0 {
+			if err := orders.Delete(objID); err != nil {
+				return fmt.Errorf("failed to delete order %d: %w", objID, err)
+			}
+		} else {
+			if err := PatchField(&ord, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching order %d: %w", objID, err)
+			}
+			if err := orders.Insert(objID, ord); err != nil {
+				return fmt.Errorf("failed to update order %d: %w", objID, err)
+			}
+		}
+
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+
+	return p.validator.Struct(&ord)
+}
+
+// Accounts patches an Accounts collection or individual Account
+func (p *Patcher) Accounts(accounts Accounts, patch Patch) error {
 	if patch.Path.AccountID == nil {
 		return fmt.Errorf("account patch needs an ID")
 	}
 	accID := *patch.Path.AccountID
-	acc, ok := in.Trie.Get(accID[:])
+	acc, ok := accounts.Trie.Get(accID[:])
+
 	switch patch.Op {
 	case AddOp:
 		if ok {
 			return fmt.Errorf("account %s already exists", accID)
 		}
-		err = cbor.Unmarshal(patch.Value, &acc)
-		if err != nil {
+		if len(patch.Path.Fields) > 0 {
+			return fmt.Errorf("cannot add fields to non-existent account")
+		}
+		if err := Unmarshal(patch.Value, &acc); err != nil {
 			return fmt.Errorf("failed to unmarshal account: %w", err)
 		}
-		err = in.Trie.Insert(accID[:], acc)
-		if err != nil {
+		if err := accounts.Trie.Insert(accID[:], acc); err != nil {
 			return fmt.Errorf("failed to insert account %s: %w", accID, err)
 		}
+
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("account %s not found", accID)
 		}
 		if len(patch.Path.Fields) == 0 {
-			err = in.Trie.Delete(accID[:])
-			if err != nil {
+			if err := accounts.Trie.Delete(accID[:]); err != nil {
 				return fmt.Errorf("failed to delete account %s: %w", accID, err)
 			}
 		} else {
-			if patch.Path.Fields[0] != "keyCards" {
-				return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
+			if err := PatchField(&acc, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching account %s: %w", accID, err)
 			}
-			idx, err := strconv.Atoi(patch.Path.Fields[1])
-			if err != nil {
-				return fmt.Errorf("failed to convert index to int: %w", err)
-			}
-			if idx < 0 || idx >= len(acc.KeyCards) {
-				return fmt.Errorf("index out of bounds: %d", idx)
-			}
-			acc.KeyCards = slices.Delete(acc.KeyCards, idx, idx+1)
-			err = in.Trie.Insert(accID[:], acc)
-			if err != nil {
-				return fmt.Errorf("failed to insert account %s: %w", accID, err)
+			if err := accounts.Trie.Insert(accID[:], acc); err != nil {
+				return fmt.Errorf("failed to update account %s: %w", accID, err)
 			}
 		}
+
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
-	return nil
+
+	return p.validator.Struct(&acc)
 }
 
-func (p *Patcher) Listings(listings Listings, patch Patch) error {
-	if patch.Path.ObjectID == nil {
-		return fmt.Errorf("listing patch needs an ID")
-	}
-	objId := *patch.Path.ObjectID
-	lis, ok := listings.Get(objId)
-	switch patch.Op {
-	case AddOp:
-		var err error
-		if len(patch.Path.Fields) == 0 {
-			if ok {
-				return fmt.Errorf("listing %d already exists", objId)
-			}
-			err = Unmarshal(patch.Value, &lis)
-		} else {
-			if !ok {
-				return fmt.Errorf("listing %d not found", objId)
-			}
-			err = p.Listing(&lis, patch)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
-		}
-		err = listings.Insert(objId, lis)
-		if err != nil {
-			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
-		}
-	case ReplaceOp:
-		if !ok {
-			return fmt.Errorf("listing %d not found", objId)
-		}
-		var err error
-		if len(patch.Path.Fields) == 0 {
-			err = Unmarshal(patch.Value, &lis)
-		} else {
-			err = p.Listing(&lis, patch)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
-		}
-		err = listings.Insert(objId, lis)
-		if err != nil {
-			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
-		}
-	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("listing %d not found", objId)
-		}
-		err := listings.Delete(objId)
-		if err != nil {
-			return fmt.Errorf("failed to delete Listing %d: %w", objId, err)
-		}
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
-	return nil
-}
-
-func (p *Patcher) Listing(in *Listing, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeListing {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
-	}
-	switch patch.Op {
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
-	if err != nil {
-		return err
-	}
-	return p.validator.Struct(in)
-}
-
-func (p *Patcher) Tags(in Tags, patch Patch) error {
+// Tags patches a Tags collection or individual Tag
+func (p *Patcher) Tags(tags Tags, patch Patch) error {
 	if patch.Path.TagName == nil {
-		return fmt.Errorf("tag patch needs a tag name")
+		return fmt.Errorf("tag patch needs a name")
 	}
-
 	tagName := *patch.Path.TagName
-	tag, ok := in.Get(tagName)
+	tag, ok := tags.Trie.Get([]byte(tagName))
+
 	switch patch.Op {
 	case AddOp:
-		var err error
-		if len(patch.Path.Fields) == 0 {
-			if ok {
-				return fmt.Errorf("tag %s already exists", tagName)
-			}
-			err = Unmarshal(patch.Value, &tag)
-		} else {
-			if !ok {
-				return fmt.Errorf("tag %s not found", tagName)
-			}
-			err = p.Tag(&tag, patch)
+		if ok {
+			return fmt.Errorf("tag %s already exists", tagName)
 		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
+		if len(patch.Path.Fields) > 0 {
+			return fmt.Errorf("cannot add fields to non-existent tag")
 		}
-		err = in.Insert(tagName, tag)
-		if err != nil {
-			return fmt.Errorf("failed to insert Tag %s: %w", tagName, err)
+		if err := Unmarshal(patch.Value, &tag); err != nil {
+			return fmt.Errorf("failed to unmarshal tag: %w", err)
 		}
+		if err := tags.Trie.Insert([]byte(tagName), tag); err != nil {
+			return fmt.Errorf("failed to insert tag %s: %w", tagName, err)
+		}
+
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("tag %s not found", tagName)
 		}
-		err := in.Delete(tagName)
-		if err != nil {
-			return fmt.Errorf("failed to delete Tag %s: %w", tagName, err)
+		if len(patch.Path.Fields) == 0 {
+			if err := tags.Trie.Delete([]byte(tagName)); err != nil {
+				return fmt.Errorf("failed to delete tag %s: %w", tagName, err)
+			}
+		} else {
+			if err := PatchField(&tag, patch.Op, patch.Path.Fields, patch.Value); err != nil {
+				return fmt.Errorf("patching tag %s: %w", tagName, err)
+			}
+			if err := tags.Trie.Insert([]byte(tagName), tag); err != nil {
+				return fmt.Errorf("failed to update tag %s: %w", tagName, err)
+			}
 		}
+
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
-	return nil
-}
 
-func (p *Patcher) Tag(in *Tag, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeTag {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
-	}
-	if patch.Path.TagName == nil {
-		return fmt.Errorf("tag patch needs a tag name")
-	}
-	switch patch.Op {
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to patch Tag %s: %w", *patch.Path.TagName, err)
-	}
-	return nil
-}
-
-func (p *Patcher) Orders(in Orders, patch Patch) error {
-	// needs an ID
-	if patch.Path.ObjectID == nil {
-		return fmt.Errorf("order patch needs an ID")
-	}
-	objId := *patch.Path.ObjectID
-	order, ok := in.Get(objId)
-	switch patch.Op {
-	case AddOp:
-		if ok {
-			return fmt.Errorf("order %d already exists", objId)
-		}
-		err := p.Order(&order, patch)
-		if err != nil {
-			return fmt.Errorf("failed to patch Order %d: %w", objId, err)
-		}
-		err = in.Insert(objId, order)
-		if err != nil {
-			return fmt.Errorf("failed to insert Order %d: %w", objId, err)
-		}
-	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("order %d not found", objId)
-		}
-		err := in.Delete(objId)
-		if err != nil {
-			return fmt.Errorf("failed to delete Order %d: %w", objId, err)
-		}
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
-	return nil
-}
-
-func (p *Patcher) Order(in *Order, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeOrder {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
-	}
-	switch patch.Op {
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
-	if err != nil {
-		return err
-	}
-	return p.validator.Struct(in)
+	return p.validator.Struct(&tag)
 }

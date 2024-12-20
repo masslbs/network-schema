@@ -106,7 +106,7 @@ func TestCreateAllTypes(t *testing.T) {
 	}
 	expectedInStockBy := time.Unix(9999999999, 0).UTC()
 
-	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
+	vanillaEth := addrFromHex(t, 1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
 		typ any
 	}{
@@ -116,7 +116,7 @@ func TestCreateAllTypes(t *testing.T) {
 			Payees: map[string]Payee{
 				"ethereum": {
 					CallAsContract: true,
-					Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+					Address:        addrFromHex(t, 1, "0x1234567890123456789012345678901234567890"),
 				},
 			},
 			AcceptedCurrencies: []ChainAddress{vanillaEth},
@@ -225,7 +225,7 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStateCommited,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        addrFromHex(t, 1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
@@ -240,7 +240,7 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStateUnpaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        addrFromHex(t, 1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
@@ -263,7 +263,7 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStatePaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        addrFromHex(t, 1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,

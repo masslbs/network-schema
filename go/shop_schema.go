@@ -8,10 +8,8 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -30,6 +28,8 @@ func (err ErrBytesTooShort) Error() string {
 /*
 BASE TYPES
 */
+
+const ObjectIdSize = 8
 
 type ObjectId = uint64
 
@@ -101,18 +101,6 @@ type ChainAddress struct {
 	ChainID uint64 `validate:"required,gt=0"`
 	// when repsenting an ERC20 the zero address is used native currency
 	Address EthereumAddress
-}
-
-func addrFromHex(chain uint64, hexAddr string) ChainAddress {
-	addr := ChainAddress{ChainID: chain}
-	hexAddr = strings.TrimPrefix(hexAddr, "0x")
-	decoded, err := hex.DecodeString(hexAddr)
-	check(err)
-	n := copy(addr.Address[:], decoded)
-	if n != EthereumAddressSize {
-		panic(fmt.Sprintf("copy failed: %d != %d", n, EthereumAddressSize))
-	}
-	return addr
 }
 
 // Payee represents a payment recipient
@@ -235,7 +223,7 @@ func HAMTValidation(sl validator.StructLevel) {
 		})
 	case Listings:
 		tval.All(func(key []byte, value Listing) bool {
-			if len(key) < 8 {
+			if len(key) != ObjectIdSize {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
 			}
@@ -252,7 +240,7 @@ func HAMTValidation(sl validator.StructLevel) {
 		})
 	case Orders:
 		tval.All(func(key []byte, value Order) bool {
-			if len(key) < 8 {
+			if len(key) != ObjectIdSize {
 				sl.ReportError(value, "key", "key", "tooShort", "")
 				return true
 			}

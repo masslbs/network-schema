@@ -14,7 +14,7 @@ import (
 )
 
 func TestPatchObjectIDs(t *testing.T) {
-	testAddr := addrFromHex(1, "0x1234567890123456789012345678901234567890").Address
+	testAddr := addrFromHex(t, 1, "0x1234567890123456789012345678901234567890").Address
 
 	type testCase struct {
 		Path PatchPath
@@ -206,9 +206,6 @@ func TestPatchListingErrors(t *testing.T) {
 		},
 	}
 
-	var patcher Patcher
-	patcher.validator = validate
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			lis := testListing()
@@ -217,7 +214,7 @@ func TestPatchListingErrors(t *testing.T) {
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			err := patcher.Listing(&lis, decodedPatch)
+			err := PatchField(&lis, decodedPatch.Op, decodedPatch.Path.Fields, decodedPatch.Value)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.errMatch)
 		})
@@ -283,7 +280,7 @@ func TestPatchManifestErrors(t *testing.T) {
 			op:       ReplaceOp,
 			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"pricingCurrency"}},
 			value:    "not a chain address",
-			errMatch: "failed to unmarshal currency:",
+			errMatch: "failed to unmarshal pricingCurrency:",
 		},
 	}
 
@@ -371,7 +368,7 @@ func TestPatchOrderErrors(t *testing.T) {
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			err := patcher.Order(&order, decodedPatch)
+			err := PatchField(&order, decodedPatch.Op, decodedPatch.Path.Fields, decodedPatch.Value)
 			r.Error(err)
 			a.Contains(err.Error(), tc.errMatch)
 		})

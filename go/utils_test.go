@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -37,6 +38,16 @@ func mustEncode(t *testing.T, v any) cbor.RawMessage {
 	data, err := Marshal(v)
 	require.NoError(t, err)
 	return data
+}
+
+func addrFromHex(t testing.TB, chain uint64, hexAddr string) ChainAddress {
+	addr := ChainAddress{ChainID: chain}
+	hexAddr = strings.TrimPrefix(hexAddr, "0x")
+	decoded, err := hex.DecodeString(hexAddr)
+	require.NoError(t, err)
+	n := copy(addr.Address[:], decoded)
+	require.Equal(t, EthereumAddressSize, n)
+	return addr
 }
 
 func testPubKey(i uint64) PublicKey {

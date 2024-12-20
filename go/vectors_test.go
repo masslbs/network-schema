@@ -105,9 +105,9 @@ func TestGenerateVectorsShop(t *testing.T) {
 
 	var (
 		shopId   Uint256      = *big.NewInt(23)
-		testAddr ChainAddress = addrFromHex(1, "0x1234567890123456789012345678901234567890")
-		testEth  ChainAddress = addrFromHex(1, "0x0000000000000000000000000000000000000000")
-		testUsdc ChainAddress = addrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+		testAddr ChainAddress = addrFromHex(t, 1, "0x1234567890123456789012345678901234567890")
+		testEth  ChainAddress = addrFromHex(t, 1, "0x0000000000000000000000000000000000000000")
+		testUsdc ChainAddress = addrFromHex(t, 1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 
 		yetAnotherPayee = Payee{
 			Address:        testAddr,
@@ -1028,7 +1028,7 @@ func TestGenerateVectorsListing(t *testing.T) {
 
 			r.Equal(tc.op, decodedPatch.Op)
 
-			err := patcher.Listing(&lis, decodedPatch)
+			err := PatchField(&lis, decodedPatch.Op, decodedPatch.Path.Fields, decodedPatch.Value)
 			r.NoError(err)
 			tc.expected(a, lis)
 
@@ -1338,7 +1338,7 @@ func TestGenerateVectorsOrder(t *testing.T) {
 			encodedPatch := encodePatch(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			err := patcher.Order(&order, decodedPatch)
+			err := PatchField(&order, decodedPatch.Op, decodedPatch.Path.Fields, decodedPatch.Value)
 			r.NoError(err)
 			tc.expected(a, order)
 
