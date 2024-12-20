@@ -109,10 +109,11 @@ func (sig Signature) MarshalJSON() ([]byte, error) {
 
 func (accs Accounts) MarshalJSON() ([]byte, error) {
 	// Convert account/userWallet addresses to hex strings for JSON encoding
-	hexAccs := make(map[string]Account, len(accs))
-	for addr, acc := range accs {
-		hexAccs[hex.EncodeToString(addr[:])] = acc
-	}
+	hexAccs := make(map[string]Account, accs.Size())
+	accs.All(func(addr []byte, acc Account) bool {
+		hexAccs[hex.EncodeToString(addr)] = acc
+		return true
+	})
 	return json.Marshal(hexAccs)
 }
 
