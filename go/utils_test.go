@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
+// SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,19 +39,19 @@ func writeVectors(t *testing.T, vectors any) {
 		t.Logf("skipping vector write due to test failure")
 		return
 	}
-
+	r := require.New(t)
 	baseName := strings.TrimPrefix(t.Name(), "TestGenerateVectors")
 	tempFile := openTestFile(t, baseName+".json")
 	jsonEnc := json.NewEncoder(tempFile)
 	jsonEnc.SetIndent("", "  ")
 	err := jsonEnc.Encode(vectors)
-	require.NoError(t, err)
-	require.NoError(t, tempFile.Close())
+	r.NoError(err)
+	r.NoError(tempFile.Close())
 	tempFile = openTestFile(t, baseName+".cbor")
 	enc := DefaultEncoder(tempFile)
 	err = enc.Encode(vectors)
-	require.NoError(t, err)
-	require.NoError(t, tempFile.Close())
+	r.NoError(err)
+	r.NoError(tempFile.Close())
 }
 
 func mustEncode(t *testing.T, v any) cbor.RawMessage {
@@ -129,7 +129,7 @@ func (sig Signature) MarshalJSON() ([]byte, error) {
 }
 
 func (accs Accounts) MarshalJSON() ([]byte, error) {
-	// Convert account/userWallet addresses to hex strings for JSON encoding
+	// Convert account/userWallet addresses to hex strings for JSON compatible map keys
 	hexAccs := make(map[string]Account, accs.Size())
 	accs.All(func(addr []byte, acc Account) bool {
 		hexAccs[hex.EncodeToString(addr)] = acc
@@ -146,12 +146,25 @@ func (pub PublicKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(base64.StdEncoding.EncodeToString(pub[:]))
 }
 
+func (h Hash) MarshalJSON() ([]byte, error) {
+	return json.Marshal(base64.StdEncoding.EncodeToString(h[:]))
+}
+
 func (patch PatchPath) MarshalJSON() ([]byte, error) {
 	path := []any{patch.Type}
+	var either bool
 	if patch.ObjectID != nil {
 		path = append(path, *patch.ObjectID)
+		either = true
 	} else if patch.AccountID != nil {
 		path = append(path, *patch.AccountID)
+		either = true
+	} else if patch.TagName != nil {
+		path = append(path, *patch.TagName)
+		either = true
+	}
+	if !either && patch.Type != ObjectTypeManifest {
+		return nil, fmt.Errorf("either ObjectID, TagName or AccountID must be set")
 	}
 	for _, field := range patch.Fields {
 		path = append(path, field)

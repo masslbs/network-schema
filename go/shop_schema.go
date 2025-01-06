@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
+// SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -605,3 +605,39 @@ func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
 	op.TxHash = tmp.TxHash
 	return nil
 }
+
+/* TODO
+// ShopEvent is the transport wrapper for a single event in a shop.
+message ShopEvent {
+	// The nonce must be unique for each event a keycard creates.
+	// The sequence values need to increase monotonicly.
+	// Since PB can't discern between the 0 value and
+	// a missing field it should start with 1.
+	uint64 nonce = 1;
+
+	// Every signed event must be tied to a shop id. This allow the
+	// event to processed outside the context of the currenct connection.
+	Uint256 shop_id = 2;
+
+	// the time when this event was created.
+	// The relay should reject any events from the future
+	google.protobuf.Timestamp timestamp = 3;
+
+	oneof union {
+	  Manifest manifest = 4;
+	  UpdateManifest update_manifest = 5;
+	  Account account = 6;
+
+	  Listing listing = 7;
+	  UpdateListing update_listing = 8;
+
+	  ChangeInventory change_inventory = 9;
+
+	  Tag tag = 10;
+	  UpdateTag update_tag = 11;
+
+	  CreateOrder create_order = 12;
+	  UpdateOrder update_order = 13;
+	}
+  }
+*/

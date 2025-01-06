@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
+# SPDX-FileCopyrightText: 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,13 +7,7 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import (
-    ClassVar as _ClassVar,
-    Iterable as _Iterable,
-    Mapping as _Mapping,
-    Optional as _Optional,
-    Union as _Union,
-)
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -22,7 +16,6 @@ class ListingViewState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     LISTING_VIEW_STATE_UNSPECIFIED: _ClassVar[ListingViewState]
     LISTING_VIEW_STATE_PUBLISHED: _ClassVar[ListingViewState]
     LISTING_VIEW_STATE_DELETED: _ClassVar[ListingViewState]
-
 LISTING_VIEW_STATE_UNSPECIFIED: ListingViewState
 LISTING_VIEW_STATE_PUBLISHED: ListingViewState
 LISTING_VIEW_STATE_DELETED: ListingViewState
@@ -81,11 +74,7 @@ class ShopCurrency(_message.Message):
     ADDRESS_FIELD_NUMBER: _ClassVar[int]
     chain_id: int
     address: EthereumAddress
-    def __init__(
-        self,
-        chain_id: _Optional[int] = ...,
-        address: _Optional[_Union[EthereumAddress, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, chain_id: _Optional[int] = ..., address: _Optional[_Union[EthereumAddress, _Mapping]] = ...) -> None: ...
 
 class Payee(_message.Message):
     __slots__ = ["name", "address", "chain_id", "call_as_contract"]
@@ -97,13 +86,7 @@ class Payee(_message.Message):
     address: EthereumAddress
     chain_id: int
     call_as_contract: bool
-    def __init__(
-        self,
-        name: _Optional[str] = ...,
-        address: _Optional[_Union[EthereumAddress, _Mapping]] = ...,
-        chain_id: _Optional[int] = ...,
-        call_as_contract: bool = ...,
-    ) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., address: _Optional[_Union[EthereumAddress, _Mapping]] = ..., chain_id: _Optional[int] = ..., call_as_contract: bool = ...) -> None: ...
 
 class ShippingRegion(_message.Message):
     __slots__ = ["name", "country", "postal_code", "city", "order_price_modifiers"]
@@ -116,19 +99,8 @@ class ShippingRegion(_message.Message):
     country: str
     postal_code: str
     city: str
-    order_price_modifiers: _containers.RepeatedCompositeFieldContainer[
-        OrderPriceModifier
-    ]
-    def __init__(
-        self,
-        name: _Optional[str] = ...,
-        country: _Optional[str] = ...,
-        postal_code: _Optional[str] = ...,
-        city: _Optional[str] = ...,
-        order_price_modifiers: _Optional[
-            _Iterable[_Union[OrderPriceModifier, _Mapping]]
-        ] = ...,
-    ) -> None: ...
+    order_price_modifiers: _containers.RepeatedCompositeFieldContainer[OrderPriceModifier]
+    def __init__(self, name: _Optional[str] = ..., country: _Optional[str] = ..., postal_code: _Optional[str] = ..., city: _Optional[str] = ..., order_price_modifiers: _Optional[_Iterable[_Union[OrderPriceModifier, _Mapping]]] = ...) -> None: ...
 
 class OrderPriceModifier(_message.Message):
     __slots__ = ["title", "percentage", "absolute"]
@@ -138,12 +110,7 @@ class OrderPriceModifier(_message.Message):
     title: str
     percentage: Uint256
     absolute: PlusMinus
-    def __init__(
-        self,
-        title: _Optional[str] = ...,
-        percentage: _Optional[_Union[Uint256, _Mapping]] = ...,
-        absolute: _Optional[_Union[PlusMinus, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, title: _Optional[str] = ..., percentage: _Optional[_Union[Uint256, _Mapping]] = ..., absolute: _Optional[_Union[PlusMinus, _Mapping]] = ...) -> None: ...
 
 class PlusMinus(_message.Message):
     __slots__ = ["plus_sign", "diff"]
@@ -151,9 +118,7 @@ class PlusMinus(_message.Message):
     DIFF_FIELD_NUMBER: _ClassVar[int]
     plus_sign: bool
     diff: Uint256
-    def __init__(
-        self, plus_sign: bool = ..., diff: _Optional[_Union[Uint256, _Mapping]] = ...
-    ) -> None: ...
+    def __init__(self, plus_sign: bool = ..., diff: _Optional[_Union[Uint256, _Mapping]] = ...) -> None: ...
 
 class ListingMetadata(_message.Message):
     __slots__ = ["title", "description", "images"]
@@ -163,12 +128,7 @@ class ListingMetadata(_message.Message):
     title: str
     description: str
     images: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(
-        self,
-        title: _Optional[str] = ...,
-        description: _Optional[str] = ...,
-        images: _Optional[_Iterable[str]] = ...,
-    ) -> None: ...
+    def __init__(self, title: _Optional[str] = ..., description: _Optional[str] = ..., images: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ListingOption(_message.Message):
     __slots__ = ["id", "title", "variations"]
@@ -178,12 +138,7 @@ class ListingOption(_message.Message):
     id: ObjectId
     title: str
     variations: _containers.RepeatedCompositeFieldContainer[ListingVariation]
-    def __init__(
-        self,
-        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
-        title: _Optional[str] = ...,
-        variations: _Optional[_Iterable[_Union[ListingVariation, _Mapping]]] = ...,
-    ) -> None: ...
+    def __init__(self, id: _Optional[_Union[ObjectId, _Mapping]] = ..., title: _Optional[str] = ..., variations: _Optional[_Iterable[_Union[ListingVariation, _Mapping]]] = ...) -> None: ...
 
 class ListingVariation(_message.Message):
     __slots__ = ["id", "variation_info", "diff"]
@@ -193,12 +148,7 @@ class ListingVariation(_message.Message):
     id: ObjectId
     variation_info: ListingMetadata
     diff: PlusMinus
-    def __init__(
-        self,
-        id: _Optional[_Union[ObjectId, _Mapping]] = ...,
-        variation_info: _Optional[_Union[ListingMetadata, _Mapping]] = ...,
-        diff: _Optional[_Union[PlusMinus, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, id: _Optional[_Union[ObjectId, _Mapping]] = ..., variation_info: _Optional[_Union[ListingMetadata, _Mapping]] = ..., diff: _Optional[_Union[PlusMinus, _Mapping]] = ...) -> None: ...
 
 class ListingStockStatus(_message.Message):
     __slots__ = ["variation_ids", "in_stock", "expected_in_stock_by"]
@@ -208,26 +158,10 @@ class ListingStockStatus(_message.Message):
     variation_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
     in_stock: bool
     expected_in_stock_by: _timestamp_pb2.Timestamp
-    def __init__(
-        self,
-        variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ...,
-        in_stock: bool = ...,
-        expected_in_stock_by: _Optional[
-            _Union[_timestamp_pb2.Timestamp, _Mapping]
-        ] = ...,
-    ) -> None: ...
+    def __init__(self, variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ..., in_stock: bool = ..., expected_in_stock_by: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class AddressDetails(_message.Message):
-    __slots__ = [
-        "name",
-        "address1",
-        "address2",
-        "city",
-        "postal_code",
-        "country",
-        "email_address",
-        "phone_number",
-    ]
+    __slots__ = ["name", "address1", "address2", "city", "postal_code", "country", "email_address", "phone_number"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     ADDRESS1_FIELD_NUMBER: _ClassVar[int]
     ADDRESS2_FIELD_NUMBER: _ClassVar[int]
@@ -244,27 +178,10 @@ class AddressDetails(_message.Message):
     country: str
     email_address: str
     phone_number: str
-    def __init__(
-        self,
-        name: _Optional[str] = ...,
-        address1: _Optional[str] = ...,
-        address2: _Optional[str] = ...,
-        city: _Optional[str] = ...,
-        postal_code: _Optional[str] = ...,
-        country: _Optional[str] = ...,
-        email_address: _Optional[str] = ...,
-        phone_number: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., address1: _Optional[str] = ..., address2: _Optional[str] = ..., city: _Optional[str] = ..., postal_code: _Optional[str] = ..., country: _Optional[str] = ..., email_address: _Optional[str] = ..., phone_number: _Optional[str] = ...) -> None: ...
 
 class PaymentDetails(_message.Message):
-    __slots__ = [
-        "payment_id",
-        "total",
-        "listing_hashes",
-        "ttl",
-        "shop_signature",
-        "shipping_region",
-    ]
+    __slots__ = ["payment_id", "total", "listing_hashes", "ttl", "shop_signature", "shipping_region"]
     PAYMENT_ID_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
     LISTING_HASHES_FIELD_NUMBER: _ClassVar[int]
@@ -277,15 +194,7 @@ class PaymentDetails(_message.Message):
     ttl: str
     shop_signature: Signature
     shipping_region: ShippingRegion
-    def __init__(
-        self,
-        payment_id: _Optional[_Union[Hash, _Mapping]] = ...,
-        total: _Optional[_Union[Uint256, _Mapping]] = ...,
-        listing_hashes: _Optional[_Iterable[_Union[IPFSAddress, _Mapping]]] = ...,
-        ttl: _Optional[str] = ...,
-        shop_signature: _Optional[_Union[Signature, _Mapping]] = ...,
-        shipping_region: _Optional[_Union[ShippingRegion, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, payment_id: _Optional[_Union[Hash, _Mapping]] = ..., total: _Optional[_Union[Uint256, _Mapping]] = ..., listing_hashes: _Optional[_Iterable[_Union[IPFSAddress, _Mapping]]] = ..., ttl: _Optional[str] = ..., shop_signature: _Optional[_Union[Signature, _Mapping]] = ..., shipping_region: _Optional[_Union[ShippingRegion, _Mapping]] = ...) -> None: ...
 
 class OrderTransaction(_message.Message):
     __slots__ = ["tx_hash", "block_hash"]
@@ -293,11 +202,7 @@ class OrderTransaction(_message.Message):
     BLOCK_HASH_FIELD_NUMBER: _ClassVar[int]
     tx_hash: Hash
     block_hash: Hash
-    def __init__(
-        self,
-        tx_hash: _Optional[_Union[Hash, _Mapping]] = ...,
-        block_hash: _Optional[_Union[Hash, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, tx_hash: _Optional[_Union[Hash, _Mapping]] = ..., block_hash: _Optional[_Union[Hash, _Mapping]] = ...) -> None: ...
 
 class OrderedItem(_message.Message):
     __slots__ = ["listing_id", "variation_ids", "quantity"]
@@ -307,9 +212,4 @@ class OrderedItem(_message.Message):
     listing_id: ObjectId
     variation_ids: _containers.RepeatedCompositeFieldContainer[ObjectId]
     quantity: int
-    def __init__(
-        self,
-        listing_id: _Optional[_Union[ObjectId, _Mapping]] = ...,
-        variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ...,
-        quantity: _Optional[int] = ...,
-    ) -> None: ...
+    def __init__(self, listing_id: _Optional[_Union[ObjectId, _Mapping]] = ..., variation_ids: _Optional[_Iterable[_Union[ObjectId, _Mapping]]] = ..., quantity: _Optional[int] = ...) -> None: ...
