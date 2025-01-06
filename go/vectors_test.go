@@ -131,12 +131,39 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			},
 			Guest: false,
 		}
-		guestAccAddr EthereumAddress
+		guestAccAddr EthereumAddress // zero address
 		testAcc2     = Account{
 			KeyCards: []PublicKey{
 				testPubKey(4),
 			},
 			Guest: true,
+		}
+
+		testVAT = PriceModifier{
+			ModificationPrecents: new(Uint256).SetUint64(19),
+		}
+		testGermany = ShippingRegion{
+			Country: "Germany",
+			PriceModifiers: map[string]PriceModifier{
+				"VAT": testVAT,
+				"DHL Local": {
+					ModificationAbsolute: &ModificationAbsolute{
+						Amount: *big.NewInt(500), // TODO: assuming 2 decimals
+						Plus:   true,
+					},
+				},
+			},
+		}
+		testOther = ShippingRegion{
+			Country: "",
+			PriceModifiers: map[string]PriceModifier{
+				"DHL International": {
+					ModificationAbsolute: &ModificationAbsolute{
+						Amount: *big.NewInt(4200), // TODO: assuming 2 decimals
+						Plus:   true,
+					},
+				},
+			},
 		}
 	)
 
@@ -159,8 +186,10 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				testUsdc,
 			},
 			PricingCurrency: testUsdc,
+			ShippingRegions: ShippingRegions{
+				"other": testOther,
+			},
 		}
-		s.Manifest.ShippingRegions = make(ShippingRegions)
 		s.Accounts.Trie = NewTrie[Account]()
 		s.Listings.Trie = NewTrie[Listing]()
 		s.Tags.Trie = NewTrie[Tag]()
@@ -189,9 +218,9 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Name:  "add-shipping-region",
 			Op:    "add",
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "germany"}},
-			Value: mustEncode(t, ShippingRegion{Country: "DE"}),
+			Value: mustEncode(t, testGermany),
 			Check: func(r *require.Assertions, state Shop) {
-				r.Equal(ShippingRegion{Country: "DE"}, state.Manifest.ShippingRegions["germany"])
+				r.Equal(testGermany, state.Manifest.ShippingRegions["germany"])
 			},
 		},
 		{
@@ -1208,6 +1237,211 @@ func TestGenerateVectorsListingError(t *testing.T) {
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = tc.errMatch
+			vectors.Patches = append(vectors.Patches, entry)
+		})
+	}
+
+	writeVectors(t, vectors)
+}
+
+func testTag() Tag {
+	return Tag{
+		Name: "test",
+		ListingIds: []ObjectId{
+			1,
+			2,
+			3,
+		},
+	}
+}
+
+func TestGenerateVectorsTagOkay(t *testing.T) {
+	testCases := []struct {
+		name     string
+		op       OpString
+		path     PatchPath
+		value    interface{}
+		expected func(*assert.Assertions, Tag)
+	}{
+		// rename
+		{
+			name:  "rename tag",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"name"}},
+			value: "New Name",
+			expected: func(a *assert.Assertions, t Tag) {
+				a.Equal("New Name", t.Name)
+			},
+		},
+		// add listing
+		{
+			name:  "add listing to tag",
+			op:    AddOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "-"}},
+			value: ObjectId(23),
+			expected: func(a *assert.Assertions, t Tag) {
+				if !a.Len(t.ListingIds, 4) {
+					return
+				}
+				a.Equal(ObjectId(23), t.ListingIds[3])
+			},
+		},
+		// remove listing
+		{
+			name: "remove listing from tag",
+			op:   RemoveOp,
+			path: PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "0"}},
+			expected: func(a *assert.Assertions, t Tag) {
+				if !a.Len(t.ListingIds, 2) {
+					return
+				}
+				a.Equal(ObjectId(2), t.ListingIds[0])
+				a.Equal(ObjectId(3), t.ListingIds[1])
+			},
+		},
+		// replace listing ID
+		{
+			name:  "replace listing ID",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "0"}},
+			value: ObjectId(42),
+			expected: func(a *assert.Assertions, t Tag) {
+				if !a.Len(t.ListingIds, 3) {
+					return
+				}
+				a.Equal(ObjectId(42), t.ListingIds[0])
+			},
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileOkay[Tag]
+	encodedBefore := mustEncode(t, testTag())
+	var before = vectorSnapshot[Tag]{
+		Value:   testTag(),
+		Encoded: encodedBefore,
+		Hash:    hash(encodedBefore),
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := require.New(t)
+			a := assert.New(t)
+
+			tag := testTag()
+
+			// round trip to make sure we can encode/decode the patch
+			patch := createPatch(t, tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			r.Equal(tc.op, decodedPatch.Op)
+
+			err := patcher.Tag(&tag, decodedPatch)
+			r.NoError(err)
+			tc.expected(a, tag)
+
+			var entry vectorEntryOkay[Tag]
+			entry.Name = t.Name()
+			entry.Patch = patch
+			entry.Before = before
+			encoded := mustEncode(t, tag)
+			entry.After = vectorSnapshot[Tag]{
+				Value:   tag,
+				Encoded: encoded,
+				Hash:    hash(encoded),
+			}
+			vectors.Patches = append(vectors.Patches, entry)
+		})
+	}
+
+	writeVectors(t, vectors)
+}
+
+func TestGenerateVectorsTagError(t *testing.T) {
+
+	testCases := []struct {
+		name  string
+		op    OpString
+		path  PatchPath
+		value interface{}
+		error string
+	}{
+		// can only replace name, not add or remove
+		{
+			name:  "add to name",
+			op:    AddOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"name"}},
+			value: "New Name",
+			error: "unsupported field: name",
+		},
+		{
+			name:  "remove from name",
+			op:    RemoveOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"name"}},
+			value: "New Name",
+			error: "unsupported field: name",
+		},
+		// listingIds need numerical index
+		{
+			name:  "add listing to tag",
+			op:    AddOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "helloWorld"}},
+			value: ObjectId(23),
+			error: "unsupported field: helloWorld",
+		},
+		{
+			name:  "remove listing from tag",
+			op:    RemoveOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "helloWorld"}},
+			value: ObjectId(23),
+			error: "unsupported field: helloWorld",
+		},
+		{
+			name:  "replace listing in tag",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "helloWorld"}},
+			value: ObjectId(42),
+			error: "unsupported field: helloWorld",
+		},
+		// cant remove or replace non-existent listing
+		{
+			name:  "remove non-existent listing from tag",
+			op:    RemoveOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "999"}},
+			value: ObjectId(42),
+			error: "index out of bounds: 999",
+		},
+		{
+			name:  "replace non-existent listing in tag",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "999"}},
+			value: ObjectId(42),
+			error: "index out of bounds: 999",
+		},
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileError[Tag]
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tag := testTag()
+
+			patch := createPatch(t, tc.op, tc.path, tc.value)
+			encodedPatch := encodePatch(t, patch)
+			decodedPatch := decodePatch(t, encodedPatch)
+
+			err := patcher.Tag(&tag, decodedPatch)
+			require.Error(t, err)
+
+			var entry vectorEntryError[Tag]
+			entry.Name = t.Name()
+			entry.Patch = patch
+			entry.Error = tc.error
 			vectors.Patches = append(vectors.Patches, entry)
 		})
 	}
