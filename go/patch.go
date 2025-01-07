@@ -48,11 +48,11 @@ type PatchPath struct {
 
 	// one-of, element 1 of the array
 	//
-	// account: EthereumAddress as [20]byte
+	// account: EthereumAddress
 	// tag: TagName as string
-	// listing: ObjectId as uint64
-	// order: ObjectId as uint64
-	// inventory: ObjectId as uint64 with optional variations as fields
+	// listing: ObjectId
+	// order: ObjectId
+	// inventory: ObjectId with optional variations as fields
 	//
 	// exclusion: manifest, which has no id
 	ObjectID  *ObjectId
