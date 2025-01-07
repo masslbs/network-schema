@@ -133,11 +133,12 @@ type Payee struct {
 The complete Shop state
 */
 type Shop struct {
-	Tags     Tags
-	Orders   Orders
-	Accounts Accounts
-	Listings Listings
-	Manifest Manifest `validate:"required"`
+	Tags      Tags
+	Orders    Orders
+	Accounts  Accounts
+	Listings  Listings
+	Manifest  Manifest `validate:"required"`
+	Inventory Inventory
 }
 
 type Accounts struct {
@@ -217,6 +218,26 @@ func (l *Orders) Delete(id ObjectId) error {
 	return l.Trie.Delete(buf)
 }
 
+type Inventory struct {
+	*Trie[uint64]
+}
+
+func (l *Inventory) Get(id ObjectId, variations []string) (uint64, bool) {
+	buf := combinedIDtoBytes(id, variations)
+	val, ok := l.Trie.Get(buf)
+	return val, ok
+}
+
+func (l *Inventory) Insert(id ObjectId, variations []string, val uint64) error {
+	buf := combinedIDtoBytes(id, variations)
+	return l.Trie.Insert(buf, val)
+}
+
+func (l *Inventory) Delete(id ObjectId, variations []string) error {
+	buf := combinedIDtoBytes(id, variations)
+	return l.Trie.Delete(buf)
+}
+
 func HAMTValidation(sl validator.StructLevel) {
 	hamt := sl.Current().Interface()
 	val := sl.Validator()
@@ -276,6 +297,19 @@ func HAMTValidation(sl validator.StructLevel) {
 			err := val.Struct(value)
 			if err != nil {
 				sl.ReportError(value, string(key), "value", err.Error(), "")
+			}
+			return true
+		})
+	case Inventory:
+		tval.All(func(key []byte, value uint64) bool {
+			if len(key) < 8 {
+				sl.ReportError(value, "key", "key", "tooShort", "")
+				return true
+			}
+			id := bytesToId(key)
+			if id == 0 {
+				sl.ReportError(value, "key", "key", "notZero", "")
+				return true
 			}
 			return true
 		})

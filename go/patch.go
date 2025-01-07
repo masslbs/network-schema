@@ -53,6 +53,7 @@ type PatchPath struct {
 	// listing: ObjectId
 	// order: ObjectId
 	// tag: TagName
+	// inventory: ObjectId with optional variations as fields
 	ObjectID  *ObjectId
 	AccountID *EthereumAddress
 	TagName   *string
@@ -171,11 +172,12 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 type ObjectType string
 
 const (
-	ObjectTypeManifest ObjectType = "manifest"
-	ObjectTypeAccount  ObjectType = "account"
-	ObjectTypeListing  ObjectType = "listing"
-	ObjectTypeOrder    ObjectType = "order"
-	ObjectTypeTag      ObjectType = "tag"
+	ObjectTypeManifest  ObjectType = "manifest"
+	ObjectTypeAccount   ObjectType = "account"
+	ObjectTypeListing   ObjectType = "listing"
+	ObjectTypeOrder     ObjectType = "order"
+	ObjectTypeTag       ObjectType = "tag"
+	ObjectTypeInventory ObjectType = "inventory"
 )
 
 func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
@@ -213,6 +215,33 @@ func (p *Patcher) Shop(in *Shop, patch Patch) error {
 		err = p.Orders(in.Orders, patch)
 	case ObjectTypeTag:
 		err = p.Tags(in.Tags, patch)
+	case ObjectTypeInventory:
+		// validate patch edits an existing listing
+		if patch.Path.ObjectID == nil {
+			return fmt.Errorf("inventory patch needs an id")
+		}
+		objId := *patch.Path.ObjectID
+		lis, ok := in.Listings.Get(objId)
+		if !ok {
+			return fmt.Errorf("listing %d not found", objId)
+		}
+		// if it is a variation, check that they exist
+		if n := len(patch.Path.Fields); n > 0 {
+			var found = uint(n)
+			for _, field := range patch.Path.Fields {
+				for _, opt := range lis.Options {
+					_, has := opt.Variations[field]
+					if has {
+						found--
+						break // found
+					}
+				}
+			}
+			if found > 0 {
+				return fmt.Errorf("some variation of object %d not found", objId)
+			}
+		}
+		err = p.Inventory(&in.Inventory, patch)
 	default:
 		return fmt.Errorf("unsupported path type: %s", patch.Path.Type)
 	}
@@ -291,6 +320,53 @@ func (p *Patcher) Accounts(in Accounts, patch Patch) error {
 			if err != nil {
 				return fmt.Errorf("failed to insert account %s: %w", accID, err)
 			}
+		}
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	return nil
+}
+
+func (p *Patcher) Inventory(in *Inventory, patch Patch) error {
+	if patch.Path.ObjectID == nil {
+		return fmt.Errorf("inventory patch needs an ID")
+	}
+	var (
+		err    error
+		newVal uint64
+	)
+	if patch.Op != RemoveOp {
+		err = cbor.Unmarshal(patch.Value, &newVal)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal inventory value: %w", err)
+		}
+	}
+	objId := *patch.Path.ObjectID
+	_, ok := in.Get(objId, patch.Path.Fields)
+	switch patch.Op {
+	case AddOp:
+		if ok {
+			return fmt.Errorf("inventory %d already exists", objId)
+		}
+		err = in.Insert(objId, patch.Path.Fields, newVal)
+		if err != nil {
+			return fmt.Errorf("failed to insert inventory %d: %w", objId, err)
+		}
+	case RemoveOp:
+		if !ok {
+			return fmt.Errorf("inventory %d not found", objId)
+		}
+		err = in.Delete(objId, patch.Path.Fields)
+		if err != nil {
+			return fmt.Errorf("failed to delete inventory %d: %w", objId, err)
+		}
+	case ReplaceOp:
+		if !ok {
+			return fmt.Errorf("inventory %d not found", objId)
+		}
+		err = in.Insert(objId, patch.Path.Fields, newVal)
+		if err != nil {
+			return fmt.Errorf("failed to insert inventory %d: %w", objId, err)
 		}
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)

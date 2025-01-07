@@ -25,6 +25,7 @@ func TestMapOrdering(t *testing.T) {
 	shop.Listings.Trie = NewTrie[Listing]()
 	shop.Orders.Trie = NewTrie[Order]()
 	shop.Tags.Trie = NewTrie[Tag]()
+	shop.Inventory.Trie = NewTrie[uint64]()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -35,7 +36,7 @@ func TestMapOrdering(t *testing.T) {
 	// The fields should be ordered: Tags, Orders, Accounts, Listings, Manifest
 	// This corresponds to the following CBOR structure:
 	want := []byte{
-		0xa5, // map(5)
+		0xa6, // map(6)
 		0x64, // text(4)
 		'T', 'a', 'g', 's',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -70,6 +71,9 @@ func TestMapOrdering(t *testing.T) {
 		0x72, // text(18)
 		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
 		0xf6, // primitive(22)
+		0x69, // text(8)
+		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
+		0x82, 0x00, 0xf6, // empty hamt
 	}
 	got := buf.Bytes()
 	gotHex := hex.EncodeToString(got)
@@ -167,6 +171,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		}
 	)
 
+	// inline function to scope over the variables
 	testShop := func() Shop {
 		s := Shop{}
 		s.Manifest = Manifest{
@@ -194,6 +199,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		s.Listings.Trie = NewTrie[Listing]()
 		s.Tags.Trie = NewTrie[Tag]()
 		s.Orders.Trie = NewTrie[Order]()
+		s.Inventory.Trie = NewTrie[uint64]()
 		return s
 	}
 
@@ -207,7 +213,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		// manifest
 		{
 			Name:  "add-payee",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "yet-another-payee"}},
 			Value: mustEncode(t, yetAnotherPayee),
 			Check: func(r *require.Assertions, state Shop) {
@@ -216,7 +222,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name:  "add-shipping-region",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"shippingRegions", "germany"}},
 			Value: mustEncode(t, testGermany),
 			Check: func(r *require.Assertions, state Shop) {
@@ -225,7 +231,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "remove-payee",
-			Op:   "remove",
+			Op:   RemoveOp,
 			Path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "with-escrow"}},
 			Check: func(r *require.Assertions, state Shop) {
 				r.Equal(2, len(state.Manifest.Payees))
@@ -240,7 +246,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		// accounts
 		{
 			Name:  "add-account",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr},
 			Value: mustEncode(t, testAcc1),
 			Check: func(r *require.Assertions, state Shop) {
@@ -251,7 +257,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "remove-keycard",
-			Op:   "remove",
+			Op:   RemoveOp,
 			Path: PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
 			Check: func(r *require.Assertions, state Shop) {
 				acc, ok := state.Accounts.Get(testAcc1Addr[:])
@@ -261,7 +267,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name:  "add-guest-account",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &guestAccAddr},
 			Value: mustEncode(t, testAcc2),
 			Check: func(r *require.Assertions, state Shop) {
@@ -274,7 +280,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		// listing
 		{
 			Name: "add-listing",
-			Op:   "add",
+			Op:   AddOp,
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23)},
 			Value: mustEncode(t, Listing{
 				ID:        23,
@@ -288,19 +294,19 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name:  "add-listing-image",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "-"}},
 			Value: mustEncode(t, "https://http.cat/images/100.jpg"),
 		},
 		{
 			Name:  "replace-listing-image",
-			Op:    "replace",
+			Op:    ReplaceOp,
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23), Fields: []string{"metadata", "images", "0"}},
 			Value: mustEncode(t, "https://http.cat/images/200.jpg"),
 		},
 		{
 			Name: "add-listing2",
-			Op:   "add",
+			Op:   AddOp,
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
 				ID:        42,
@@ -314,7 +320,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "replace-listing",
-			Op:   "replace",
+			Op:   ReplaceOp,
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, Listing{
 				ID:        42,
@@ -328,7 +334,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "add-deleted-listing",
-			Op:   "add",
+			Op:   AddOp,
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 			Value: mustEncode(t, Listing{
 				ID:        666,
@@ -342,32 +348,32 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "remove-deleted-listing",
-			Op:   "remove",
+			Op:   RemoveOp,
 			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(666)},
 		},
 		// Tags
 		{
 			Name:  "add-tag",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag")},
 			Value: mustEncode(t, Tag{Name: "test-tag"}),
 		},
 		{
 			Name:  "add-listing-to-tag",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(23)),
 		},
 		{
 			Name:  "add-listing-to-tag2",
-			Op:    "add",
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag"), Fields: []string{"listingIds", "-"}},
 			Value: mustEncode(t, ObjectId(42)),
 		},
 		// orders
 		{
 			Name: "add-order",
-			Op:   "add",
+			Op:   AddOp,
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 1)},
 			Value: mustEncode(t, Order{
 				ID:    math.MaxUint64 - 1,
@@ -379,7 +385,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "add-order2",
-			Op:   "add",
+			Op:   AddOp,
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
 			Value: mustEncode(t, Order{
 				ID:    math.MaxUint64 - 2,
@@ -391,8 +397,69 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name: "remove-order",
-			Op:   "remove",
+			Op:   RemoveOp,
 			Path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(math.MaxUint64 - 2)},
+		},
+		// inventory
+		{
+			Name:  "add-inventory",
+			Op:    AddOp, // initializes the inventory for id 1
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(23)},
+			Value: mustEncode(t, uint64(100)),
+		},
+		{
+			Name:  "replace-inventory",
+			Op:    ReplaceOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(23)},
+			Value: mustEncode(t, uint64(24)),
+		},
+		{
+			Name:  "add-inventory-to-be-deleted",
+			Op:    AddOp, // initializes the inventory for id 1
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(42)},
+			Value: mustEncode(t, uint64(100)),
+		},
+		{ // inject item with variations
+			Name:  "add-listing",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000)},
+			Value: mustEncode(t, testListing()),
+		},
+		{
+			Name: "add-size-option",
+			Op:   AddOp,
+			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000), Fields: []string{"options", "size"}},
+			Value: mustEncode(t, ListingOption{
+				Title: "Sizes",
+				Variations: ListingVariations{
+					"m":  {VariationInfo: ListingMetadata{Title: "M", Description: "Medium"}},
+					"l":  {VariationInfo: ListingMetadata{Title: "L", Description: "Large"}},
+					"xl": {VariationInfo: ListingMetadata{Title: "XL", Description: "X-Large"}},
+				},
+			}),
+		},
+		{
+			Name:  "add-inventory-variation",
+			Op:    AddOp, // adds a variation to the inventory for id 1
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"r", "xl"}},
+			Value: mustEncode(t, uint64(23)),
+		},
+		{
+			Name:  "add-inventory-variation2",
+			Op:    AddOp, // adds a variation to the inventory for id 1
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"b", "m"}},
+			Value: mustEncode(t, uint64(42)),
+		},
+		// remove inventory variation
+		{
+			Name: "remove-inventory",
+			Op:   RemoveOp,
+			Path: PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(42)},
+		},
+		{
+			Name: "remove-inventory-variation",
+			Op:   RemoveOp,
+			Path: PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"r", "xl"}},
 		},
 	}
 
@@ -640,7 +707,7 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 			a := assert.New(t)
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 			r.Equal(tc.op, decodedPatch.Op)
 
@@ -742,8 +809,9 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 			manifest := testManifest()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
+			encodedManifest := mustEncode(t, manifest)
 
 			err := patcher.Manifest(&manifest, decodedPatch)
 			r.Error(err)
@@ -752,6 +820,11 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 			var entry vectorEntryError[Manifest]
 			entry.Name = t.Name()
 			entry.Patch = patch
+			entry.Before = vectorSnapshot[Manifest]{
+				Value:   manifest,
+				Encoded: encodedManifest,
+				Hash:    hash(encodedManifest),
+			}
 			entry.Error = err.Error()
 			vectors.Patches = append(vectors.Patches, entry)
 		})
@@ -1122,7 +1195,7 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 
 			// round trip to make sure we can encode/decode the patch
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
 			r.Equal(tc.op, decodedPatch.Op)
@@ -1226,8 +1299,9 @@ func TestGenerateVectorsListingError(t *testing.T) {
 			lis := testListing()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
+			encodedBefore := mustEncode(t, lis)
 
 			err := patcher.Listing(&lis, decodedPatch)
 			require.Error(t, err)
@@ -1237,6 +1311,11 @@ func TestGenerateVectorsListingError(t *testing.T) {
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = tc.errMatch
+			entry.Before = vectorSnapshot[Listing]{
+				Value:   lis,
+				Encoded: encodedBefore,
+				Hash:    hash(encodedBefore),
+			}
 			vectors.Patches = append(vectors.Patches, entry)
 		})
 	}
@@ -1333,7 +1412,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 
 			// round trip to make sure we can encode/decode the patch
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
 			r.Equal(tc.op, decodedPatch.Op)
@@ -1432,8 +1511,9 @@ func TestGenerateVectorsTagError(t *testing.T) {
 			tag := testTag()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
+			encodedBefore := mustEncode(t, tag)
 
 			err := patcher.Tag(&tag, decodedPatch)
 			require.Error(t, err)
@@ -1442,6 +1522,11 @@ func TestGenerateVectorsTagError(t *testing.T) {
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = tc.error
+			entry.Before = vectorSnapshot[Tag]{
+				Value:   tag,
+				Encoded: encodedBefore,
+				Hash:    hash(encodedBefore),
+			}
 			vectors.Patches = append(vectors.Patches, entry)
 		})
 	}
@@ -1723,7 +1808,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			order := testOrder()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
 			err := patcher.Order(&order, decodedPatch)
@@ -1810,8 +1895,9 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 			order := testOrder()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
-			encodedPatch := encodePatch(t, patch)
+			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
+			encodedBefore := mustEncode(t, order)
 
 			err := patcher.Order(&order, decodedPatch)
 			r.Error(err)
@@ -1821,6 +1907,11 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = err.Error()
+			entry.Before = vectorSnapshot[Order]{
+				Value:   order,
+				Encoded: encodedBefore,
+				Hash:    hash(encodedBefore),
+			}
 			vectors.Patches = append(vectors.Patches, entry)
 		})
 	}

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -81,12 +82,6 @@ func createPatch(t testing.TB, op OpString, path PatchPath, value interface{}) P
 	}
 }
 
-func encodePatch(t *testing.T, patch Patch) []byte {
-	encoded, err := Marshal(patch)
-	require.NoError(t, err)
-	return encoded
-}
-
 func decodePatch(t *testing.T, encoded []byte) Patch {
 	var decoded Patch
 	dec := DefaultDecoder(bytes.NewReader(encoded))
@@ -121,6 +116,22 @@ func uint64ptr(i uint64) *uint64 {
 	return &i
 }
 
+func TestCombinedID(t *testing.T) {
+	id := ObjectId(1)
+	buf := combinedIDtoBytes(id, nil)
+	id, variations := bytesToCombinedID(buf)
+	require.Equal(t, id, ObjectId(1))
+	require.Equal(t, variations, []string{})
+
+	// test with variations
+	id = ObjectId(2)
+	variations = []string{"a", "b", "c"}
+	buf = combinedIDtoBytes(id, variations)
+	id, variations = bytesToCombinedID(buf)
+	require.Equal(t, id, ObjectId(2))
+	require.Equal(t, variations, []string{"a", "b", "c"})
+}
+
 // fix formatting for test vectors
 // go's json encoder defaults to encode []byte as base64 encoded string
 
@@ -136,6 +147,29 @@ func (accs Accounts) MarshalJSON() ([]byte, error) {
 		return true
 	})
 	return json.Marshal(hexAccs)
+}
+
+func (lis Listings) MarshalJSON() ([]byte, error) {
+	hexLis := make(map[ObjectId]Listing, lis.Size())
+	lis.All(func(id []byte, lis Listing) bool {
+		hexLis[bytesToId(id)] = lis
+		return true
+	})
+	return json.Marshal(hexLis)
+}
+
+func (inv Inventory) MarshalJSON() ([]byte, error) {
+	stringID := make(map[string]uint64, inv.Size())
+	inv.All(func(id []byte, inv uint64) bool {
+		objId, vars := bytesToCombinedID(id)
+		mapKey := strconv.FormatUint(uint64(objId), 10)
+		if len(vars) > 0 {
+			mapKey += ":" + strings.Join(vars, "-")
+		}
+		stringID[mapKey] = inv
+		return true
+	})
+	return json.Marshal(stringID)
 }
 
 func (addr EthereumAddress) MarshalJSON() ([]byte, error) {

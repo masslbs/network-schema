@@ -45,6 +45,14 @@ func TestHAMT(t *testing.T) {
 	val, ok = trie.Get([]byte("age"))
 	r.False(ok)
 	r.Zero(val)
+
+	// should also work with literal types, like uint64
+	trie2 := NewTrie[uint64]()
+	err = trie2.Insert([]byte("age"), 1)
+	r.NoError(err)
+	valInt, ok := trie2.Get([]byte("age"))
+	r.True(ok)
+	r.Equal(uint64(1), valInt)
 }
 
 func TestHAMTComplexOperations(t *testing.T) {

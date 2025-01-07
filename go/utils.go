@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
@@ -68,6 +70,22 @@ func DefaultValidator() *validator.Validate {
 	// we cant "nonEmptyMapKeys" via struct tags, since the library cant iterate through the HAMT
 	validate.RegisterStructValidation(HAMTValidation, Tags{}, Accounts{}, Listings{}, Orders{})
 	return validate
+}
+
+func combinedIDtoBytes(id ObjectId, variations []string) []byte {
+	buf := idToBytes(id)
+	sort.Strings(variations)
+	buf = append(buf, []byte(strings.Join(variations, "|"))...)
+	return buf
+}
+
+func bytesToCombinedID(buf []byte) (ObjectId, []string) {
+	id := bytesToId(buf[:8])
+	variations := strings.Split(string(buf[8:]), "|")
+	if len(variations) == 1 && variations[0] == "" {
+		variations = []string{}
+	}
+	return id, variations
 }
 
 func check(err error) {
