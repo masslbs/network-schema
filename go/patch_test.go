@@ -145,7 +145,7 @@ func TestPatchAdd(t *testing.T) {
 	createListing.Op = AddOp
 	createListing.Path = PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1)}
 
-	lis := testListing()
+	_, lis := newTestListing()
 	createListing.Value, err = Marshal(lis)
 	r.NoError(err)
 	err = enc.Encode(createListing)

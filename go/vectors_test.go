@@ -18,14 +18,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func newTestShop() Shop {
+	s := Shop{}
+	s.Accounts.Trie = NewTrie[Account]()
+	s.Listings.Trie = NewTrie[Listing]()
+	s.Orders.Trie = NewTrie[Order]()
+	s.Tags.Trie = NewTrie[Tag]()
+	s.Inventory.Trie = NewTrie[uint64]()
+	return s
+}
+
 func TestMapOrdering(t *testing.T) {
 	r := require.New(t)
-	var shop Shop
-	shop.Accounts.Trie = NewTrie[Account]()
-	shop.Listings.Trie = NewTrie[Listing]()
-	shop.Orders.Trie = NewTrie[Order]()
-	shop.Tags.Trie = NewTrie[Tag]()
-	shop.Inventory.Trie = NewTrie[uint64]()
+	shop := newTestShop()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -84,26 +89,26 @@ func TestMapOrdering(t *testing.T) {
 }
 
 // Defines the structure of a vector file.
-type vectorFileOkay[T any] struct {
-	Patches []vectorEntryOkay[T]
+type vectorFileOkay struct {
+	Patches []vectorEntryOkay
 }
-type vectorEntryOkay[T any] struct {
+type vectorEntryOkay struct {
 	Name          string
 	Patch         Patch
-	Before, After vectorSnapshot[T]
+	Before, After vectorSnapshot
 }
-type vectorSnapshot[T any] struct {
-	Value   T
+type vectorSnapshot struct {
+	Value   Shop
 	Encoded []byte
 	Hash    []byte
 }
-type vectorFileError[T any] struct {
-	Patches []vectorEntryError[T]
+type vectorFileError struct {
+	Patches []vectorEntryError
 }
-type vectorEntryError[T any] struct {
+type vectorEntryError struct {
 	Name   string
 	Patch  Patch
-	Before vectorSnapshot[T]
+	Before vectorSnapshot
 	Error  string
 }
 
@@ -202,6 +207,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		s.Inventory.Trie = NewTrie[uint64]()
 		return s
 	}
+	_, testListing := newTestListing()
 
 	var testCases = []struct {
 		Name  string
@@ -423,7 +429,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Name:  "add-listing",
 			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000)},
-			Value: mustEncode(t, testListing()),
+			Value: mustEncode(t, testListing),
 		},
 		{
 			Name: "add-size-option",
@@ -466,7 +472,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileOkay[Shop]
+	var vectors vectorFileOkay
 
 	var state = testShop()
 	for _, testCase := range testCases {
@@ -477,7 +483,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				Path:  testCase.Path,
 				Value: testCase.Value,
 			}
-			var entry = vectorEntryOkay[Shop]{
+			var entry = vectorEntryOkay{
 				Name:  t.Name(),
 				Patch: patch,
 			}
@@ -487,7 +493,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 
 			beforeState := clone.Clone(state)
 			beforeEncoded := mustEncode(t, beforeState)
-			entry.Before = vectorSnapshot[Shop]{
+			entry.Before = vectorSnapshot{
 				Value:   beforeState,
 				Encoded: beforeEncoded,
 				Hash:    hash(beforeEncoded),
@@ -502,7 +508,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 
 			afterState := clone.Clone(state)
 			afterEncoded := mustEncode(t, afterState)
-			entry.After = vectorSnapshot[Shop]{
+			entry.After = vectorSnapshot{
 				Value:   afterState,
 				Encoded: afterEncoded,
 				Hash:    hash(afterEncoded),
@@ -524,8 +530,9 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func testManifest() Manifest {
-	return Manifest{
+func newTestManifest() Shop {
+	s := newTestShop()
+	s.Manifest = Manifest{
 		ShopId: *big.NewInt(1),
 		Payees: map[string]Payee{
 			"default": {
@@ -556,6 +563,7 @@ func testManifest() Manifest {
 			},
 		},
 	}
+	return s
 }
 
 func TestGenerateVectorsManifestOkay(t *testing.T) {
@@ -689,20 +697,21 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 	}
 
 	var err error
-	var vectors vectorFileOkay[Manifest]
+	var vectors vectorFileOkay
 
+	shop := newTestManifest()
 	// we use the same before for all test cases
-	var before = vectorSnapshot[Manifest]{
-		Value:   testManifest(),
-		Encoded: mustEncode(t, testManifest()),
-		Hash:    hash(mustEncode(t, testManifest())),
+	var before = vectorSnapshot{
+		Value:   shop,
+		Encoded: mustEncode(t, shop),
+		Hash:    hash(mustEncode(t, shop)),
 	}
 
 	var patcher Patcher
 	patcher.validator = validate
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			manifest := testManifest()
+			shop := newTestManifest()
 			r := require.New(t)
 			a := assert.New(t)
 
@@ -711,18 +720,18 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 			decodedPatch := decodePatch(t, encodedPatch)
 			r.Equal(tc.op, decodedPatch.Op)
 
-			err = patcher.Manifest(&manifest, decodedPatch)
+			err = patcher.Shop(&shop, decodedPatch)
 			r.NoError(err)
-			tc.expected(a, manifest)
+			tc.expected(a, shop.Manifest)
 
-			var entry vectorEntryOkay[Manifest]
+			var entry vectorEntryOkay
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Before = before
 
-			encoded := mustEncode(t, manifest)
-			entry.After = vectorSnapshot[Manifest]{
-				Value:   manifest,
+			encoded := mustEncode(t, shop)
+			entry.After = vectorSnapshot{
+				Value:   shop,
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
@@ -799,29 +808,29 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileError[Manifest]
+	var vectors vectorFileError
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := assert.New(t)
 			r := require.New(t)
 
-			manifest := testManifest()
+			shop := newTestManifest()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
 			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
-			encodedManifest := mustEncode(t, manifest)
+			encodedManifest := mustEncode(t, shop)
 
-			err := patcher.Manifest(&manifest, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			r.Error(err)
 			a.Contains(err.Error(), tc.errMatch)
 
-			var entry vectorEntryError[Manifest]
+			var entry vectorEntryError
 			entry.Name = t.Name()
 			entry.Patch = patch
-			entry.Before = vectorSnapshot[Manifest]{
-				Value:   manifest,
+			entry.Before = vectorSnapshot{
+				Value:   shop,
 				Encoded: encodedManifest,
 				Hash:    hash(encodedManifest),
 			}
@@ -833,7 +842,7 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func testListing() Listing {
+func newTestListing() (Shop, Listing) {
 	var lis Listing
 	lis.ID = 1
 	lis.ViewState = ListingViewStatePublished
@@ -868,7 +877,10 @@ func testListing() Listing {
 			InStock:      boolptr(true),
 		},
 	}
-	return lis
+	s := newTestManifest()
+	err := s.Listings.Insert(lis.ID, lis)
+	check(err)
+	return s, lis
 }
 
 func TestGenerateVectorsListingOkay(t *testing.T) {
@@ -909,6 +921,8 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 	}
 	testTimeFuture := time.Unix(10000000000, 0).UTC()
 
+	shop, testListing := newTestListing()
+
 	testCases := []struct {
 		name     string
 		op       OpString
@@ -919,10 +933,10 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 		{
 			name:  "create full listing",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1)},
-			value: testListing(),
+			path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(23)},
+			value: testListing,
 			expected: func(a *assert.Assertions, l Listing) {
-				a.EqualValues(testListing(), l)
+				a.EqualValues(testListing, l)
 			},
 		},
 		{
@@ -947,9 +961,9 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			name:  "replace whole metadata",
 			op:    ReplaceOp,
 			path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1), Fields: []string{"metadata"}},
-			value: testListing().Metadata,
+			value: testListing.Metadata,
 			expected: func(a *assert.Assertions, l Listing) {
-				a.Equal(testListing().Metadata, l.Metadata)
+				a.Equal(testListing.Metadata, l.Metadata)
 			},
 		},
 		{
@@ -1177,11 +1191,11 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 		},
 	}
 
-	var vectors vectorFileOkay[Listing]
-	var before = vectorSnapshot[Listing]{
-		Value:   testListing(),
-		Encoded: mustEncode(t, testListing()),
-		Hash:    hash(mustEncode(t, testListing())),
+	var vectors vectorFileOkay
+	var before = vectorSnapshot{
+		Value:   shop,
+		Encoded: mustEncode(t, shop),
+		Hash:    hash(mustEncode(t, shop)),
 	}
 
 	var patcher Patcher
@@ -1191,7 +1205,7 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			r := require.New(t)
 			a := assert.New(t)
 
-			lis := testListing()
+			shop, _ = newTestListing()
 
 			// round trip to make sure we can encode/decode the patch
 			patch := createPatch(t, tc.op, tc.path, tc.value)
@@ -1200,17 +1214,19 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 
 			r.Equal(tc.op, decodedPatch.Op)
 
-			err := patcher.Listing(&lis, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			r.NoError(err)
+			lis, ok := shop.Listings.Get(*patch.Path.ObjectID)
+			r.True(ok)
 			tc.expected(a, lis)
 
-			var entry vectorEntryOkay[Listing]
+			var entry vectorEntryOkay
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Before = before
-			encoded := mustEncode(t, lis)
-			entry.After = vectorSnapshot[Listing]{
-				Value:   lis,
+			encoded := mustEncode(t, shop)
+			entry.After = vectorSnapshot{
+				Value:   shop,
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
@@ -1292,27 +1308,27 @@ func TestGenerateVectorsListingError(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileError[Listing]
+	var vectors vectorFileError
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			lis := testListing()
+			shop, _ := newTestListing()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
 			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
-			encodedBefore := mustEncode(t, lis)
+			encodedBefore := mustEncode(t, shop)
 
-			err := patcher.Listing(&lis, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.errMatch)
 
-			var entry vectorEntryError[Listing]
+			var entry vectorEntryError
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = tc.errMatch
-			entry.Before = vectorSnapshot[Listing]{
-				Value:   lis,
+			entry.Before = vectorSnapshot{
+				Value:   shop,
 				Encoded: encodedBefore,
 				Hash:    hash(encodedBefore),
 			}
@@ -1323,8 +1339,9 @@ func TestGenerateVectorsListingError(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func testTag() Tag {
-	return Tag{
+func newTestTag() (Shop, Tag) {
+	s := newTestManifest()
+	t := Tag{
 		Name: "test",
 		ListingIds: []ObjectId{
 			1,
@@ -1332,9 +1349,13 @@ func testTag() Tag {
 			3,
 		},
 	}
+	err := s.Tags.Insert(t.Name, t)
+	check(err)
+	return s, t
 }
 
 func TestGenerateVectorsTagOkay(t *testing.T) {
+	var testTagName = "test"
 	testCases := []struct {
 		name     string
 		op       OpString
@@ -1346,7 +1367,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 		{
 			name:  "rename tag",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"name"}},
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr(testTagName), Fields: []string{"name"}},
 			value: "New Name",
 			expected: func(a *assert.Assertions, t Tag) {
 				a.Equal("New Name", t.Name)
@@ -1356,7 +1377,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 		{
 			name:  "add listing to tag",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "-"}},
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr(testTagName), Fields: []string{"listingIds", "-"}},
 			value: ObjectId(23),
 			expected: func(a *assert.Assertions, t Tag) {
 				if !a.Len(t.ListingIds, 4) {
@@ -1369,7 +1390,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 		{
 			name: "remove listing from tag",
 			op:   RemoveOp,
-			path: PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "0"}},
+			path: PatchPath{Type: ObjectTypeTag, TagName: strptr(testTagName), Fields: []string{"listingIds", "0"}},
 			expected: func(a *assert.Assertions, t Tag) {
 				if !a.Len(t.ListingIds, 2) {
 					return
@@ -1382,7 +1403,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 		{
 			name:  "replace listing ID",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr("test"), Fields: []string{"listingIds", "0"}},
+			path:  PatchPath{Type: ObjectTypeTag, TagName: strptr(testTagName), Fields: []string{"listingIds", "0"}},
 			value: ObjectId(42),
 			expected: func(a *assert.Assertions, t Tag) {
 				if !a.Len(t.ListingIds, 3) {
@@ -1396,10 +1417,11 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileOkay[Tag]
-	encodedBefore := mustEncode(t, testTag())
-	var before = vectorSnapshot[Tag]{
-		Value:   testTag(),
+	var vectors vectorFileOkay
+	shop, _ := newTestTag()
+	encodedBefore := mustEncode(t, shop)
+	var before = vectorSnapshot{
+		Value:   shop,
 		Encoded: encodedBefore,
 		Hash:    hash(encodedBefore),
 	}
@@ -1408,7 +1430,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 			r := require.New(t)
 			a := assert.New(t)
 
-			tag := testTag()
+			shop, _ := newTestTag()
 
 			// round trip to make sure we can encode/decode the patch
 			patch := createPatch(t, tc.op, tc.path, tc.value)
@@ -1417,17 +1439,19 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 
 			r.Equal(tc.op, decodedPatch.Op)
 
-			err := patcher.Tag(&tag, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			r.NoError(err)
+			tag, ok := shop.Tags.Get(testTagName)
+			r.True(ok)
 			tc.expected(a, tag)
 
-			var entry vectorEntryOkay[Tag]
+			var entry vectorEntryOkay
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Before = before
 			encoded := mustEncode(t, tag)
-			entry.After = vectorSnapshot[Tag]{
-				Value:   tag,
+			entry.After = vectorSnapshot{
+				Value:   shop,
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
@@ -1439,7 +1463,6 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 }
 
 func TestGenerateVectorsTagError(t *testing.T) {
-
 	testCases := []struct {
 		name  string
 		op    OpString
@@ -1504,26 +1527,26 @@ func TestGenerateVectorsTagError(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileError[Tag]
+	var vectors vectorFileError
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tag := testTag()
+			shop, _ := newTestTag()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
 			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
-			encodedBefore := mustEncode(t, tag)
+			encodedBefore := mustEncode(t, shop)
 
-			err := patcher.Tag(&tag, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			require.Error(t, err)
 
-			var entry vectorEntryError[Tag]
+			var entry vectorEntryError
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = tc.error
-			entry.Before = vectorSnapshot[Tag]{
-				Value:   tag,
+			entry.Before = vectorSnapshot{
+				Value:   shop,
 				Encoded: encodedBefore,
 				Hash:    hash(encodedBefore),
 			}
@@ -1534,8 +1557,9 @@ func TestGenerateVectorsTagError(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func testOrder() Order {
-	return Order{
+func newTestOrder() (Shop, Order) {
+	s := newTestManifest()
+	o := Order{
 		ID:    666,
 		State: OrderStateOpen,
 		Items: []OrderedItem{
@@ -1552,6 +1576,9 @@ func testOrder() Order {
 			EmailAddress: "john.doe@example.com",
 		},
 	}
+	err := s.Orders.Insert(o.ID, o)
+	check(err)
+	return s, o
 }
 
 func TestGenerateVectorsOrderOkay(t *testing.T) {
@@ -1581,7 +1608,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name:  "replace quantity of an item",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "0", "quantity"}},
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "0", "quantity"}},
 			value: uint32(42),
 			expected: func(a *assert.Assertions, o Order) {
 				a.Equal(uint32(42), o.Items[0].Quantity)
@@ -1590,7 +1617,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "add an item to an order",
 			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "-"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "-"}},
 			value: OrderedItem{
 				ListingID: 5555,
 				Quantity:  23,
@@ -1606,7 +1633,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "remove an item from an order",
 			op:   RemoveOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "0"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "0"}},
 			expected: func(a *assert.Assertions, o Order) {
 				a.Len(o.Items, 0)
 			},
@@ -1614,7 +1641,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name:  "remove all items from an order",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items"}},
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items"}},
 			value: []OrderedItem{},
 			expected: func(a *assert.Assertions, o Order) {
 				a.Len(o.Items, 0)
@@ -1623,11 +1650,10 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 
 		// add ops
 		// =======
-
 		{
 			name:  "set invoice address name",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress", "name"}},
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"invoiceAddress", "name"}},
 			value: "John Doe",
 			expected: func(a *assert.Assertions, o Order) {
 				a.Nil(o.ShippingAddress)
@@ -1642,7 +1668,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "set shipping address",
 			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"shippingAddress"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"shippingAddress"}},
 			value: &AddressDetails{
 				Name:         "Jane Doe",
 				Address1:     "321 Other St",
@@ -1661,7 +1687,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "remove invoice address",
 			op:   RemoveOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"invoiceAddress"}},
 			expected: func(a *assert.Assertions, o Order) {
 				a.Nil(o.InvoiceAddress)
 			},
@@ -1669,7 +1695,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "choose payee",
 			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"chosenPayee"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"chosenPayee"}},
 			value: Payee{
 				Address: ChainAddress{
 					ChainID: 1337,
@@ -1687,7 +1713,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "choose currency",
 			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"chosenCurrency"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"chosenCurrency"}},
 			value: ChainAddress{
 				ChainID: 1337,
 				Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
@@ -1703,7 +1729,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name:  "add payment details",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"paymentDetails"}},
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"paymentDetails"}},
 			value: testPaymentDetails,
 			expected: func(a *assert.Assertions, o Order) {
 				a.NotNil(o.PaymentDetails)
@@ -1717,7 +1743,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "add tx details",
 			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"txDetails"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"txDetails"}},
 			value: OrderPaid{
 				TxHash: &Hash{0x01, 0x02, 0x03},
 			},
@@ -1732,7 +1758,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "replace payee",
 			op:   ReplaceOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"chosenPayee"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"chosenPayee"}},
 			value: Payee{
 				Address: ChainAddress{
 					ChainID: 1338,
@@ -1750,7 +1776,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "replace currency",
 			op:   ReplaceOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"chosenCurrency"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"chosenCurrency"}},
 			value: ChainAddress{
 				ChainID: 1338,
 				Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
@@ -1767,7 +1793,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name:  "replace payment details",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"paymentDetails"}},
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"paymentDetails"}},
 			value: testPaymentDetails,
 			expected: func(a *assert.Assertions, o Order) {
 				a.NotNil(o.PaymentDetails)
@@ -1778,7 +1804,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		{
 			name: "replace tx details",
 			op:   ReplaceOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"txDetails"}},
+			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"txDetails"}},
 			value: OrderPaid{
 				TxHash: &Hash{0x04, 0x05, 0x06},
 			},
@@ -1792,10 +1818,11 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileOkay[Order]
-	encodedBefore := mustEncode(t, testOrder())
-	var before = vectorSnapshot[Order]{
-		Value:   testOrder(),
+	var vectors vectorFileOkay
+	shop, _ := newTestOrder()
+	encodedBefore := mustEncode(t, shop)
+	var before = vectorSnapshot{
+		Value:   shop,
 		Encoded: encodedBefore,
 		Hash:    hash(encodedBefore),
 	}
@@ -1805,23 +1832,25 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			r := require.New(t)
 			a := assert.New(t)
 
-			order := testOrder()
+			shop, _ := newTestOrder()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
 			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
 
-			err := patcher.Order(&order, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			r.NoError(err)
+			order, ok := shop.Orders.Get(*patch.Path.ObjectID)
+			r.True(ok)
 			tc.expected(a, order)
 
-			encodedAfter := mustEncode(t, order)
-			var entry = vectorEntryOkay[Order]{
+			encodedAfter := mustEncode(t, shop)
+			var entry = vectorEntryOkay{
 				Name:   tc.name,
 				Before: before,
 				Patch:  patch,
-				After: vectorSnapshot[Order]{
-					Value:   order,
+				After: vectorSnapshot{
+					Value:   shop,
 					Encoded: encodedAfter,
 					Hash:    hash(encodedAfter),
 				},
@@ -1844,39 +1873,39 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 		{
 			name:     "unsupported op",
 			op:       IncrementOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items"}},
 			errMatch: "unsupported op: increment",
 		},
 		{
 			name:     "unsupported field",
 			op:       ReplaceOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invalid"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"invalid"}},
 			errMatch: "unsupported field: invalid",
 		},
 		{
 			name:     "invalid item index",
 			op:       ReplaceOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "999"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "999"}},
 			value:    OrderedItem{},
 			errMatch: "index out of bounds: 999",
 		},
 		{
 			name:     "invalid item index format",
 			op:       ReplaceOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"items", "abc"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "abc"}},
 			value:    OrderedItem{},
 			errMatch: "failed to convert index to int",
 		},
 		{
 			name:     "missing address field",
 			op:       AddOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"invoiceAddress"}},
 			errMatch: "Field validation for 'Name' failed on the 'required' tag",
 		},
 		{
 			name:     "invalid address field",
 			op:       AddOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(1), Fields: []string{"invoiceAddress", "invalid"}},
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"invoiceAddress", "invalid"}},
 			value:    "test",
 			errMatch: "unsupported field: invalid",
 		},
@@ -1885,30 +1914,30 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 	var patcher Patcher
 	patcher.validator = validate
 
-	var vectors vectorFileError[Order]
+	var vectors vectorFileError
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := assert.New(t)
 			r := require.New(t)
 
-			order := testOrder()
+			shop, _ := newTestOrder()
 
 			patch := createPatch(t, tc.op, tc.path, tc.value)
 			encodedPatch := mustEncode(t, patch)
 			decodedPatch := decodePatch(t, encodedPatch)
-			encodedBefore := mustEncode(t, order)
+			encodedBefore := mustEncode(t, shop)
 
-			err := patcher.Order(&order, decodedPatch)
+			err := patcher.Shop(&shop, decodedPatch)
 			r.Error(err)
 			a.Contains(err.Error(), tc.errMatch)
 
-			var entry vectorEntryError[Order]
+			var entry vectorEntryError
 			entry.Name = t.Name()
 			entry.Patch = patch
 			entry.Error = err.Error()
-			entry.Before = vectorSnapshot[Order]{
-				Value:   order,
+			entry.Before = vectorSnapshot{
+				Value:   shop,
 				Encoded: encodedBefore,
 				Hash:    hash(encodedBefore),
 			}
