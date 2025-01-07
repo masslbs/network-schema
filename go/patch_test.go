@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,17 +59,51 @@ func TestPatchObjectIDs(t *testing.T) {
 
 		{Path: PatchPath{Type: ObjectTypeOrder, TagName: strptr("test-tag")}},
 	}
+	var testPath TestPath
 	for idx, tc := range badTestCases {
 		t.Run(fmt.Sprintf("bad-%d", idx), func(t *testing.T) {
 			r := require.New(t)
 			data, err := Marshal(tc.Path)
+			r.Error(err)
+			r.Nil(data)
+
+			testPath.PatchPath = tc.Path
+			data, err = Marshal(testPath)
+			t.Logf("cbor diag:\n%s", pretty(data))
 			r.NoError(err)
+			r.NotNil(data)
 
 			var got PatchPath
 			err = Unmarshal(data, &got)
-			r.Error(err)
+			t.Logf("got: %+v", got)
+			if tc.Path.Type != ObjectTypeManifest { // we cant tell these from paths elements
+				r.Error(err, "decoding should fail")
+			}
 		})
 	}
+}
+
+type TestPath struct {
+	PatchPath
+}
+
+// copy of PatchPath.MarshalCBOR for testing, removed error checking
+func (p TestPath) MarshalCBOR() ([]byte, error) {
+	var path []any
+	path = append(path, string(p.Type))
+	if p.AccountID != nil {
+		path = append(path, *p.AccountID)
+	}
+	if p.ObjectID != nil {
+		path = append(path, *p.ObjectID)
+	}
+	if p.TagName != nil {
+		path = append(path, *p.TagName)
+	}
+	for _, field := range p.Fields {
+		path = append(path, field)
+	}
+	return cbor.Marshal(path)
 }
 
 func TestPatchPath(t *testing.T) {

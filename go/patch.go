@@ -48,12 +48,13 @@ type PatchPath struct {
 
 	// one-of, element 1 of the array
 	//
-	// manifest: nil
-	// account: EthereumAddress
-	// listing: ObjectId
-	// order: ObjectId
-	// tag: TagName
-	// inventory: ObjectId with optional variations as fields
+	// account: EthereumAddress as [20]byte
+	// tag: TagName as string
+	// listing: ObjectId as uint64
+	// order: ObjectId as uint64
+	// inventory: ObjectId as uint64 with optional variations as fields
+	//
+	// exclusion: manifest, which has no id
 	ObjectID  *ObjectId
 	AccountID *EthereumAddress
 	TagName   *string
@@ -62,19 +63,41 @@ type PatchPath struct {
 }
 
 func (p PatchPath) MarshalCBOR() ([]byte, error) {
-	var path = make([]any, len(p.Fields)+2)
-	path[0] = p.Type
-	if p.ObjectID != nil {
-		path[1] = *p.ObjectID
-	} else if p.AccountID != nil {
+	var extraFields = 2 // usually we have type and id
+	if p.Type == ObjectTypeManifest {
+		extraFields = 1 // manifest has no id
+	}
+	var path = make([]any, len(p.Fields)+extraFields)
+	path[0] = string(p.Type)
+	switch p.Type {
+	case ObjectTypeManifest:
+		if p.ObjectID != nil {
+			return nil, fmt.Errorf("manifest patch should not have an id")
+		}
+		if p.AccountID != nil {
+			return nil, fmt.Errorf("manifest patch should not have an account id")
+		}
+		if p.TagName != nil {
+			return nil, fmt.Errorf("manifest patch should not have a tag name")
+		}
+	case ObjectTypeAccount:
+		if p.AccountID == nil {
+			return nil, fmt.Errorf("account patch needs an id")
+		}
 		path[1] = *p.AccountID
-	} else if p.TagName != nil {
+	case ObjectTypeListing, ObjectTypeOrder:
+		if p.ObjectID == nil {
+			return nil, fmt.Errorf("listing/order patch needs an id")
+		}
+		path[1] = *p.ObjectID
+	case ObjectTypeTag:
+		if p.TagName == nil {
+			return nil, fmt.Errorf("tag patch needs a tag name")
+		}
 		path[1] = *p.TagName
-	} else {
-		path[1] = nil
 	}
 	for i, field := range p.Fields {
-		path[i+2] = field
+		path[i+extraFields] = field
 	}
 	return cbor.Marshal(path)
 }
@@ -85,33 +108,58 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 	if err != nil {
 		return err
 	}
-	if len(path) < 2 {
-		return fmt.Errorf("invalid patch path: %v - need at least type and id", path)
+	objType, ok := path[0].(string)
+	if !ok {
+		return fmt.Errorf("invalid object type: %v", path[0])
 	}
-	p.Type = ObjectType(path[0].(string))
+	p.Type = ObjectType(objType)
 	if !p.Type.IsValid() {
-		return fmt.Errorf("invalid object type: %s", path[0].(string))
+		return fmt.Errorf("invalid object type: %s", objType)
 	}
-	// path[0] can be a uint64, an ethereum address or nil (for manifest)
-	switch tv := path[1].(type) {
-	case uint64:
-		p.ObjectID = &tv
-	case []byte:
+	path = path[1:] // slice of type
+	// path[0] can be a uint64, an ethereum address or empty (for manifest)
+	switch p.Type {
+	case ObjectTypeManifest:
+		// noop
+	case ObjectTypeAccount:
+		if len(path) < 1 {
+			return fmt.Errorf("invalid ethereum address: %w", err)
+		}
+		data, ok := path[0].([]byte)
+		if !ok {
+			return fmt.Errorf("invalid ethereum address: %v", path[0])
+		}
+		if len(data) != EthereumAddressSize {
+			return fmt.Errorf("invalid ethereum address size: %d != %d", len(data), EthereumAddressSize)
+		}
 		var addr EthereumAddress
-		n := copy(addr[:], tv)
-		if n != EthereumAddressSize {
-			return fmt.Errorf("invalid ethereum address: %d != %d", n, EthereumAddressSize)
-		}
+		copy(addr[:], data)
 		p.AccountID = &addr
-	case string:
-		p.TagName = &tv
-	case nil:
-		// needs to be manifest type
-		if p.Type != ObjectTypeManifest {
-			return fmt.Errorf("invalid path type: %s", p.Type)
+	case ObjectTypeOrder, ObjectTypeListing:
+		if len(path) < 1 {
+			return fmt.Errorf("invalid object id: %w", err)
 		}
+		id, ok := path[0].(uint64)
+		if !ok {
+			return fmt.Errorf("invalid object id: %v", path[0])
+		}
+		objId := ObjectId(id)
+		p.ObjectID = &objId
+	case ObjectTypeTag:
+		if len(path) < 1 {
+			return fmt.Errorf("invalid tag name: %w", err)
+		}
+		tagName, ok := path[0].(string)
+		if !ok {
+			return fmt.Errorf("invalid tag name: %v", path[0])
+		}
+		p.TagName = &tagName
 	default:
-		return fmt.Errorf("invalid id type: %T", tv)
+		return fmt.Errorf("invalid id type: %s", path[0])
+	}
+
+	if p.Type != ObjectTypeManifest {
+		path = path[1:] // all other types have an id
 	}
 
 	// validate contextual type<>id values
@@ -150,6 +198,9 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if p.TagName == nil {
 			return fmt.Errorf("tag patch needs a tag name")
 		}
+		if len(*p.TagName) == 0 {
+			return fmt.Errorf("tag name cannot be empty")
+		}
 		if p.ObjectID != nil {
 			return fmt.Errorf("tag patch should not have an object id")
 		}
@@ -161,9 +212,12 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 	}
 
 	// the rest of the path is the fields
-	p.Fields = make([]string, len(path)-2)
-	for i, field := range path[2:] {
-		p.Fields[i] = field.(string)
+	p.Fields = make([]string, len(path))
+	for i, field := range path {
+		p.Fields[i], ok = field.(string)
+		if !ok {
+			return fmt.Errorf("invalid field: %v", field)
+		}
 	}
 	return nil
 }
