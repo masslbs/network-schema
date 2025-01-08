@@ -280,12 +280,7 @@ listing_simple = mevents.Listing(
 )
 append_event(listing_simple)
 
-sort_listing_simple = mevents.UpdateTag(
-    id=tag_stuff.id,
-    add_listing_ids=[listing_simple.id],
-)
-
-# and and remove from tag
+# add and remove from tag
 err_add_tag = mevents.UpdateTag(
     id=tag_clothes.id,
     add_listing_ids=[listing_simple.id],

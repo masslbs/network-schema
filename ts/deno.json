@@ -1,8 +1,0 @@
-{
-  "tasks": {
-    "dev": "deno run --watch main.ts"
-  },
-  "imports": {
-    "cbor-x": "https://raw.githubusercontent.com/cryptix/cbor-x/sort-maps/index.js"
-  }
-}
