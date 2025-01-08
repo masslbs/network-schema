@@ -15,13 +15,31 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
 )
 
+type PatchSet struct {
+	// The nonce must be unique for each event a keycard creates.
+	// The sequence values need to increase monotonicly.
+	KeyCardNonce uint64 `validate:"required,gt=0"`
+
+	// Every signed event must be tied to a shop id. This allow the
+	// event to processed outside the context of the currenct connection.
+	ShopID Uint256 `validate:"required"`
+
+	// The time when this event was created.
+	// The relay should reject any events from the future
+	Timestamp time.Time `validate:"required"`
+
+	// The patches to apply to the shop.
+	Patches []Patch `validate:"required,gt=0,dive"`
+}
+
 type Patch struct {
-	Op    OpString        `validate:"oneof=add replace remove increment decrement"`
+	Op    OpString        `validate:"required,oneof=add replace remove increment decrement"`
 	Path  PatchPath       `validate:"required"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
 }

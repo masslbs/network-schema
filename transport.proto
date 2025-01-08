@@ -35,15 +35,14 @@ syntax = "proto3";
 package market.mass;
 
 import "base_types.proto";
-import "google/protobuf/any.proto";
 
 // ====================
 // Event syncronization
 // ====================
 
 message SignedEvent {
-  google.protobuf.Any event = 1;
-  Signature signature = 2; // EIP-191 of any.value
+  bytes cbor_patch_set = 1;
+  Signature signature = 2; // EIP-191 of the above
 }
 
 // Used by authenticated clients to write events to the relay.
