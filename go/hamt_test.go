@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -662,6 +663,10 @@ func TestHAMTVectors(t *testing.T) {
 
 	// Read test vectors
 	data, err := os.ReadFile("../vectors/hamt_test.json")
+	if errors.Is(err, os.ErrNotExist) {
+		t.Skip("test vectors not found, skipping")
+		return
+	}
 	r.NoError(err, "unable to read test vectors")
 
 	var vectors []TestVector
