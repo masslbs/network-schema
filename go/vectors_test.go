@@ -416,7 +416,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		// inventory
 		{
 			Name:  "add-inventory",
-			Op:    AddOp, // initializes the inventory for id 1
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(23)},
 			Value: mustEncode(t, uint64(100)),
 		},
@@ -428,7 +428,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 		{
 			Name:  "add-inventory-to-be-deleted",
-			Op:    AddOp, // initializes the inventory for id 1
+			Op:    AddOp,
 			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(42)},
 			Value: mustEncode(t, uint64(100)),
 		},
@@ -463,7 +463,6 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"b", "m"}},
 			Value: mustEncode(t, uint64(42)),
 		},
-		// remove inventory variation
 		{
 			Name: "remove-inventory",
 			Op:   RemoveOp,
@@ -504,6 +503,209 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 
 			if testCase.Check != nil {
 				testCase.Check(r, state)
+			}
+
+			afterState := clone.Clone(state)
+			afterEncoded := mustEncode(t, afterState)
+			entry.After = vectorSnapshot{
+				Value:   afterState,
+				Encoded: afterEncoded,
+				Hash:    hash(afterEncoded),
+			}
+			vectors.Snapshots = append(vectors.Snapshots, entry)
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
+		})
+	}
+
+	// check all maps are non-empty
+	r.NotEmpty(state.Manifest.Payees)
+	r.NotEmpty(state.Manifest.ShippingRegions)
+	r.NotEmpty(state.Manifest.AcceptedCurrencies)
+	r.NotEmpty(state.Manifest.PricingCurrency)
+	r.NotEmpty(state.Accounts)
+	r.NotEmpty(state.Listings)
+	r.NotEmpty(state.Tags)
+	r.NotEmpty(state.Orders)
+
+	// sign the patchset
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+
+	writeVectors(t, vectors)
+}
+
+func TestGenerateVectorsInventoryOkay(t *testing.T) {
+	r := require.New(t)
+
+	var (
+		shopIdBytes [32]byte
+		shopId      Uint256
+		patcher     Patcher
+		vectors     vectorFileOkay
+
+		state, testListing = newTestListing()
+	)
+	rand.Read(shopIdBytes[:])
+	shopId.SetBytes(shopIdBytes[:])
+
+	state.Manifest.ShopID = shopId
+
+	patcher.validator = validate
+
+	kp := initVectors(t, &vectors, shopId)
+
+	_, rmListing := newTestListing()
+	rmListing.ID = 42
+
+	var testCases = []struct {
+		Name  string
+		Op    OpString
+		Path  PatchPath
+		Value []byte
+		Check func(*require.Assertions, Inventory)
+	}{
+		// inventory
+		{
+			Name:  "add-inventory",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(testListing.ID)},
+			Value: mustEncode(t, uint64(100)),
+		},
+		{
+			Name:  "replace-inventory",
+			Op:    ReplaceOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(testListing.ID)},
+			Value: mustEncode(t, uint64(24)),
+		},
+		{
+			Name:  "add listing to be deleted",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(42)},
+			Value: mustEncode(t, rmListing),
+		},
+		{
+			Name:  "add-inventory-to-be-deleted",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(42)},
+			Value: mustEncode(t, uint64(100)),
+		},
+		{ // inject item with variations
+			Name:  "add-listing",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000)},
+			Value: mustEncode(t, testListing),
+		},
+		{
+			Name: "add-size-option",
+			Op:   AddOp,
+			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000), Fields: []string{"options", "size"}},
+			Value: mustEncode(t, ListingOption{
+				Title: "Sizes",
+				Variations: ListingVariations{
+					"m":  {VariationInfo: ListingMetadata{Title: "M", Description: "Medium"}},
+					"l":  {VariationInfo: ListingMetadata{Title: "L", Description: "Large"}},
+					"xl": {VariationInfo: ListingMetadata{Title: "XL", Description: "X-Large"}},
+				},
+			}),
+		},
+		{
+			Name:  "add-inventory-variation",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"r", "xl"}},
+			Value: mustEncode(t, uint64(23)),
+		},
+		{
+			Name:  "add-inventory-variation2",
+			Op:    AddOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"b", "m"}},
+			Value: mustEncode(t, uint64(42)),
+		},
+		{
+			Name: "remove-inventory",
+			Op:   RemoveOp,
+			Path: PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(42)},
+		},
+		{
+			Name: "remove-inventory-variation",
+			Op:   RemoveOp,
+			Path: PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"r", "xl"}},
+		},
+		{
+			Name:  "increment-inventory",
+			Op:    IncrementOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"b", "m"}},
+			Value: mustEncode(t, uint64(42)),
+			Check: func(r *require.Assertions, i Inventory) {
+				count, has := i.Get(9000, []string{"b", "m"})
+				r.True(has)
+				r.Equal(uint64(2*42), count)
+			},
+		},
+		{
+			Name:  "decrement-inventory",
+			Op:    DecrementOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"b", "m"}},
+			Value: mustEncode(t, uint64(42)),
+			Check: func(r *require.Assertions, i Inventory) {
+				count, has := i.Get(9000, []string{"b", "m"})
+				r.True(has)
+				r.Equal(uint64(42), count)
+			},
+		},
+		{
+			Name: "add-variation-for-next-test",
+			Op:   AddOp,
+			Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(9000), Fields: []string{"options", "size", "variations", "s"}},
+			Value: mustEncode(t, ListingVariation{
+				VariationInfo: ListingMetadata{Title: "S", Description: "Small"},
+			}),
+			Check: func(r *require.Assertions, i Inventory) {
+				count, has := i.Get(9000, []string{"r", "s"})
+				r.False(has)
+				r.Equal(uint64(0), count)
+			},
+		},
+		{
+			Name:  "increment-from-zero",
+			Op:    IncrementOp,
+			Path:  PatchPath{Type: ObjectTypeInventory, ObjectID: uint64ptr(9000), Fields: []string{"r", "s"}},
+			Value: mustEncode(t, uint64(123)),
+			Check: func(r *require.Assertions, i Inventory) {
+				count, has := i.Get(9000, []string{"r", "s"})
+				r.True(has)
+				r.Equal(uint64(123), count)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			r := require.New(t)
+			patch := Patch{
+				Op:    testCase.Op,
+				Path:  testCase.Path,
+				Value: testCase.Value,
+			}
+			var entry = vectorEntryOkay{
+				Name: t.Name(),
+			}
+
+			// we need to clone the state because the patcher mutates the state
+			// and we want to keep the original state for the before value for serialization
+
+			beforeState := clone.Clone(state)
+			beforeEncoded := mustEncode(t, beforeState)
+			entry.Before = vectorSnapshot{
+				Value:   beforeState,
+				Encoded: beforeEncoded,
+				Hash:    hash(beforeEncoded),
+			}
+
+			err := patcher.Shop(&state, patch)
+			r.NoError(err)
+
+			if testCase.Check != nil {
+				testCase.Check(r, state.Inventory)
 			}
 
 			afterState := clone.Clone(state)
@@ -1672,6 +1874,24 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			},
 		},
 		{
+			name:  "increment item quantity",
+			op:    IncrementOp,
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "0", "quantity"}},
+			value: uint32(10),
+			expected: func(a *assert.Assertions, o Order) {
+				a.Equal(uint32(33), o.Items[0].Quantity) // 23 + 10
+			},
+		},
+		{
+			name:  "decrement item quantity",
+			op:    DecrementOp,
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "0", "quantity"}},
+			value: uint32(5),
+			expected: func(a *assert.Assertions, o Order) {
+				a.Equal(uint32(18), o.Items[0].Quantity) // 23 - 5
+			},
+		},
+		{
 			name: "remove an item from an order",
 			op:   RemoveOp,
 			path: PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items", "0"}},
@@ -1904,10 +2124,16 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 		errMatch string
 	}{
 		{
-			name:     "unsupported op",
+			name:     "unsupported path",
 			op:       IncrementOp,
-			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"items"}},
-			errMatch: "unsupported op: increment",
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"state"}},
+			errMatch: "incr/decr only works on path: [items, x, quantity]",
+		},
+		{
+			name:     "unsupported path",
+			op:       DecrementOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: uint64ptr(666), Fields: []string{"state"}},
+			errMatch: "incr/decr only works on path: [items, x, quantity]",
 		},
 		{
 			name:     "unsupported field",

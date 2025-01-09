@@ -311,7 +311,7 @@ func (p *Patcher) Shop(in *Shop, patch Patch) error {
 		}
 		err = p.Inventory(&in.Inventory, patch)
 	default:
-		return fmt.Errorf("unsupported path type: %s", patch.Path.Type)
+		return fmt.Errorf("unsupported path: %s", patch.Path.Type)
 	}
 	if err != nil {
 		return err
@@ -410,34 +410,37 @@ func (p *Patcher) Inventory(in *Inventory, patch Patch) error {
 		}
 	}
 	objId := *patch.Path.ObjectID
-	_, ok := in.Get(objId, patch.Path.Fields)
+	current, ok := in.Get(objId, patch.Path.Fields)
 	switch patch.Op {
 	case AddOp:
 		if ok {
 			return fmt.Errorf("inventory %d already exists", objId)
 		}
 		err = in.Insert(objId, patch.Path.Fields, newVal)
-		if err != nil {
-			return fmt.Errorf("failed to insert inventory %d: %w", objId, err)
-		}
 	case RemoveOp:
 		if !ok {
 			return fmt.Errorf("inventory %d not found", objId)
 		}
 		err = in.Delete(objId, patch.Path.Fields)
-		if err != nil {
-			return fmt.Errorf("failed to delete inventory %d: %w", objId, err)
-		}
 	case ReplaceOp:
 		if !ok {
 			return fmt.Errorf("inventory %d not found", objId)
 		}
 		err = in.Insert(objId, patch.Path.Fields, newVal)
-		if err != nil {
-			return fmt.Errorf("failed to insert inventory %d: %w", objId, err)
+	case IncrementOp:
+		current += newVal
+		err = in.Insert(objId, patch.Path.Fields, current)
+	case DecrementOp:
+		if current < newVal {
+			return fmt.Errorf("inventory %d cannot decrement below 0", objId)
 		}
+		current -= newVal
+		err = in.Insert(objId, patch.Path.Fields, current)
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to patch(%s) inventory %d: %w", patch.Op, objId, err)
 	}
 	return nil
 }
@@ -627,7 +630,6 @@ func (p *Patcher) Tag(in *Tag, patch Patch) error {
 }
 
 func (p *Patcher) Orders(in Orders, patch Patch) error {
-	// needs an ID
 	if patch.Path.ObjectID == nil {
 		return fmt.Errorf("order patch needs an ID")
 	}
@@ -677,6 +679,10 @@ func (p *Patcher) Orders(in Orders, patch Patch) error {
 			}
 			err = in.Insert(objId, order)
 		}
+	case IncrementOp:
+		err = p.Order(&order, patch)
+	case DecrementOp:
+		err = p.Order(&order, patch)
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
@@ -698,6 +704,10 @@ func (p *Patcher) Order(in *Order, patch Patch) error {
 		err = in.PatchReplace(patch.Path.Fields, patch.Value)
 	case RemoveOp:
 		err = in.PatchRemove(patch.Path.Fields)
+	case IncrementOp:
+		err = in.PatchIncrement(patch.Path.Fields, patch.Value)
+	case DecrementOp:
+		err = in.PatchDecrement(patch.Path.Fields, patch.Value)
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
@@ -705,4 +715,46 @@ func (p *Patcher) Order(in *Order, patch Patch) error {
 		return err
 	}
 	return p.validator.Struct(in)
+}
+
+func (existing *Order) checkPathAndIndex(fields []string) (int, error) {
+	if len(fields) != 3 || fields[0] != "items" || fields[2] != "quantity" {
+		return 0, fmt.Errorf("incr/decr only works on path: [items, x, quantity]")
+	}
+	index, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert index to int: %w", err)
+	}
+	if index < 0 || index >= len(existing.Items) {
+		return 0, fmt.Errorf("index out of bounds: %d", index)
+	}
+	return index, nil
+}
+
+func (existing *Order) PatchIncrement(fields []string, data cbor.RawMessage) error {
+	index, err := existing.checkPathAndIndex(fields)
+	if err != nil {
+		return err
+	}
+	var value uint32
+	err = Unmarshal(data, &value)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal value: %w", err)
+	}
+	existing.Items[index].Quantity += value
+	return nil
+}
+
+func (existing *Order) PatchDecrement(fields []string, data cbor.RawMessage) error {
+	index, err := existing.checkPathAndIndex(fields)
+	if err != nil {
+		return err
+	}
+	var value uint32
+	err = Unmarshal(data, &value)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal value: %w", err)
+	}
+	existing.Items[index].Quantity -= value
+	return nil
 }
