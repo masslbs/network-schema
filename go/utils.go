@@ -6,6 +6,7 @@ package schema
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -70,6 +71,13 @@ func DefaultValidator() *validator.Validate {
 	// we cant "nonEmptyMapKeys" via struct tags, since the library cant iterate through the HAMT
 	validate.RegisterStructValidation(HAMTValidation, Tags{}, Accounts{}, Listings{}, Orders{})
 	return validate
+}
+
+func bytesToId(buf []byte) ObjectId {
+	if len(buf) != 8 {
+		panic(fmt.Sprintf("expected 8 bytes, got %d", len(buf)))
+	}
+	return ObjectId(binary.BigEndian.Uint64(buf))
 }
 
 func combinedIDtoBytes(id ObjectId, variations []string) []byte {

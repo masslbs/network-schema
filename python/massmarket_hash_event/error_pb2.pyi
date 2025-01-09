@@ -10,7 +10,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ErrorCodes(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = []
+    __slots__ = ()
     ERROR_CODES_UNSPECIFIED: _ClassVar[ErrorCodes]
     ERROR_CODES_NOT_FOUND: _ClassVar[ErrorCodes]
     ERROR_CODES_INVALID: _ClassVar[ErrorCodes]
@@ -23,6 +23,7 @@ class ErrorCodes(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     ERROR_CODES_OUT_OF_STOCK: _ClassVar[ErrorCodes]
     ERROR_CODES_SIMULATED: _ClassVar[ErrorCodes]
     ERROR_CODES_CLOSE_SUBSCRIPTION: _ClassVar[ErrorCodes]
+
 ERROR_CODES_UNSPECIFIED: ErrorCodes
 ERROR_CODES_NOT_FOUND: ErrorCodes
 ERROR_CODES_INVALID: ErrorCodes
@@ -37,9 +38,13 @@ ERROR_CODES_SIMULATED: ErrorCodes
 ERROR_CODES_CLOSE_SUBSCRIPTION: ErrorCodes
 
 class Error(_message.Message):
-    __slots__ = ["code", "message"]
+    __slots__ = ("code", "message")
     CODE_FIELD_NUMBER: _ClassVar[int]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
     code: ErrorCodes
     message: str
-    def __init__(self, code: _Optional[_Union[ErrorCodes, str]] = ..., message: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        code: _Optional[_Union[ErrorCodes, str]] = ...,
+        message: _Optional[str] = ...,
+    ) -> None: ...

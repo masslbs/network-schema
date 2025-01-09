@@ -7,9 +7,11 @@ package schema
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -640,6 +642,61 @@ func (n *Node[V]) collectDepths(currentDepth int, depths *[]int) {
 			*depths = append(*depths, currentDepth)
 		} else {
 			e.Node.collectDepths(currentDepth+1, depths)
+		}
+	}
+}
+
+type TestOperation struct {
+	Type  string `json:"type"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type TestVector struct {
+	Operations []TestOperation `json:"operations"`
+	Hashes     []string        `json:"hashes"`
+}
+
+func TestHAMTVectors(t *testing.T) {
+	r := require.New(t)
+
+	// Read test vectors
+	data, err := os.ReadFile("../vectors/hamt_test.json")
+	r.NoError(err, "unable to read test vectors")
+
+	var vectors []TestVector
+	err = json.Unmarshal(data, &vectors)
+	r.NoError(err, "unable to parse test vectors")
+
+	for i, vector := range vectors {
+		trie := NewTrie[string]()
+
+		for j, op := range vector.Operations {
+			t.Run(fmt.Sprintf("vector-%d/operation-%d", i, j), func(t *testing.T) {
+
+				r := require.New(t)
+				key, err := hex.DecodeString(op.Key)
+				r.NoError(err, "invalid key hex")
+
+				switch op.Type {
+				case "insert":
+					if err := trie.Insert(key, op.Value); err != nil {
+						t.Fatalf("Vector %d, operation %d: insert failed: %v", i, j, err)
+					}
+				case "delete":
+					if err := trie.Delete(key); err != nil {
+						t.Fatalf("Vector %d, operation %d: delete failed: %v", i, j, err)
+					}
+				default:
+					t.Fatalf("Vector %d, operation %d: invalid operation: %s", i, j, op.Type)
+				}
+
+				hash, err := trie.Hash()
+				r.NoError(err, "hash failed")
+
+				actualHash := hex.EncodeToString(hash)
+				r.Equal(vector.Hashes[j], actualHash, "hash mismatch")
+			})
 		}
 	}
 }

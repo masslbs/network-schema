@@ -35,7 +35,7 @@ func TestSignatureIncomplete(t *testing.T) {
 	dec := DefaultDecoder(bytes.NewReader(shortData))
 	err = dec.Decode(&msg)
 	r.Error(err)
-	r.EqualValues([64]byte{}, msg.Sig)
+	r.EqualValues([65]byte{}, msg.Sig)
 	r.IsType(ErrBytesTooShort{}, err)
 }
 
@@ -110,9 +110,8 @@ func TestCreateAllTypes(t *testing.T) {
 	cases := []struct {
 		typ any
 	}{
-
 		{Manifest{
-			ShopId: *bigId,
+			ShopID: *bigId,
 			Payees: map[string]Payee{
 				"ethereum": {
 					CallAsContract: true,

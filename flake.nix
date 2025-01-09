@@ -5,7 +5,7 @@
 {
   description = "Mass Market Network Schema";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     utils.url = "github:numtide/flake-utils";
     gomod2nix = {
       url = "github:tweag/gomod2nix";
@@ -44,29 +44,16 @@
         self = pkgs.python3;
       };
 
-      protobuf_to_dict = pkgs.python3Packages.buildPythonPackage rec {
-        pname = "protobuf-to-dict";
-        version = "0.3.1";
-        src = fetchGit {
-          url = "https://github.com/masslbs/protobuf-to-dict.git";
-          rev = "39d7ec2a3a72b5938fe9bddbc593d210bccb64b8";
-          ref = "patch-reqs";
-        };
-        propagatedBuildInputs = [
-          pkgs.python3Packages.pip
-          pkgs.python3Packages.six
-          pkgs.python3Packages.nose
-          pkgs.python3Packages.dateutil
-        ];
-        doCheck = false;
-      };
-
       mass-python = pinnedPython.withPackages (ps:
         with ps; [
           protobuf
-          protobuf_to_dict
           web3
           safe-pysha3
+
+          matplotlib # go/hamt_bench_plot.py
+          cbor2
+          xxhash
+
           # packaging massmarket_hash_event
           pytest
           setuptools
@@ -74,8 +61,7 @@
           wheel
           build
           twine
-          cbor2
-          matplotlib
+
         ]
       );
 

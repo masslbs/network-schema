@@ -6,6 +6,7 @@ package schema
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -16,7 +17,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -33,6 +38,18 @@ func openTestFile(t testing.TB, fileName string) *os.File {
 		t.Fatal(err)
 	}
 	return file
+}
+
+func initVectors(t *testing.T, vectors *vectorFileOkay, shopID Uint256) ethKeyPair {
+	kp, seed := newTestKeyPair(t)
+	vectors.Signer.Secret = seed
+	vectors.Signer.Address = kp.Wallet()
+
+	vectors.PatchSet.ShopID = shopID
+	vectors.PatchSet.KeyCardNonce = kcNonce
+	kcNonce++
+	vectors.PatchSet.Timestamp = time.Unix(0, 0).UTC()
+	return kp
 }
 
 func writeVectors(t *testing.T, vectors any) {
@@ -132,6 +149,55 @@ func TestCombinedID(t *testing.T) {
 	require.Equal(t, variations, []string{"a", "b", "c"})
 }
 
+// signing the vectors, also returns the seed
+func newTestKeyPair(t *testing.T) (ethKeyPair, []byte) {
+	priv, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	return ethKeyPair{secret: priv}, crypto.FromECDSA(priv)
+}
+
+// copied from relay
+type ethKeyPair struct {
+	secret *ecdsa.PrivateKey
+}
+
+func (kp ethKeyPair) Wallet() EthereumAddress {
+	publicKey := kp.secret.Public()
+	publicKeyECDSA := publicKey.(*ecdsa.PublicKey)
+	return EthereumAddress(crypto.PubkeyToAddress(*publicKeyECDSA))
+}
+
+func (kp ethKeyPair) PublicKey() PublicKey {
+	publicKey := kp.secret.Public()
+	publicKeyECDSA := publicKey.(*ecdsa.PublicKey)
+	return PublicKey(crypto.CompressPubkey(publicKeyECDSA))
+}
+
+func (kp ethKeyPair) CompressedPubKey() []byte {
+	return crypto.CompressPubkey(&kp.secret.PublicKey)
+}
+
+func (kp ethKeyPair) Sign(data []byte) ([]byte, error) {
+	sighash := accounts.TextHash(data)
+	signature, err := crypto.Sign(sighash, kp.secret)
+	if err != nil {
+		return nil, fmt.Errorf("crypto.Sign failed: %w", err)
+	}
+	return signature, nil
+}
+
+func (kp ethKeyPair) TestSign(t testing.TB, data []byte) Signature {
+	signature, err := kp.Sign(data)
+	require.NoError(t, err)
+	if n := len(signature); n != 65 {
+		panic(fmt.Sprintf("signature length is not 65: %d", n))
+	}
+	signature[64] += 27
+	var sig Signature
+	copy(sig[:], signature)
+	return sig
+}
+
 // fix formatting for test vectors
 // go's json encoder defaults to encode []byte as base64 encoded string
 
@@ -172,8 +238,10 @@ func (inv Inventory) MarshalJSON() ([]byte, error) {
 	return json.Marshal(stringID)
 }
 
+// use default json encoding for ethereum addresses
 func (addr EthereumAddress) MarshalJSON() ([]byte, error) {
-	return json.Marshal(base64.StdEncoding.EncodeToString(addr[:]))
+	common := common.Address(addr)
+	return json.Marshal(common)
 }
 
 func (pub PublicKey) MarshalJSON() ([]byte, error) {

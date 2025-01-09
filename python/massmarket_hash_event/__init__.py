@@ -9,19 +9,16 @@ __all__ = [
     "shop_pb2",
     "shop_requests_pb2",
     "error_pb2",
-    "shop_events_pb2",
+    "shop_events_cbor",
     "storage_pb2",
 ]
 
-import json
-import binascii
-from pprint import pprint
-from importlib.resources import files
+import cbor2
 from eth_account import messages
 
-from massmarket_hash_event import shop_events_pb2
+from massmarket_hash_event import shop_events_cbor
 
 
-def hash_event(evt: shop_events_pb2.ShopEvent):
-    encoded = evt.SerializeToString()
+def hash_patchset(evt: shop_events_cbor.PatchSet):
+    encoded = cbor2.dumps(evt)
     return messages.encode_defunct(encoded)

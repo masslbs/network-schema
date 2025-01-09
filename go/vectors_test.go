@@ -6,6 +6,7 @@ package schema
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/hex"
 	"math"
 	"math/big"
@@ -18,19 +19,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestShop() Shop {
-	s := Shop{}
-	s.Accounts.Trie = NewTrie[Account]()
-	s.Listings.Trie = NewTrie[Listing]()
-	s.Orders.Trie = NewTrie[Order]()
-	s.Tags.Trie = NewTrie[Tag]()
-	s.Inventory.Trie = NewTrie[uint64]()
-	return s
-}
-
 func TestMapOrdering(t *testing.T) {
 	r := require.New(t)
-	shop := newTestShop()
+	shop := NewShop()
 
 	var buf bytes.Buffer
 	enc := DefaultEncoder(&buf)
@@ -61,7 +52,7 @@ func TestMapOrdering(t *testing.T) {
 		'P', 'a', 'y', 'e', 'e', 's',
 		0xf6, // primitive(22)
 		0x66, // text(6)
-		'S', 'h', 'o', 'p', 'I', 'd',
+		'S', 'h', 'o', 'p', 'I', 'D',
 		0x00, // unsigned(0)
 		0x6f, // text(15)
 		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
@@ -90,12 +81,19 @@ func TestMapOrdering(t *testing.T) {
 
 // Defines the structure of a vector file.
 type vectorFileOkay struct {
-	Patches []vectorEntryOkay
+	Signer struct {
+		Address EthereumAddress
+		Secret  []byte
+	}
+	Snapshots []vectorEntryOkay
+
+	PatchSet  PatchSet
+	Signature Signature // signature of the patchset, using the signer's secret
 }
 type vectorEntryOkay struct {
-	Name          string
-	Patch         Patch
-	Before, After vectorSnapshot
+	Name   string
+	Before vectorSnapshot
+	After  vectorSnapshot
 }
 type vectorSnapshot struct {
 	Value   Shop
@@ -112,6 +110,8 @@ type vectorEntryError struct {
 	Error  string
 }
 
+var kcNonce uint64 = 23
+
 // This vector exercises the mutations of the shop object.
 // Mutations of objects in the shop (listing, order, etc) are tested seperatly.
 // The vectors file is constructed slightly differently to the other vectors files.
@@ -120,8 +120,12 @@ type vectorEntryError struct {
 func TestGenerateVectorsShopOkay(t *testing.T) {
 	r := require.New(t)
 
+	var shopIdBytes [32]byte
+	rand.Read(shopIdBytes[:])
+	shopId := Uint256{}
+	shopId.SetBytes(shopIdBytes[:])
+	t.Log("shop ID: ", shopId.String())
 	var (
-		shopId   Uint256      = *big.NewInt(23)
 		testAddr ChainAddress = addrFromHex(1, "0x1234567890123456789012345678901234567890")
 		testEth  ChainAddress = addrFromHex(1, "0x0000000000000000000000000000000000000000")
 		testUsdc ChainAddress = addrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
@@ -178,9 +182,9 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 
 	// inline function to scope over the variables
 	testShop := func() Shop {
-		s := Shop{}
+		s := NewShop()
 		s.Manifest = Manifest{
-			ShopId: shopId,
+			ShopID: shopId,
 			Payees: Payees{
 				"default": {
 					Address:        testAddr,
@@ -200,15 +204,18 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				"other": testOther,
 			},
 		}
-		s.Accounts.Trie = NewTrie[Account]()
-		s.Listings.Trie = NewTrie[Listing]()
-		s.Tags.Trie = NewTrie[Tag]()
-		s.Orders.Trie = NewTrie[Order]()
-		s.Inventory.Trie = NewTrie[uint64]()
 		return s
 	}
 	_, testListing := newTestListing()
 
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileOkay
+
+	kp := initVectors(t, &vectors, shopId)
+
+	var state = testShop()
 	var testCases = []struct {
 		Name  string
 		Op    OpString
@@ -469,12 +476,6 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		},
 	}
 
-	var patcher Patcher
-	patcher.validator = validate
-
-	var vectors vectorFileOkay
-
-	var state = testShop()
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			r := require.New(t)
@@ -484,8 +485,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				Value: testCase.Value,
 			}
 			var entry = vectorEntryOkay{
-				Name:  t.Name(),
-				Patch: patch,
+				Name: t.Name(),
 			}
 
 			// we need to clone the state because the patcher mutates the state
@@ -513,7 +513,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				Encoded: afterEncoded,
 				Hash:    hash(afterEncoded),
 			}
-			vectors.Patches = append(vectors.Patches, entry)
+			vectors.Snapshots = append(vectors.Snapshots, entry)
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
 		})
 	}
 
@@ -527,13 +528,17 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	r.NotEmpty(state.Tags)
 	r.NotEmpty(state.Orders)
 
+	// sign the patchset
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+
 	writeVectors(t, vectors)
 }
 
 func newTestManifest() Shop {
-	s := newTestShop()
+	s := NewShop()
 	s.Manifest = Manifest{
-		ShopId: *big.NewInt(1),
+		ShopID: *big.NewInt(1),
 		Payees: map[string]Payee{
 			"default": {
 				CallAsContract: false,
@@ -700,12 +705,15 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 	var vectors vectorFileOkay
 
 	shop := newTestManifest()
+	shopEncoded := mustEncode(t, shop)
 	// we use the same before for all test cases
 	var before = vectorSnapshot{
 		Value:   shop,
-		Encoded: mustEncode(t, shop),
-		Hash:    hash(mustEncode(t, shop)),
+		Encoded: shopEncoded,
+		Hash:    hash(shopEncoded),
 	}
+
+	kp := initVectors(t, &vectors, shop.Manifest.ShopID)
 
 	var patcher Patcher
 	patcher.validator = validate
@@ -726,7 +734,6 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 
 			var entry vectorEntryOkay
 			entry.Name = t.Name()
-			entry.Patch = patch
 			entry.Before = before
 
 			encoded := mustEncode(t, shop)
@@ -735,9 +742,15 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
-			vectors.Patches = append(vectors.Patches, entry)
+			vectors.Snapshots = append(vectors.Snapshots, entry)
+
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
 		})
 	}
+
+	// sign the patchset
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
 
 	writeVectors(t, vectors)
 }
@@ -922,6 +935,18 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 	testTimeFuture := time.Unix(10000000000, 0).UTC()
 
 	shop, testListing := newTestListing()
+
+	var vectors vectorFileOkay
+	var before = vectorSnapshot{
+		Value:   shop,
+		Encoded: mustEncode(t, shop),
+		Hash:    hash(mustEncode(t, shop)),
+	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	kp := initVectors(t, &vectors, shop.Manifest.ShopID)
 
 	testCases := []struct {
 		name     string
@@ -1191,15 +1216,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 		},
 	}
 
-	var vectors vectorFileOkay
-	var before = vectorSnapshot{
-		Value:   shop,
-		Encoded: mustEncode(t, shop),
-		Hash:    hash(mustEncode(t, shop)),
-	}
-
-	var patcher Patcher
-	patcher.validator = validate
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
@@ -1222,7 +1238,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 
 			var entry vectorEntryOkay
 			entry.Name = t.Name()
-			entry.Patch = patch
 			entry.Before = before
 			encoded := mustEncode(t, shop)
 			entry.After = vectorSnapshot{
@@ -1230,9 +1245,12 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
-			vectors.Patches = append(vectors.Patches, entry)
+			vectors.Snapshots = append(vectors.Snapshots, entry)
 		})
 	}
+	// sign the patchset
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
 
 	writeVectors(t, vectors)
 }
@@ -1356,6 +1374,22 @@ func newTestTag() (Shop, Tag) {
 
 func TestGenerateVectorsTagOkay(t *testing.T) {
 	var testTagName = "test"
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileOkay
+	shop, _ := newTestTag()
+	encodedBefore := mustEncode(t, shop)
+
+	kp := initVectors(t, &vectors, shop.Manifest.ShopID)
+
+	var before = vectorSnapshot{
+		Value:   shop,
+		Encoded: encodedBefore,
+		Hash:    hash(encodedBefore),
+	}
+
 	testCases := []struct {
 		name     string
 		op       OpString
@@ -1414,17 +1448,6 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 		},
 	}
 
-	var patcher Patcher
-	patcher.validator = validate
-
-	var vectors vectorFileOkay
-	shop, _ := newTestTag()
-	encodedBefore := mustEncode(t, shop)
-	var before = vectorSnapshot{
-		Value:   shop,
-		Encoded: encodedBefore,
-		Hash:    hash(encodedBefore),
-	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
@@ -1447,7 +1470,6 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 
 			var entry vectorEntryOkay
 			entry.Name = t.Name()
-			entry.Patch = patch
 			entry.Before = before
 			encoded := mustEncode(t, tag)
 			entry.After = vectorSnapshot{
@@ -1455,9 +1477,14 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 				Encoded: encoded,
 				Hash:    hash(encoded),
 			}
-			vectors.Patches = append(vectors.Patches, entry)
+			vectors.Snapshots = append(vectors.Snapshots, entry)
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
 		})
 	}
+
+	// sign the patch set
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
 
 	writeVectors(t, vectors)
 }
@@ -1594,6 +1621,20 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		TTL:           100,
 		ShopSignature: Signature{0xff},
 	}
+
+	var patcher Patcher
+	patcher.validator = validate
+
+	var vectors vectorFileOkay
+	shop, _ := newTestOrder()
+	encodedBefore := mustEncode(t, shop)
+	var before = vectorSnapshot{
+		Value:   shop,
+		Encoded: encodedBefore,
+		Hash:    hash(encodedBefore),
+	}
+
+	kp := initVectors(t, &vectors, shop.Manifest.ShopID)
 
 	testCases := []struct {
 		name     string
@@ -1815,18 +1856,6 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		},
 	}
 
-	var patcher Patcher
-	patcher.validator = validate
-
-	var vectors vectorFileOkay
-	shop, _ := newTestOrder()
-	encodedBefore := mustEncode(t, shop)
-	var before = vectorSnapshot{
-		Value:   shop,
-		Encoded: encodedBefore,
-		Hash:    hash(encodedBefore),
-	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
@@ -1848,16 +1877,20 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			var entry = vectorEntryOkay{
 				Name:   tc.name,
 				Before: before,
-				Patch:  patch,
 				After: vectorSnapshot{
 					Value:   shop,
 					Encoded: encodedAfter,
 					Hash:    hash(encodedAfter),
 				},
 			}
-			vectors.Patches = append(vectors.Patches, entry)
+			vectors.Snapshots = append(vectors.Snapshots, entry)
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
 		})
 	}
+
+	// sign the patchset
+	patchSetEncoded := mustEncode(t, vectors.PatchSet)
+	vectors.Signature = kp.TestSign(t, patchSetEncoded)
 
 	writeVectors(t, vectors)
 }

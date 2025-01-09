@@ -2,15 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-.phony: all lint reuse
+.phony: all lint reuse go
 
-all: testVectors.json python-package reuse
+all: vectors/hamt_test.json python-package reuse
 
-python-package:
+python-package: vectors/ShopOkay.cbor vectors/hamt_test.json
 	make -C python
 
-testVectors.json: python-package generate_testVectors_json.py
-	$(PYTHON) ./generate_testVectors_json.py
+vectors/hamt_test.json:
+	cd python && $(PYTHON) ./generate_hamt_test_vectors.py
+
+vectors/ShopOkay.cbor:
+	cd go && TEST_DATA_OUT=../vectors go test
 
 lint:
 	$(PYTHON) ./check.py
@@ -24,4 +27,8 @@ CPY := "Mass Labs"
 
 reuse:
 	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights Makefile CHANGELOG.md README.md *.proto flake.nix .gitignore .github/workflows/test.yml *.py python/*.py python/tests/*.py python/massmarket_hash_event/*.pyi python/massmarket_hash_event/*.py python/pyproject.toml python/Makefile go.mod go.sum go/*.go
-	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights --force-dot-license VERSION *.txt flake.lock
+	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights --force-dot-license VERSION *.txt  flake.lock
+
+clean:
+	rm -r vectors
+	mkdir vectors

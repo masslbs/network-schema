@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/crypto/sha3"
@@ -34,7 +35,7 @@ BASE TYPES
 type ObjectId = uint64
 
 // Signature represents a cryptographic signature
-const SignatureSize = 64
+const SignatureSize = 65
 
 type Signature [SignatureSize]byte
 
@@ -73,9 +74,9 @@ func (val *Hash) UnmarshalBinary(data []byte) error {
 }
 
 // EthereumAddress represents an Ethereum address
-const EthereumAddressSize = 20
+const EthereumAddressSize = common.AddressLength
 
-type EthereumAddress [EthereumAddressSize]byte
+type EthereumAddress common.Address
 
 func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != EthereumAddressSize {
@@ -141,6 +142,16 @@ type Shop struct {
 	Inventory Inventory
 }
 
+func NewShop() Shop {
+	s := Shop{}
+	s.Accounts.Trie = NewTrie[Account]()
+	s.Listings.Trie = NewTrie[Listing]()
+	s.Orders.Trie = NewTrie[Order]()
+	s.Tags.Trie = NewTrie[Tag]()
+	s.Inventory.Trie = NewTrie[uint64]()
+	return s
+}
+
 type Accounts struct {
 	*Trie[Account]
 }
@@ -169,13 +180,6 @@ func idToBytes(id ObjectId) []byte {
 	buf := make([]byte, 8)
 	binary.BigEndian.PutUint64(buf, uint64(id))
 	return buf
-}
-
-func bytesToId(buf []byte) ObjectId {
-	if len(buf) != 8 {
-		panic(fmt.Sprintf("expected 8 bytes, got %d", len(buf)))
-	}
-	return ObjectId(binary.BigEndian.Uint64(buf))
 }
 
 type Tags struct {
@@ -357,7 +361,7 @@ The Manifest schema
 */
 type Manifest struct {
 	// shop metadata lives in the NFT
-	ShopId Uint256 `validate:"required"`
+	ShopID Uint256 `validate:"required"`
 	// maps payee names to payee objects
 	Payees Payees `validate:"nonEmptyMapKeys"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
@@ -638,23 +642,4 @@ func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
 	op.BlockHash = *tmp.BlockHash
 	op.TxHash = tmp.TxHash
 	return nil
-}
-
-// ShopEvent is the transport wrapper for a single event in a shop.
-type ShopEvent struct {
-	// The nonce must be unique for each event a keycard creates.
-	// The sequence values need to increase monotonicly.
-	// Since PB can't discern between the 0 value and
-	// a missing field it should start with 1.
-	Nonce uint64
-
-	// Every signed event must be tied to a shop id. This allow the
-	// event to processed outside the context of the currenct connection.
-	ShopId Uint256
-
-	// the time when this event was created.
-	// The relay should reject any events from the future
-	Timestamp time.Time
-
-	Patch Patch
 }

@@ -14,7 +14,6 @@ random.seed("mass-market-test-vectors")
 from google.protobuf import timestamp_pb2
 from web3 import Account
 from eth_keys import keys
-from protobuf_to_dict import protobuf_to_dict
 
 from massmarket_hash_event import (
     hash_event,
