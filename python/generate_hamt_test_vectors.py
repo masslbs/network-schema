@@ -111,5 +111,7 @@ def generate_test_vectors() -> List[Dict[str, Any]]:
 
 if __name__ == "__main__":
     vectors = generate_test_vectors()
+    import os
+    os.makedirs("../vectors", exist_ok=True)
     with open("../vectors/hamt_test.json", "w") as f:
         json.dump(vectors, f, indent=2)
