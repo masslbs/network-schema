@@ -15,6 +15,7 @@ __all__ = [
 import cbor2
 from eth_account import messages
 
+
 def hash_patchset(evt):
     encoded = cbor2.dumps(evt)
     return messages.encode_defunct(encoded)
