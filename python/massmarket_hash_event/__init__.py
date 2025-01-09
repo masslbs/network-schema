@@ -9,16 +9,12 @@ __all__ = [
     "shop_pb2",
     "shop_requests_pb2",
     "error_pb2",
-    "shop_events_cbor",
     "storage_pb2",
 ]
 
 import cbor2
 from eth_account import messages
 
-from massmarket_hash_event import shop_events_cbor
-
-
-def hash_patchset(evt: shop_events_cbor.PatchSet):
+def hash_patchset(evt):
     encoded = cbor2.dumps(evt)
     return messages.encode_defunct(encoded)
