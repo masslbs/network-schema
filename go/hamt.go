@@ -20,12 +20,12 @@ const (
 )
 
 var (
-	newHashFn = xxhash.New
-	nilHash   []byte
+	newHAMTHashFn = xxhash.New
+	nilHAMTHash   []byte
 )
 
 func init() {
-	nilHash = newHashFn().Sum(nil)
+	nilHAMTHash = newHAMTHashFn().Sum(nil)
 }
 
 type hashState struct {
@@ -67,7 +67,7 @@ var (
 
 // hashKey is used to hash keys
 func hashKeyFunc(key []byte) uint64 {
-	h := newHashFn()
+	h := newHAMTHashFn()
 	h.Write(key)
 	return h.Sum64()
 }
@@ -198,14 +198,14 @@ func (n *Node[V]) insert(key []byte, value V, hs *hashState) (bool, error) {
 			if n.hash != nil {
 				currentHash = n.hash
 			} else {
-				var h1 = newHashFn()
+				var h1 = newHAMTHashFn()
 				err := n.encodeValue(entry.Value, h1)
 				if err != nil {
 					return false, err
 				}
 				currentHash = h1.Sum(nil)
 			}
-			var h2 = newHashFn()
+			var h2 = newHAMTHashFn()
 			err := n.encodeValue(value, h2)
 			if err != nil {
 				return false, err
@@ -446,13 +446,13 @@ func (t *Trie[V]) Size() int {
 // Hash hashes the whole HAMT
 func (t *Trie[V]) Hash() ([]byte, error) {
 	if t.root == nil {
-		return nilHash, nil
+		return nilHAMTHash, nil
 	}
 	return t.root.Hash()
 }
 
 func (n *Node[V]) Hash() ([]byte, error) {
-	h := newHashFn()
+	h := newHAMTHashFn()
 	if n == nil {
 		return h.Sum(nil), nil
 	}

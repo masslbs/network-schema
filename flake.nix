@@ -5,11 +5,17 @@
 {
   description = "Mass Market Network Schema";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    # nixpkgs.url = "github:cryptix/nixpkgs/web3py-on-channel";
+    # nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     gomod2nix = {
       url = "github:tweag/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    bryce-mmrs-py = {
+      url = "github:robinbryce/draft-bryce-cose-merkle-mountain-range-proofs";
+      flake = false;
     };
   };
 
@@ -17,6 +23,7 @@
     nixpkgs,
     utils,
     gomod2nix,
+    bryce-mmrs-py,
     ...
   }:
     utils.lib.eachDefaultSystem (system: let
@@ -25,29 +32,16 @@
         overlays = [ gomod2nix.overlays.default ];
       };
 
-      # web3 needs parsimonious v0.9.0
-      # https://github.com/ethereum/web3.py/issues/3110#issuecomment-1737826910
-      packageOverrides = self: super: {
-        parsimonious = super.parsimonious.overridePythonAttrs (old: rec {
-          pname = "parsimonious";
-          version = "0.9.0";
-          src = pkgs.python3.pkgs.fetchPypi {
-            inherit pname version;
-            sha256 = "sha256-sq0a5jovZb149eCorFEKmPNgekPx2yqNRmNqXZ5KMME=";
-          };
-          doCheck = false;
-        });
-      };
+      ourPython = pkgs.python311;
 
-      pinnedPython = pkgs.python3.override {
-        inherit packageOverrides;
-        self = pkgs.python3;
+      pinnedPython = ourPython.override {
+        self = ourPython;
       };
 
       mass-python = pinnedPython.withPackages (ps:
         with ps; [
           protobuf
-          web3
+          # web3 previous vectors
           safe-pysha3
 
           matplotlib # go/hamt_bench_plot.py
@@ -66,7 +60,7 @@
       );
 
       buildInputs = with pkgs; [
-        go
+        go_1_23
         go-outline
         gopls
         gopkgs
@@ -92,17 +86,32 @@
       devShell = pkgs.mkShell {
         inherit buildInputs;
         shellHook = ''
+          test -d go || {
+            echo "go/ directory not found, skipping gomod2nix update"
+            exit 0
+          }
           gomod2nix generate
+          # TODO: this should be an actual python package
+          # but i dont want to package it up right now
+          test -d python/mmr || {
+            cp -r ${bryce-mmrs-py} python/mmr
+          }
           export PYTHON=${mass-python}/bin/python
           export PYTHONPATH=$PYTHONPATH:$PWD/python
+          export TEST_DATA_OUT=$PWD/vectors
         '';
       };
       packages.default = pkgs.buildGoApplication {
           name = "MassMarket Test Vectors";
           modules = ./gomod2nix.toml;
-          buildInputs = [ pkgs.go ];
+          # go = pkgs.go_1_23;
+          buildInputs = [ pkgs.go_1_23 ];
           src = ./.;
           buildPhase = ''
+            test -d go || {
+              echo "go/ directory not found, skipping vector generation"
+              exit 0
+            }
             cd ./go
             mkdir -p $out
             TEST_DATA_OUT=$out go test

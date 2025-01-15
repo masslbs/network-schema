@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "bryce-mmrs-py": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732639710,
+        "narHash": "sha256-rgWSlJa4G7ZR8gfu0wu7C5XDmamIM9S8LJb0qSE4TbU=",
+        "owner": "robinbryce",
+        "repo": "draft-bryce-cose-merkle-mountain-range-proofs",
+        "rev": "c8c691d18dde39509e68a5a9cdc9eba18ea1062a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "robinbryce",
+        "repo": "draft-bryce-cose-merkle-mountain-range-proofs",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -41,22 +57,23 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1736200483,
-        "narHash": "sha256-JO+lFN2HsCwSLMUWXHeOad6QUxOuwe9UOAF/iSl1J4I=",
+        "lastModified": 1737885589,
+        "narHash": "sha256-Zf0hSrtzaM1DEz8//+Xs51k/wdSajticVrATqDrfQjg=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3f0a8ac25fb674611b98089ca3a5dd6480175751",
+        "rev": "852ff1d9e153d8875a83602e03fdef8a63f0ecf8",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-24.11",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
+        "bryce-mmrs-py": "bryce-mmrs-py",
         "gomod2nix": "gomod2nix",
         "nixpkgs": "nixpkgs",
         "utils": "utils"

@@ -21,7 +21,18 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type PatchSet struct {
+// To validate a patchset, construct the merkle tree of the patches and validate the root hash.
+type SignedPatchSet struct {
+	// The header of the patch set
+	Header PatchSetHeader `validate:"required"`
+
+	// The signature of the header, containing the merkle root of the patches
+	Signature Signature `validate:"required,gt=0,dive"`
+
+	Patches []Patch `validate:"required,gt=0,dive"`
+}
+
+type PatchSetHeader struct {
 	// The nonce must be unique for each event a keycard creates.
 	// The sequence values need to increase monotonicly.
 	KeyCardNonce uint64 `validate:"required,gt=0"`
@@ -34,14 +45,18 @@ type PatchSet struct {
 	// The relay should reject any events from the future
 	Timestamp time.Time `validate:"required"`
 
-	// The patches to apply to the shop.
-	Patches []Patch `validate:"required,gt=0,dive"`
+	// The merkle root of the patches
+	RootHash Hash `validate:"required"`
 }
 
 type Patch struct {
 	Op    OpString        `validate:"required,oneof=add replace remove increment decrement"`
 	Path  PatchPath       `validate:"required"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
+}
+
+func (p Patch) Serialize() ([]byte, error) {
+	return Marshal(p)
 }
 
 // TODO: type change to enum/number instead of string?

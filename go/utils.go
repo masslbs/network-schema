@@ -12,24 +12,24 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
+	"golang.org/x/crypto/sha3"
 )
 
 func MassMarketTags() cbor.TagSet {
 	tags := cbor.NewTagSet()
 
 	// Register tag for Status enum type (using tag 1000)
-	tags.Add(
-		cbor.TagOptions{EncTag: cbor.EncTagRequired, DecTag: cbor.DecTagRequired},
-		reflect.TypeOf(ListingViewState(0)), // Reflect the Status type
-		1000,                                // CBOR tag number for the Status enum
-	)
+	// tags.Add(
+	// 	cbor.TagOptions{EncTag: cbor.EncTagRequired, DecTag: cbor.DecTagRequired},
+	// 	reflect.TypeOf(ListingViewState(0)),
+	// 	1000,
+	// )
 	return tags
 }
 
@@ -94,6 +94,12 @@ func bytesToCombinedID(buf []byte) (ObjectId, []string) {
 		variations = []string{}
 	}
 	return id, variations
+}
+
+func hash(value []byte) []byte {
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(value)
+	return hash.Sum(nil)
 }
 
 func check(err error) {

@@ -1,0 +1,5 @@
+{
+    "imports": {
+        "@openzeppelin/merkle-tree": "https://raw.githubusercontent.com/cryptix/js-merkle-tree/deno-hacking/src/index.ts"
+    }
+}

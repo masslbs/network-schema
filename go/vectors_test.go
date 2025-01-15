@@ -87,8 +87,7 @@ type vectorFileOkay struct {
 	}
 	Snapshots []vectorEntryOkay
 
-	PatchSet  PatchSet
-	Signature Signature // signature of the patchset, using the signer's secret
+	PatchSet SignedPatchSet
 }
 type vectorEntryOkay struct {
 	Name   string
@@ -527,9 +526,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	r.NotEmpty(state.Tags)
 	r.NotEmpty(state.Orders)
 
-	// sign the patchset
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }
@@ -731,8 +728,7 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 	r.NotEmpty(state.Orders)
 
 	// sign the patchset
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }
@@ -951,8 +947,7 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 	}
 
 	// sign the patchset
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }
@@ -1448,11 +1443,11 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 				Hash:    hash(encoded),
 			}
 			vectors.Snapshots = append(vectors.Snapshots, entry)
+			vectors.PatchSet.Patches = append(vectors.PatchSet.Patches, patch)
 		})
 	}
 	// sign the patchset
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }
@@ -1685,8 +1680,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 	}
 
 	// sign the patch set
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }
@@ -2109,8 +2103,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 	}
 
 	// sign the patchset
-	patchSetEncoded := mustEncode(t, vectors.PatchSet)
-	vectors.Signature = kp.TestSign(t, patchSetEncoded)
+	kp.TestSignPatchSet(t, &vectors.PatchSet)
 
 	writeVectors(t, vectors)
 }

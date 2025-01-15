@@ -14,16 +14,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/datatrails/go-datatrails-merklelog/mmr"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ipfs/go-cid"
+	"github.com/masslbs/go-pgmmr"
 	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/sha3"
@@ -45,10 +48,10 @@ func initVectors(t *testing.T, vectors *vectorFileOkay, shopID Uint256) ethKeyPa
 	vectors.Signer.Secret = seed
 	vectors.Signer.Address = kp.Wallet()
 
-	vectors.PatchSet.ShopID = shopID
-	vectors.PatchSet.KeyCardNonce = kcNonce
+	vectors.PatchSet.Header.ShopID = shopID
+	vectors.PatchSet.Header.KeyCardNonce = kcNonce
 	kcNonce++
-	vectors.PatchSet.Timestamp = time.Unix(0, 0).UTC()
+	vectors.PatchSet.Header.Timestamp = time.Unix(0, 0).UTC()
 	return kp
 }
 
@@ -106,12 +109,6 @@ func decodePatch(t *testing.T, encoded []byte) Patch {
 	require.NoError(t, err)
 	require.NoError(t, validate.Struct(decoded))
 	return decoded
-}
-
-func hash(value []byte) []byte {
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(value)
-	return hash.Sum(nil)
 }
 
 func testHash(i uint) cid.Cid {
@@ -198,6 +195,20 @@ func (kp ethKeyPair) TestSign(t testing.TB, data []byte) Signature {
 	return sig
 }
 
+func (kp ethKeyPair) TestSignPatchSet(t testing.TB, patchSet *SignedPatchSet) {
+	r := require.New(t)
+	r.Greater(len(patchSet.Patches), 0)
+
+	var err error
+	patchSet.Header.RootHash, _, err = rootHash(t, patchSet.Patches)
+	r.NoError(err)
+
+	// sign the header
+	headerEncoded, err := Marshal(patchSet.Header)
+	r.NoError(err)
+	patchSet.Signature = kp.TestSign(t, headerEncoded)
+}
+
 // fix formatting for test vectors
 // go's json encoder defaults to encode []byte as base64 encoded string
 
@@ -272,4 +283,231 @@ func (patch PatchPath) MarshalJSON() ([]byte, error) {
 		path = append(path, field)
 	}
 	return json.Marshal(path)
+}
+
+func TestGenerateVectorsMerkleProofs(t *testing.T) {
+	type testCase struct {
+		Name     string
+		Patches  []Patch
+		RootHash Hash
+		Proofs   []pgmmr.Proof
+	}
+
+	_, listing := newTestListing()
+	encodedListing := mustEncode(t, listing)
+
+	vectors := []testCase{
+		{
+			Name: "SinglePatch",
+			Patches: []Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(1),
+					},
+					Value: encodedListing,
+				},
+			},
+		},
+		{
+			Name: "TwoPatches",
+			Patches: []Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(1),
+					},
+					Value: encodedListing,
+				},
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(2),
+					},
+					Value: encodedListing,
+				},
+			},
+		},
+		{
+			Name: "ThreePatches",
+			Patches: []Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(1),
+					},
+					Value: encodedListing,
+				},
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(2),
+					},
+					Value: encodedListing,
+				},
+				{
+					Op: ReplaceOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(1),
+					},
+					Value: encodedListing,
+				},
+			},
+		},
+
+		{
+			Name: "FourPatches",
+			Patches: slices.Repeat([]Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(4),
+					},
+					Value: encodedListing,
+				},
+			}, 4),
+		},
+
+		{
+			Name: "FivePatches",
+			Patches: slices.Repeat([]Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(5),
+					},
+					Value: encodedListing,
+				},
+			}, 5),
+		},
+
+		{
+			Name: "SixteenPatches",
+			Patches: slices.Repeat([]Patch{
+				{
+					Op: AddOp,
+					Path: PatchPath{
+						Type:     ObjectTypeListing,
+						ObjectID: uint64ptr(16),
+					},
+					Value: encodedListing,
+				},
+			}, 16),
+		},
+	}
+
+	// Process each test case to generate merkle roots and proofs
+	for idx := range vectors {
+		t.Run(vectors[idx].Name, func(t *testing.T) {
+			tc := &vectors[idx]
+
+			// Store root hash
+			var err error
+			var tree pgmmr.VerifierTree
+			tc.RootHash, tree, err = rootHash(t, tc.Patches)
+			require.NoError(t, err)
+
+			// Generate and store proofs for each patch
+			tc.Proofs = make([]pgmmr.Proof, len(tc.Patches))
+			for i := range tc.Patches {
+				proof, err := tree.MakeProof(uint64(i))
+				require.NoError(t, err)
+				require.NotNil(t, proof)
+				tc.Proofs[i] = *proof
+				err = tree.VerifyProof(*proof)
+				require.NoError(t, err)
+			}
+		})
+	}
+
+	// Write test vectors to file
+	writeVectors(t, vectors)
+}
+
+func rootHash(t testing.TB, patches []Patch) (Hash, pgmmr.VerifierTree, error) {
+	r := require.New(t)
+	sz := mmr.FirstMMRSize(uint64(len(patches)))
+
+	tree := pgmmr.NewInMemoryVerifierTree(sha3.NewLegacyKeccak256(), sz)
+	for _, patch := range patches {
+		data, err := Marshal(patch)
+		r.NoError(err)
+		_, err = tree.Add(data)
+		r.NoError(err)
+	}
+
+	// fill up the tree to the next power of 2
+	cnt, err := tree.LeafCount()
+	require.NoError(t, err)
+	nextSquare := nextPowerOf2(cnt)
+	t.Logf("sz: %d for %d patches. Tree Size: %d", sz, len(patches), nextSquare)
+	for cnt < nextSquare {
+		_, err = tree.Add([]byte{})
+		r.NoError(err)
+		cnt, err = tree.LeafCount()
+		r.NoError(err)
+	}
+
+	root, err := tree.Root()
+	r.NoError(err)
+	return Hash(root), tree, nil
+}
+
+
+// * n--: First decrements n by 1. This is done to handle the case where n is already a power of 2.
+// * The series of bit-shifting operations (|= with right shifts):
+//    This sequence "fills" all the bits to the right of the highest set bit with 1s. For example:
+//    If n = 00100000, after these operations it becomes 00111111
+// * n++: Finally increments n by 1, which gives us the next power of 2.
+//
+// Here's a concrete example:
+// Start with n = 33 (00100001 in binary)
+// After n--, n = 32 (00100000)
+// After bit-shifting operations, n = 00111111
+// After n++, n = 01000000 (64 in decimal)
+func nextPowerOf2(n uint64) uint64 {
+	n--
+	n |= n >> 1
+	n |= n >> 2
+	n |= n >> 4
+	n |= n >> 8
+	n |= n >> 16
+	n |= n >> 32
+	n++
+	return n
+}
+
+func TestNextPowerOf2(t *testing.T) {
+	require.EqualValues(t, nextPowerOf2(1), 1)
+	require.EqualValues(t, nextPowerOf2(2), 2)
+	require.EqualValues(t, nextPowerOf2(3), 4)
+	require.EqualValues(t, nextPowerOf2(4), 4)
+	require.EqualValues(t, nextPowerOf2(5), 8)
+	require.EqualValues(t, nextPowerOf2(6), 8)
+	require.EqualValues(t, nextPowerOf2(7), 8)
+	require.EqualValues(t, nextPowerOf2(8), 8)
+	require.EqualValues(t, nextPowerOf2(9), 16)
+	require.EqualValues(t, nextPowerOf2(16), 16)
+	require.EqualValues(t, nextPowerOf2(17), 32)
+	require.EqualValues(t, nextPowerOf2(32), 32)
+	require.EqualValues(t, nextPowerOf2(33), 64)
+	require.EqualValues(t, nextPowerOf2(64), 64)
+	require.EqualValues(t, nextPowerOf2(65), 128)
+	require.EqualValues(t, nextPowerOf2(128), 128)
+	require.EqualValues(t, nextPowerOf2(256), 256)
+	require.EqualValues(t, nextPowerOf2(257), 512)
+	require.EqualValues(t, nextPowerOf2(512), 512)
+	require.EqualValues(t, nextPowerOf2(513), 1024)
+	require.EqualValues(t, nextPowerOf2(1024), 1024)
+	require.EqualValues(t, nextPowerOf2(1025), 2048)
+	require.EqualValues(t, nextPowerOf2(2048), 2048)
+
 }
