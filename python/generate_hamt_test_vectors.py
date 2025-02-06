@@ -112,6 +112,10 @@ if __name__ == "__main__":
     vectors = generate_test_vectors()
     import os
 
-    os.makedirs("../vectors", exist_ok=True)
-    with open("../vectors/hamt_test.json", "w") as f:
+    test_data_out = os.getenv("TEST_DATA_OUT")
+    if test_data_out is None:
+        test_data_out = "../vectors"
+        
+    os.makedirs(test_data_out, exist_ok=True)
+    with open(os.path.join(test_data_out, "hamt_test.json"), "w") as f:
         json.dump(vectors, f, indent=2)

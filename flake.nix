@@ -114,7 +114,10 @@
             }
             cd ./go
             mkdir -p $out
-            TEST_DATA_OUT=$out go test
+            export TEST_DATA_OUT=$out
+            go test
+            cd ../python
+            ${mass-python}/bin/python generate_hamt_test_vectors.py
             '';
         };
     });
