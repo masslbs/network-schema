@@ -5,12 +5,13 @@
 {
   description = "Mass Market Network Schema";
   inputs = {
-    # nixpkgs.url = "github:cryptix/nixpkgs/web3py-on-channel";
-    # nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     gomod2nix = {
-      url = "github:tweag/gomod2nix";
+      # url = "github:tweag/gomod2nix";
+      # fix builds with go 1.23
+      # https://github.com/nix-community/gomod2nix/pull/168
+      url = "github:obreitwi/gomod2nix/fix/go_mod_vendor";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     bryce-mmrs-py = {
