@@ -42,7 +42,7 @@
       mass-python = pinnedPython.withPackages (ps:
         with ps; [
           protobuf
-          # web3 previous vectors
+          web3
           safe-pysha3
 
           matplotlib # go/hamt_bench_plot.py
@@ -92,10 +92,11 @@
             exit 0
           }
           gomod2nix generate
+          # vendored mmr code
           # TODO: this should be an actual python package
           # but i dont want to package it up right now
-          test -d python/mmr || {
-            cp -r ${bryce-mmrs-py} python/mmr
+          test -d python/massmarket_hash_event/mmr || {
+            cp -r ${bryce-mmrs-py} python/massmarket_hash_event/mmr
           }
           export PYTHON=${mass-python}/bin/python
           export PYTHONPATH=$PYTHONPATH:$PWD/python
@@ -105,7 +106,6 @@
       packages.default = pkgs.buildGoApplication {
           name = "MassMarket Test Vectors";
           modules = ./gomod2nix.toml;
-          # go = pkgs.go_1_23;
           buildInputs = [ pkgs.go_1_23 ];
           src = ./.;
           buildPhase = ''

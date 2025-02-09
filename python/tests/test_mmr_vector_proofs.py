@@ -2,8 +2,8 @@ import cbor2
 from sha3 import keccak_256
 
 # TODO: move to dedicated package instead of vendoring the code
-from mmr.algorithms import included_root, verify_inclusion_path, add_leaf_hash
-from mmr.db import FlatDB
+from massmarket_hash_event.mmr.algorithms import included_root, verify_inclusion_path, add_leaf_hash
+from massmarket_hash_event.mmr.db import FlatDB
 
 def hex(x: bytes) -> str:
     return "0x" + x.hex()
@@ -22,7 +22,6 @@ def test_merkle_proofs():
         # Convert patches to bytes for hashing
         patches_bytes = [cbor2.dumps(patch) for patch in test_case['Patches']]
         hashed_patches = [keccak_256(patch).digest() for patch in patches_bytes]
-
 
         # Create merkle tree
         tree = FlatDB()

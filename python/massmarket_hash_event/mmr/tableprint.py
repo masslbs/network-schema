@@ -1,21 +1,19 @@
-from mmr.algorithms import inclusion_proof_path
-from mmr.algorithms import included_root
-from mmr.algorithms import index_height
-from mmr.algorithms import peaks
-from mmr.algorithms import peak_depths
-from mmr.algorithms import leaf_count
-from mmr.algorithms import complete_mmr
-from mmr.algorithms import mmr_index
-from mmr.algorithms import proves_index_peak
-from mmr.algorithms import proves_peak
-from mmr.algorithms import parent
-from mmr.algorithms import roots
-from mmr.algorithms import leaf_witness_update_due
-from mmr.algorithms import accumulator_root
-from mmr.algorithms import accumulator_index
+from massmarket_hash_event.mmr.algorithms import included_root, inclusion_proof_path
+from massmarket_hash_event.mmr.algorithms import index_height
+from massmarket_hash_event.mmr.algorithms import peaks
+from massmarket_hash_event.mmr.algorithms import peak_depths
+from massmarket_hash_event.mmr.algorithms import leaf_count
+from massmarket_hash_event.mmr.algorithms import complete_mmr
+from massmarket_hash_event.mmr.algorithms import mmr_index
+from massmarket_hash_event.mmr.algorithms import proves_index_peak
+from massmarket_hash_event.mmr.algorithms import proves_peak
+from massmarket_hash_event.mmr.algorithms import parent
+from massmarket_hash_event.mmr.algorithms import leaf_witness_update_due
+from massmarket_hash_event.mmr.algorithms import accumulator_root
+from massmarket_hash_event.mmr.algorithms import accumulator_index
 
 
-from mmr.db import KatDB, FlatDB
+from massmarket_hash_event.mmr.db import KatDB
 
 complete_mmr_sizes =   [ 1, 3, 4, 7, 8, 10, 11, 15, 16, 18, 19, 22, 23, 25, 26, 31, 32, 34, 35, 38, 39 ]
 complete_mmr_indices = [ 0, 2, 3, 6, 7,  9, 10, 14, 15, 17, 18, 21, 22, 24, 25, 30, 31, 33, 34, 37, 38 ]

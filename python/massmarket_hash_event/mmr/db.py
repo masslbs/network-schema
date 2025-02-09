@@ -77,11 +77,11 @@ ASCII art & notes for the test db and related properties.
 """
 from sha3 import keccak_256
 
-from mmr.algorithms import add_leaf_hash
-from mmr.algorithms import leaf_count
-from mmr.algorithms import complete_mmr
-from mmr.algorithms import hash_pospair64
-from mmr.algorithms import trailing_zeros
+from massmarket_hash_event.mmr.algorithms import add_leaf_hash
+from massmarket_hash_event.mmr.algorithms import leaf_count
+from massmarket_hash_event.mmr.algorithms import complete_mmr
+from massmarket_hash_event.mmr.algorithms import hash_pospair64
+from massmarket_hash_event.mmr.algorithms import trailing_zeros
 
 
 def hash_num64(v: int) -> bytes:

@@ -4,14 +4,12 @@
 
 import os
 import cbor2
-
-
+from pprint import pprint
 from web3 import Account, Web3
 
 from massmarket_hash_event import (
-    hash_patchset,
+    get_signer_of_patchset,
 )
-
 
 # check that we can recompute the signatures from the test vectors
 def test_verify_vector_file():
@@ -31,16 +29,15 @@ def check_vector(vector):
     # convert the signer address to a hex string
     signer = Web3.to_checksum_address(signer)
 
+    # pprint(vector)
     patch_set = vector["PatchSet"]
 
-    # re-encode the patchset
-    encoded_data = hash_patchset(patch_set)
+    # 1. recompute root from patches and extract signer pubkey
+    extracted_signer = get_signer_of_patchset(patch_set)
 
     # verify the signature
-    pub_key = Account.recover_message(encoded_data, signature=vector["Signature"])
-    their_addr = Web3.to_checksum_address(pub_key)
+    their_addr = Web3.to_checksum_address(extracted_signer)
     assert their_addr == signer, f"invalid signer on event"
-
 
 if __name__ == "__main__":
     test_verify_vector_file()
