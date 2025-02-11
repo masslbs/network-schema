@@ -32,7 +32,7 @@ func TestMapOrdering(t *testing.T) {
 	// The fields should be ordered: Tags, Orders, Accounts, Listings, Manifest
 	// This corresponds to the following CBOR structure:
 	want := []byte{
-		0xa6, // map(6)
+		0xa7, // map(7)
 		0x64, // text(4)
 		'T', 'a', 'g', 's',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -70,6 +70,9 @@ func TestMapOrdering(t *testing.T) {
 		0x69, // text(8)
 		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
 		0x82, 0x00, 0xf6, // empty hamt
+		0x6d, // text(12)
+		'S', 'c', 'h', 'e', 'm', 'a', 'V', 'e', 'r', 's', 'i', 'o', 'n',
+		0x18, 0x2a, // unsigned(42)
 	}
 	got := buf.Bytes()
 	gotHex := hex.EncodeToString(got)
@@ -182,6 +185,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	// inline function to scope over the variables
 	testShop := func() Shop {
 		s := NewShop()
+		s.SchemaVersion = 23
 		s.Manifest = Manifest{
 			ShopID: shopId,
 			Payees: Payees{
@@ -735,8 +739,9 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 
 func newTestManifest() Shop {
 	s := NewShop()
+	s.SchemaVersion = 666
 	s.Manifest = Manifest{
-		ShopID: *big.NewInt(1),
+		ShopID:        *big.NewInt(1),
 		Payees: map[string]Payee{
 			"default": {
 				CallAsContract: false,

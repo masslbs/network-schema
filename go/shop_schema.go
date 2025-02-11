@@ -134,6 +134,7 @@ type Payee struct {
 The complete Shop state
 */
 type Shop struct {
+	SchemaVersion uint64
 	Tags      Tags
 	Orders    Orders
 	Accounts  Accounts
@@ -144,6 +145,7 @@ type Shop struct {
 
 func NewShop() Shop {
 	s := Shop{}
+	s.SchemaVersion = 42
 	s.Accounts.Trie = NewTrie[Account]()
 	s.Listings.Trie = NewTrie[Listing]()
 	s.Orders.Trie = NewTrie[Order]()

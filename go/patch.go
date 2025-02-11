@@ -255,12 +255,13 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 type ObjectType string
 
 const (
-	ObjectTypeManifest  ObjectType = "manifest"
-	ObjectTypeAccount   ObjectType = "account"
-	ObjectTypeListing   ObjectType = "listing"
-	ObjectTypeOrder     ObjectType = "order"
-	ObjectTypeTag       ObjectType = "tag"
-	ObjectTypeInventory ObjectType = "inventory"
+	ObjectTypeSchemaVersion ObjectType = "schemaVersion"
+	ObjectTypeManifest      ObjectType = "manifest"
+	ObjectTypeAccount       ObjectType = "account"
+	ObjectTypeListing       ObjectType = "listing"
+	ObjectTypeOrder         ObjectType = "order"
+	ObjectTypeTag           ObjectType = "tag"
+	ObjectTypeInventory     ObjectType = "inventory"
 )
 
 func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
@@ -278,7 +279,7 @@ func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
 }
 
 func (obj ObjectType) IsValid() bool {
-	return obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
+	return obj == ObjectTypeSchemaVersion || obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
 }
 
 type Patcher struct {
@@ -288,6 +289,23 @@ type Patcher struct {
 func (p *Patcher) Shop(in *Shop, patch Patch) error {
 	var err error
 	switch patch.Path.Type {
+	case ObjectTypeSchemaVersion:
+		if in.SchemaVersion != 0 && patch.Op != ReplaceOp {
+			return fmt.Errorf("schema version can only be replaced once it is set")
+		}
+		if in.SchemaVersion == 0 && patch.Op != AddOp {
+			return fmt.Errorf("schema version can only be initialized once")
+		}
+		var newVal uint64
+		err = cbor.Unmarshal(patch.Value, &newVal)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal schema version: %w", err)
+		}
+		if newVal <= in.SchemaVersion {
+			return fmt.Errorf("schema version can only be incremented")
+		}
+		in.SchemaVersion = newVal
+		return nil
 	case ObjectTypeManifest:
 		err = p.Manifest(&in.Manifest, patch)
 	case ObjectTypeAccount:
