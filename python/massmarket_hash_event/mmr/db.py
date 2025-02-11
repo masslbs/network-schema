@@ -1,80 +1,3 @@
-"""
-
-ASCII art & notes for the test db and related properties.
-
-
- .  4                        30
-
-    3              14                       29
-                 /    \
-              /          \
-    2        6            13           21             28                37
-           /   \        /    \
-    1     2     5      9     12     17     20     24       27       33      36
-         / \   / \    / \   /  \   /  \
-    0   0   1 3   4  7   8 10  11 15  16 18  19 22  23   25   26  31  32   34  35   38
-        0   1 2   3  4   5  6   7  8   9 10  11 12  13   14   15  16  17   18  19   20
-
-    leaves in sub tree containing tx, at time tw
-
-       0   1 2   3  4   5  6   7  8   9 10  11 12  13   14   15  16  17   18  19   20
-    0: 1   2 2   4  4   4  4   8  8 . 8  8 . 8 .8 . 8 .  8 . 16  16  16   16  16   16 
-    1:     2 2   4
-    2:       1   4
-    3:           4  4
-    4:              1   2  2   8
-    5:                  
-    6:                     
-    7:                         
-    8:                            
-
-
-    tx=0 ta -> 20 witness from reaches the accumulator, what is the oldest accumulator we can use ?
-
-    Note: the accumulator (obviously) can't contain tx until after tx
-
-    Note: identifying by *leaf* index, not mmr index
-
-       0   1 2   3  4   5  6   7  8   9 10  11 12  13   14   15  16  17   18  19   20
-    0: 0   1 1   3  3   3  3   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    1:     1 1   3  3   3  3   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    2:       2   3  3   3  3   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    3:           3  3   3  3   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    4:              4   5  5   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    5:                  5  5   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    6:                     6   7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    7:                         7  7   7  7   7  7   7    7   15  15  15   15  15   15
-    8:                            8   9  9  11 11  11   11   15  15  15   15  15   15
-
-    * The reyzin paper defines `t` as "A discrete time / operation counter".
-    * In the context of MMRIVER, this means the number of leaf additions, which is `e`.
-    * `d` is the length of the witness, which is also the height, `h`, of the accumulator peak.
-
-                                   15
-       7                  111               14
-     3   6   10        11     110     1010       13
-    1 2 4 5 8  9 11   1 10 100  101 1000 1001 1011 12
-
-                                   1111
-       7                  111               1110
-     3   6   10        11     110     1010       1101     18
-    1 2 4 5 8  9 11   1 10 100  101 1000 1001 1011 1100 16 17
-
-                                   1111
-       7                  111               1110                 22
-     3   6   10        11     110     1010       1101      10010     21
-    1 2 4 5 8  9 11   1 10 100  101 1000 1001 1011 1100 10000 10001 19 20
-
-                                   1111
-       7                  111               1110                 10110
-     3   6   10        11     110     1010       1101      10010     10101
-    1 2 4 5 8  9 11   1 10 100  101 1000 1001 1011 1100 10000 10001 10011 10100
-                      0  1   2    3    4    5    6    7     8     9    10    11 12  13   14   15  16  17   18  19   20
-                      0  1   3    4    7    8   10   11    15    16    18    19 22  23   25   26  31  32   34  35   38
-                      1  2   4    5    8    9   11   12    16    17    19    20 23  24   26   27  32  33   35  36   39
-
-    0   1 2   3  4   5  6   7  8   9 10  11 12  13   14   15  16  17   18  19   20
-"""
 from sha3 import keccak_256
 
 from massmarket_hash_event.mmr.algorithms import add_leaf_hash
@@ -161,23 +84,6 @@ class KatDB:
         return self.store[i]
 
     def init_canonical39(self):
-        """
-        Initialise the db to the canonical MMR(39) which is,
-
-            4                         30
-
-
-            3              14                       29
-                         /    \
-                      /          \
-            2        6            13           21             28                37
-                   /   \        /    \
-            1     2     5      9     12     17     20     24       27       33      36
-                 / \   / \    / \   /  \   /  \
-            0   0   1 3   4  7   8 10  11 15  16 18  19 22  23   25   26  31  32   34  35   38
-                0   1 2   3  4   5  6   7  8   9 10  11 12  13   14   15  16  17   18  19   20
-
-        """
 
         self.store = {}
 
