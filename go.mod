@@ -18,6 +18,7 @@ require (
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.32.0
+	google.golang.org/protobuf v1.34.2
 )
 
 require (

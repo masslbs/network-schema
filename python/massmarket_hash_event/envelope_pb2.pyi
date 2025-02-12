@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 from massmarket_hash_event import authentication_pb2 as _authentication_pb2
 from massmarket_hash_event import base_types_pb2 as _base_types_pb2
 from massmarket_hash_event import error_pb2 as _error_pb2

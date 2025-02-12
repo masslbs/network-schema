@@ -741,7 +741,7 @@ func newTestManifest() Shop {
 	s := NewShop()
 	s.SchemaVersion = 666
 	s.Manifest = Manifest{
-		ShopID:        *big.NewInt(1),
+		ShopID: *big.NewInt(1),
 		Payees: map[string]Payee{
 			"default": {
 				CallAsContract: false,

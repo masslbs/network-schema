@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 from massmarket_hash_event import base_types_pb2 as _base_types_pb2
 from massmarket_hash_event import transport_pb2 as _transport_pb2
 from google.protobuf.internal import containers as _containers

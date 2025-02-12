@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
+
 {
   description = "Mass Market Network Schema";
   inputs = {
@@ -144,7 +145,7 @@
         godef
         clang
         cbor-diag
-        deno
+        protoc-gen-go
         buf
         black
         reuse
@@ -184,11 +185,15 @@
             echo "go/ directory not found, skipping vector generation"
             exit 0
           }
-          cd ./go
           mkdir -p $out
-          export TEST_DATA_OUT=$out
+          cp constants.txt $out
+          cp VERSION $out
+          mkdir -p $out/vectors
+          export TEST_DATA_OUT=$out/vectors
+          pushd go/cbor
           go test
-          cd ../python
+          popd
+          cd python
           ${mass-python}/bin/python generate_hamt_test_vectors.py
         '';
       };

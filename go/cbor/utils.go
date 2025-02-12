@@ -15,9 +15,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/datatrails/go-datatrails-merklelog/mmr"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
+	"github.com/masslbs/go-pgmmr"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -94,6 +96,68 @@ func bytesToCombinedID(buf []byte) (ObjectId, []string) {
 		variations = []string{}
 	}
 	return id, variations
+}
+
+func RootHash(patches []Patch) (Hash, pgmmr.VerifierTree, error) {
+	sz := mmr.FirstMMRSize(uint64(len(patches)))
+
+	tree := pgmmr.NewInMemoryVerifierTree(sha3.NewLegacyKeccak256(), sz)
+	for _, patch := range patches {
+		data, err := Marshal(patch)
+		if err != nil {
+			return Hash{}, nil, fmt.Errorf("failed to marshal patch: %w", err)
+		}
+		_, err = tree.Add(data)
+		if err != nil {
+			return Hash{}, nil, fmt.Errorf("failed to add patch to tree: %w", err)
+		}
+	}
+
+	// fill up the tree to the next power of 2
+	cnt, err := tree.LeafCount()
+	if err != nil {
+		return Hash{}, nil, fmt.Errorf("failed to get leaf count: %w", err)
+	}
+	nextSquare := NextPowerOf2(cnt)
+	for cnt < nextSquare {
+		_, err = tree.Add([]byte{})
+		if err != nil {
+			return Hash{}, nil, fmt.Errorf("failed to add empty leaf to tree: %w", err)
+		}
+		cnt, err = tree.LeafCount()
+		if err != nil {
+			return Hash{}, nil, fmt.Errorf("failed to get leaf count: %w", err)
+		}
+	}
+
+	root, err := tree.Root()
+	if err != nil {
+		return Hash{}, nil, fmt.Errorf("failed to get root: %w", err)
+	}
+	return Hash(root), tree, nil
+}
+
+//   - n--: First decrements n by 1. This is done to handle the case where n is already a power of 2.
+//   - The series of bit-shifting operations (|= with right shifts):
+//     This sequence "fills" all the bits to the right of the highest set bit with 1s. For example:
+//     If n = 00100000, after these operations it becomes 00111111
+//   - n++: Finally increments n by 1, which gives us the next power of 2.
+//
+// Here's a concrete example:
+// Start with n = 33 (00100001 in binary)
+// After n--, n = 32 (00100000)
+// After bit-shifting operations, n = 00111111
+// After n++, n = 01000000 (64 in decimal)
+func NextPowerOf2(n uint64) uint64 {
+	n--
+	n |= n >> 1
+	n |= n >> 2
+	n |= n >> 4
+	n |= n >> 8
+	n |= n >> 16
+	n |= n >> 32
+	n++
+	return n
 }
 
 func hash(value []byte) []byte {

@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datatrails/go-datatrails-merklelog/mmr"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,7 +28,6 @@ import (
 	"github.com/masslbs/go-pgmmr"
 	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 )
 
 var validate = DefaultValidator()
@@ -200,7 +198,7 @@ func (kp ethKeyPair) TestSignPatchSet(t testing.TB, patchSet *SignedPatchSet) {
 	r.Greater(len(patchSet.Patches), 0)
 
 	var err error
-	patchSet.Header.RootHash, _, err = rootHash(t, patchSet.Patches)
+	patchSet.Header.RootHash, _, err = RootHash(patchSet.Patches)
 	r.NoError(err)
 
 	// sign the header
@@ -412,7 +410,7 @@ func TestGenerateVectorsMerkleProofs(t *testing.T) {
 			// Store root hash
 			var err error
 			var tree pgmmr.VerifierTree
-			tc.RootHash, tree, err = rootHash(t, tc.Patches)
+			tc.RootHash, tree, err = RootHash(tc.Patches)
 			require.NoError(t, err)
 
 			// Generate and store proofs for each patch
@@ -432,82 +430,29 @@ func TestGenerateVectorsMerkleProofs(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func rootHash(t testing.TB, patches []Patch) (Hash, pgmmr.VerifierTree, error) {
-	r := require.New(t)
-	sz := mmr.FirstMMRSize(uint64(len(patches)))
-
-	tree := pgmmr.NewInMemoryVerifierTree(sha3.NewLegacyKeccak256(), sz)
-	for _, patch := range patches {
-		data, err := Marshal(patch)
-		r.NoError(err)
-		_, err = tree.Add(data)
-		r.NoError(err)
-	}
-
-	// fill up the tree to the next power of 2
-	cnt, err := tree.LeafCount()
-	require.NoError(t, err)
-	nextSquare := nextPowerOf2(cnt)
-	t.Logf("sz: %d for %d patches. Tree Size: %d", sz, len(patches), nextSquare)
-	for cnt < nextSquare {
-		_, err = tree.Add([]byte{})
-		r.NoError(err)
-		cnt, err = tree.LeafCount()
-		r.NoError(err)
-	}
-
-	root, err := tree.Root()
-	r.NoError(err)
-	return Hash(root), tree, nil
-}
-
-
-// * n--: First decrements n by 1. This is done to handle the case where n is already a power of 2.
-// * The series of bit-shifting operations (|= with right shifts):
-//    This sequence "fills" all the bits to the right of the highest set bit with 1s. For example:
-//    If n = 00100000, after these operations it becomes 00111111
-// * n++: Finally increments n by 1, which gives us the next power of 2.
-//
-// Here's a concrete example:
-// Start with n = 33 (00100001 in binary)
-// After n--, n = 32 (00100000)
-// After bit-shifting operations, n = 00111111
-// After n++, n = 01000000 (64 in decimal)
-func nextPowerOf2(n uint64) uint64 {
-	n--
-	n |= n >> 1
-	n |= n >> 2
-	n |= n >> 4
-	n |= n >> 8
-	n |= n >> 16
-	n |= n >> 32
-	n++
-	return n
-}
-
 func TestNextPowerOf2(t *testing.T) {
-	require.EqualValues(t, nextPowerOf2(1), 1)
-	require.EqualValues(t, nextPowerOf2(2), 2)
-	require.EqualValues(t, nextPowerOf2(3), 4)
-	require.EqualValues(t, nextPowerOf2(4), 4)
-	require.EqualValues(t, nextPowerOf2(5), 8)
-	require.EqualValues(t, nextPowerOf2(6), 8)
-	require.EqualValues(t, nextPowerOf2(7), 8)
-	require.EqualValues(t, nextPowerOf2(8), 8)
-	require.EqualValues(t, nextPowerOf2(9), 16)
-	require.EqualValues(t, nextPowerOf2(16), 16)
-	require.EqualValues(t, nextPowerOf2(17), 32)
-	require.EqualValues(t, nextPowerOf2(32), 32)
-	require.EqualValues(t, nextPowerOf2(33), 64)
-	require.EqualValues(t, nextPowerOf2(64), 64)
-	require.EqualValues(t, nextPowerOf2(65), 128)
-	require.EqualValues(t, nextPowerOf2(128), 128)
-	require.EqualValues(t, nextPowerOf2(256), 256)
-	require.EqualValues(t, nextPowerOf2(257), 512)
-	require.EqualValues(t, nextPowerOf2(512), 512)
-	require.EqualValues(t, nextPowerOf2(513), 1024)
-	require.EqualValues(t, nextPowerOf2(1024), 1024)
-	require.EqualValues(t, nextPowerOf2(1025), 2048)
-	require.EqualValues(t, nextPowerOf2(2048), 2048)
+	require.EqualValues(t, NextPowerOf2(1), 1)
+	require.EqualValues(t, NextPowerOf2(2), 2)
+	require.EqualValues(t, NextPowerOf2(3), 4)
+	require.EqualValues(t, NextPowerOf2(4), 4)
+	require.EqualValues(t, NextPowerOf2(5), 8)
+	require.EqualValues(t, NextPowerOf2(6), 8)
+	require.EqualValues(t, NextPowerOf2(7), 8)
+	require.EqualValues(t, NextPowerOf2(8), 8)
+	require.EqualValues(t, NextPowerOf2(9), 16)
+	require.EqualValues(t, NextPowerOf2(16), 16)
+	require.EqualValues(t, NextPowerOf2(17), 32)
+	require.EqualValues(t, NextPowerOf2(32), 32)
+	require.EqualValues(t, NextPowerOf2(33), 64)
+	require.EqualValues(t, NextPowerOf2(64), 64)
+	require.EqualValues(t, NextPowerOf2(65), 128)
+	require.EqualValues(t, NextPowerOf2(128), 128)
+	require.EqualValues(t, NextPowerOf2(256), 256)
+	require.EqualValues(t, NextPowerOf2(257), 512)
+	require.EqualValues(t, NextPowerOf2(512), 512)
+	require.EqualValues(t, NextPowerOf2(513), 1024)
+	require.EqualValues(t, NextPowerOf2(1024), 1024)
+	require.EqualValues(t, NextPowerOf2(1025), 2048)
+	require.EqualValues(t, NextPowerOf2(2048), 2048)
 
 }

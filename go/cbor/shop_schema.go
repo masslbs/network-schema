@@ -134,13 +134,13 @@ type Payee struct {
 The complete Shop state
 */
 type Shop struct {
-	SchemaVersion uint64
-	Tags      Tags
-	Orders    Orders
-	Accounts  Accounts
-	Listings  Listings
-	Manifest  Manifest `validate:"required"`
-	Inventory Inventory
+	SchemaVersion uint64 `validate:"required,gt=0"`
+	Tags          Tags
+	Orders        Orders
+	Accounts      Accounts
+	Listings      Listings
+	Manifest      Manifest `validate:"required"`
+	Inventory     Inventory
 }
 
 func NewShop() Shop {
