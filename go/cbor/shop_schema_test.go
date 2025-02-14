@@ -12,10 +12,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
 )
+
+func TestECDAPublicKeySize(t *testing.T) {
+	r := require.New(t)
+
+	priv, err := crypto.GenerateKey()
+	r.NoError(err)
+
+	pk := crypto.CompressPubkey(&priv.PublicKey)
+	r.Equal(PublicKeySize, len(pk))
+}
 
 func TestSignatureIncomplete(t *testing.T) {
 	r := require.New(t)
@@ -138,7 +149,7 @@ func TestCreateAllTypes(t *testing.T) {
 		}},
 
 		{Account{
-			KeyCards: []PublicKey{[32]byte{1, 2, 3}},
+			KeyCards: []PublicKey{[PublicKeySize]byte{1, 2, 3}},
 			Guest:    true,
 		}},
 

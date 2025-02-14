@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/go-playground/validator/v10"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/crypto/sha3"
@@ -35,7 +36,7 @@ BASE TYPES
 type ObjectId = uint64
 
 // Signature represents a cryptographic signature
-const SignatureSize = 65
+const SignatureSize = crypto.SignatureLength
 
 type Signature [SignatureSize]byte
 
@@ -47,8 +48,8 @@ func (val *Signature) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// PublicKey represents a public key
-const PublicKeySize = 32
+// PublicKey represents a ecdsa public key
+const PublicKeySize = 33 
 
 type PublicKey [PublicKeySize]byte
 

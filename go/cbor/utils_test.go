@@ -83,10 +83,7 @@ func testPubKey(i uint64) PublicKey {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, i)
 	var pk PublicKey
-	n := copy(pk[:], hash(b))
-	if n != PublicKeySize {
-		panic(fmt.Sprintf("copy failed: %d != %d", n, PublicKeySize))
-	}
+	copy(pk[:], hash(b))
 	return pk
 }
 
