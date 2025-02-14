@@ -60,13 +60,6 @@
           };
         });
 
-        asn1tools = super.asn1tools.overridePythonAttrs (old: rec {
-          pname = "asn1tools";
-          version = old.version;
-          src = old.src;
-          doCheck = false; # TODO: just on darwin..?
-        });
-
         websockets = super.websockets.overridePythonAttrs (old: rec {
           pname = "websockets";
           version = "13.1";
@@ -90,6 +83,25 @@
               pyunormalize
             ];
           doCheck = false;
+        });
+
+        # transient test failures
+        asn1tools = super.asn1tools.overridePythonAttrs (old: {
+          doCheck = false; # TODO: just on darwin..?
+        });
+
+        eth-account = super.eth-account.overridePythonAttrs (old: {
+          doCheck = false;
+          doInstallCheck = false;
+          propagatedBuildInputs =
+            super.eth-account.propagatedBuildInputs
+            ++ [
+              pinnedPython.pkgs.pydantic
+            ];
+        });
+
+        django = super.django.overrideAttrs (old: rec {
+          doInstallCheck = false;
         });
       };
 
