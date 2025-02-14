@@ -67,34 +67,6 @@
           doCheck = false; # TODO: just on darwin..?
         });
 
-        eth-keys = super.eth-keys.overridePythonAttrs (old: rec {
-          pname = "eth-keys";
-          version = "0.6.1";
-          # for some reason the pypi version gives me 404...?
-          # src = self.fetchPypi {
-          #   inherit pname version;
-          #   sha256 = "";
-          # };
-          src = ./eth_keys-0.6.1.tar.gz;
-          doCheck = false;
-        });
-
-        eth-account = super.eth-account.overridePythonAttrs (old: rec {
-          pname = "eth-account";
-          version = "0.13.4";
-          # src = self.fetchPypi {
-          #   inherit pname version;
-          #   sha256 = "";
-          # };
-          src = ./eth_account-0.13.4.tar.gz;
-          propagatedBuildInputs =
-            super.eth-account.propagatedBuildInputs
-            ++ [
-              pinnedPython.pkgs.pydantic
-            ];
-          doCheck = false;
-        });
-
         websockets = super.websockets.overridePythonAttrs (old: rec {
           pname = "websockets";
           version = "13.1";
