@@ -27,12 +27,11 @@ def generate_test_vector(operations: List[Dict[str, Any]]) -> Dict[str, Any]:
             trie.delete(bytes.fromhex(op["key"]))
 
         # Collect state information
-        entries = []
-
         def collect_entries(node, prefix=""):
+            collected = []  # Create new list for each recursion level
             for e in node.entries:
                 if e.node is None:
-                    entries.append(
+                    collected.append(
                         {
                             "type": "leaf",
                             "key": e.key.hex() if e.key else None,
@@ -40,13 +39,14 @@ def generate_test_vector(operations: List[Dict[str, Any]]) -> Dict[str, Any]:
                         }
                     )
                 else:
-                    entries.append(
+                    # Create a new dictionary for each branch
+                    collected.append(
                         {
                             "type": "branch",
                             "entries": collect_entries(e.node, prefix + "  "),
                         }
                     )
-            return entries
+            return collected  # Return new list instead of modifying global entries
 
         states.append(
             {
@@ -117,5 +117,6 @@ if __name__ == "__main__":
         test_data_out = "../vectors"
         
     os.makedirs(test_data_out, exist_ok=True)
-    with open(os.path.join(test_data_out, "hamt_test.json"), "w") as f:
+    fname = os.path.join(test_data_out, "hamt_test.json")
+    with open(fname, "w") as f:
         json.dump(vectors, f, indent=2)
