@@ -7,7 +7,6 @@ syntax = "proto3";
 package market.mass;
 
 import "base_types.proto";
-import "transport.proto";
 
 // The types of objects that events effect
 enum ObjectType {
@@ -60,8 +59,10 @@ message SubscriptionPushRequest {
   bytes subscription_id = 1;
   repeated SequencedEvent events = 2;
   message SequencedEvent {
-    SignedEvent event = 1;
-    uint64 seq_no = 2;
+    uint64 shop_seq_no = 1; // sequence number of the event in the shop log
+    bytes patch_set_header = 2; // contains the root hash of the patch set
+    bytes patch_set_signature = 3; // signature of the patch set
+    bytes mmr_proof = 4; // cbor data [index, tree_size, [proof1, proof2, ...]]
   }
 }
 

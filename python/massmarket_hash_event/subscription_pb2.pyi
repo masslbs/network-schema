@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from massmarket_hash_event import base_types_pb2 as _base_types_pb2
-from massmarket_hash_event import transport_pb2 as _transport_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -49,12 +48,16 @@ class SubscriptionRequest(_message.Message):
 class SubscriptionPushRequest(_message.Message):
     __slots__ = ("subscription_id", "events")
     class SequencedEvent(_message.Message):
-        __slots__ = ("event", "seq_no")
-        EVENT_FIELD_NUMBER: _ClassVar[int]
-        SEQ_NO_FIELD_NUMBER: _ClassVar[int]
-        event: _transport_pb2.SignedEvent
-        seq_no: int
-        def __init__(self, event: _Optional[_Union[_transport_pb2.SignedEvent, _Mapping]] = ..., seq_no: _Optional[int] = ...) -> None: ...
+        __slots__ = ("shop_seq_no", "patch_set_header", "patch_set_signature", "mmr_proof")
+        SHOP_SEQ_NO_FIELD_NUMBER: _ClassVar[int]
+        PATCH_SET_HEADER_FIELD_NUMBER: _ClassVar[int]
+        PATCH_SET_SIGNATURE_FIELD_NUMBER: _ClassVar[int]
+        MMR_PROOF_FIELD_NUMBER: _ClassVar[int]
+        shop_seq_no: int
+        patch_set_header: bytes
+        patch_set_signature: bytes
+        mmr_proof: _containers.RepeatedScalarFieldContainer[bytes]
+        def __init__(self, shop_seq_no: _Optional[int] = ..., patch_set_header: _Optional[bytes] = ..., patch_set_signature: _Optional[bytes] = ..., mmr_proof: _Optional[_Iterable[bytes]] = ...) -> None: ...
     SUBSCRIPTION_ID_FIELD_NUMBER: _ClassVar[int]
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     subscription_id: bytes

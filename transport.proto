@@ -34,21 +34,14 @@ syntax = "proto3";
 
 package market.mass;
 
-import "base_types.proto";
-
 // ====================
 // Event syncronization
 // ====================
 
-message SignedEvent {
-  bytes cbor_patch_set = 1;
-  Signature signature = 2; // EIP-191 of the above
-}
-
 // Used by authenticated clients to write events to the relay.
 // Requires prior successful authentication.
 message EventWriteRequest {
-  repeated SignedEvent events = 1;
+  bytes patch_set = 1; // CBOR encoded
 }
 
 // Sent by the relay to signal the number of unpushed events.
