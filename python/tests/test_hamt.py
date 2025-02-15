@@ -5,7 +5,7 @@
 import cbor2
 import random
 
-from massmarket_hash_event.hamt import Trie, hash_key, hash_key_with_seed
+from massmarket_hash_event.hamt import Trie
 
 
 def test_basic_hamt():
@@ -19,24 +19,23 @@ def test_basic_hamt():
     assert trie1.size == 2
 
     # Verify insertions
-    val, ok = trie1.get(b"name")
-    assert ok
+    val = trie1.get(b"name")
+    assert val is not None
     assert val == "Alice"
 
-    val, ok = trie1.get(b"age")
-    assert ok
+    val = trie1.get(b"age")
+    assert val is not None
     assert val == "Bob"
 
     # Original trie should be unchanged
-    val, ok = trie.get(b"age")
-    assert not ok
+    val = trie.get(b"age")
     assert val is None
 
     # Should also work with literal types, like int
     trie2 = Trie.new()
     trie2.insert(b"age", 1)
-    val_int, ok = trie2.get(b"age")
-    assert ok
+    val_int = trie2.get(b"age")
+    assert val_int is not None
     assert val_int == 1
 
 
@@ -58,13 +57,13 @@ def test_complex_operations():
     assert trie2.size == 4
 
     # Verify original is unchanged
-    val, ok = trie.get(b"b")
-    assert ok
+    val = trie.get(b"b")
+    assert val is not None
     assert val == values[1]
 
     # Verify new value in new trie
-    val, ok = trie2.get(b"b")
-    assert ok
+    val = trie2.get(b"b")
+    assert val is not None
     assert val == new_values[1]
 
     # Test deleting values
@@ -73,16 +72,16 @@ def test_complex_operations():
     assert trie3.size == 3
 
     # Verify deletion
-    val, ok = trie3.get(b"a")
-    assert not ok
+    val = trie3.get(b"a")
+    assert val is None
 
     # Other values should remain
-    val, ok = trie3.get(b"b")
-    assert ok
+    val = trie3.get(b"b")
+    assert val is not None
     assert val == new_values[1]
 
-    val, ok = trie3.get(b"c")
-    assert ok
+    val = trie3.get(b"c")
+    assert val is not None
     assert val == values[2]
 
 
@@ -126,41 +125,6 @@ def test_trie_hash():
     hash6 = trie6.hash()
     hash7 = trie7.hash()
     assert hash6 == hash7
-
-
-def test_hash_collisions(monkeypatch):
-    # Override hash functions to force collisions
-    def mock_hash_key_with_seed(key: bytes, seed: int) -> int:
-        if key.startswith(b"collide"):
-            return 42
-        return hash_key_with_seed(key, seed)
-
-    def mock_hash_key(key: bytes) -> int:
-        if key.startswith(b"collide"):
-            return 42
-        return hash_key(key)
-
-    monkeypatch.setattr(
-        "massmarket_hash_event.hamt.hash_key_with_seed", mock_hash_key_with_seed
-    )
-    monkeypatch.setattr("massmarket_hash_event.hamt.hash_key", mock_hash_key)
-
-    # Insert keys that will collide
-    keys = [b"collide1", b"collide2", b"collide3"]
-    values = ["value1", "value2", "value3"]
-
-    trie = Trie.new()
-    for key, value in zip(keys, values):
-        trie.insert(key, value)
-
-    # Verify all values are retrievable
-    for key, expected_value in zip(keys, values):
-        val, ok = trie.get(key)
-        assert ok
-        assert val == expected_value
-
-    # Ensure that the trie size reflects the correct number of entries
-    assert trie.size == len(keys)
 
 
 def test_trie_size_tracking():
@@ -258,8 +222,8 @@ def test_large_scale_operations():
 
     # Verify that all elements can be retrieved
     for key, expected_value in zip(keys, values):
-        val, ok = trie.get(key)
-        assert ok
+        val = trie.get(key)
+        assert val is not None
         assert val == expected_value
 
     # Delete every other element
@@ -268,12 +232,11 @@ def test_large_scale_operations():
 
     # Verify that the correct elements have been deleted
     for i, (key, expected_value) in enumerate(zip(keys, values)):
-        val, ok = trie.get(key)
+        val = trie.get(key)
         if i % 2 == 0:
-            assert not ok
             assert val is None
         else:
-            assert ok
+            assert val is not None
             assert val == expected_value
 
     assert trie.size == num_elements // 2
@@ -301,3 +264,28 @@ def test_hash_order_independence():
             first_hash = current_hash
         else:
             assert current_hash == first_hash
+
+
+def test_key_type_support():
+    trie = Trie.new()
+
+    # Test integer keys
+    trie.insert(42, "int-value")
+    val = trie.get(42)
+    assert val is not None
+    assert val == "int-value"
+
+    # Test string keys
+    trie.insert("hello", "str-value")
+    val = trie.get("hello")
+    assert val is not None
+    assert val == "str-value"
+
+    # Verify size
+    assert trie.size == 2
+
+    # Test deletion
+    trie.delete(42)
+    val = trie.get(42)
+    assert val is None
+    assert trie.size == 1

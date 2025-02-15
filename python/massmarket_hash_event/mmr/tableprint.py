@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 IETF / draft-bryce-cose-merkle-mountain-range-proofs-02
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 from massmarket_hash_event.mmr.algorithms import included_root, inclusion_proof_path
 from massmarket_hash_event.mmr.algorithms import index_height
 from massmarket_hash_event.mmr.algorithms import peaks
@@ -15,86 +19,130 @@ from massmarket_hash_event.mmr.algorithms import accumulator_index
 
 from massmarket_hash_event.mmr.db import KatDB
 
-complete_mmr_sizes =   [ 1, 3, 4, 7, 8, 10, 11, 15, 16, 18, 19, 22, 23, 25, 26, 31, 32, 34, 35, 38, 39 ]
-complete_mmr_indices = [ 0, 2, 3, 6, 7,  9, 10, 14, 15, 17, 18, 21, 22, 24, 25, 30, 31, 33, 34, 37, 38 ]
+complete_mmr_sizes = [
+    1,
+    3,
+    4,
+    7,
+    8,
+    10,
+    11,
+    15,
+    16,
+    18,
+    19,
+    22,
+    23,
+    25,
+    26,
+    31,
+    32,
+    34,
+    35,
+    38,
+    39,
+]
+complete_mmr_indices = [
+    0,
+    2,
+    3,
+    6,
+    7,
+    9,
+    10,
+    14,
+    15,
+    17,
+    18,
+    21,
+    22,
+    24,
+    25,
+    30,
+    31,
+    33,
+    34,
+    37,
+    38,
+]
 
 leaf_witness_lengths = [
-    [0, 1, 2, 3, 4],# 0 
-    [0, 1, 2, 3, 4],# 1
-    [0, 1, 2, 3, 4],# 2
-    [0, 1, 2, 3, 4],# 3
-    [0, 1, 2, 3, 4],# 4
-    [0, 1, 2, 3, 4],# 5
-    [0, 1, 2, 3, 4],# 6
-    [0, 1, 2, 3, 4],# 7
-    [0, 1, 2, 3, 4],# 8
-    [0, 1, 2, 3, 4],# 9
-    [0, 1, 2, 3, 4],#10
-    [0, 1, 2, 3, 4],#11 
-    [0, 1, 2, 3, 4],#12
-    [0, 1, 2, 3, 4],#13 
-    [0, 1, 2, 3, 4],#14 
-    [0, 1, 2, 3, 4],#15 
-
-    [0, 1, 2],#16
-    [0, 1, 2],#17
-    [0, 1, 2],#18
-    [0, 1, 2],#19
-
-    [0],#20
+    [0, 1, 2, 3, 4],  # 0
+    [0, 1, 2, 3, 4],  # 1
+    [0, 1, 2, 3, 4],  # 2
+    [0, 1, 2, 3, 4],  # 3
+    [0, 1, 2, 3, 4],  # 4
+    [0, 1, 2, 3, 4],  # 5
+    [0, 1, 2, 3, 4],  # 6
+    [0, 1, 2, 3, 4],  # 7
+    [0, 1, 2, 3, 4],  # 8
+    [0, 1, 2, 3, 4],  # 9
+    [0, 1, 2, 3, 4],  # 10
+    [0, 1, 2, 3, 4],  # 11
+    [0, 1, 2, 3, 4],  # 12
+    [0, 1, 2, 3, 4],  # 13
+    [0, 1, 2, 3, 4],  # 14
+    [0, 1, 2, 3, 4],  # 15
+    [0, 1, 2],  # 16
+    [0, 1, 2],  # 17
+    [0, 1, 2],  # 18
+    [0, 1, 2],  # 19
+    [0],  # 20
 ]
 
 leaf_peak_witnesses = [
-    [1, 1, 1, 1, 1],# [0, 1, 2, 3, 4],# 0 
-    [0, 1, 1, 1, 1],# [0, 1, 2, 3, 4],# 1
-    [1, 0, 1, 1, 1],# [0, 1, 2, 3, 4],# 2
-    [0, 0, 1, 1, 1],# [0, 1, 2, 3, 4],# 3
-    [1, 1, 0, 1, 1],# [0, 1, 2, 3, 4],# 4
-    [0, 1, 0, 1, 1],# [0, 1, 2, 3, 4],# 5
-    [1, 0, 0, 1, 1],# [0, 1, 2, 3, 4],# 6
-    [0, 0, 0, 1, 1],# [0, 1, 2, 3, 4],# 7
-    [1, 1, 1, 0, 1],# [0, 1, 2, 3, 4],# 8
-    [0, 1, 1, 0, 1],# [0, 1, 2, 3, 4],# 9
-    [1, 0, 1, 0, 1],# [0, 1, 2, 3, 4],#10
-    [0, 0, 1, 0, 1],# [0, 1, 2, 3, 4],#11 
-    [1, 1, 0, 0, 1],# [0, 1, 2, 3, 4],#12
-    [0, 1, 0, 0, 1],# [0, 1, 2, 3, 4],#13 
-    [1, 0, 0, 0, 1],# [0, 1, 2, 3, 4],#14 
-    [0, 0, 0, 0, 1],# [0, 1, 2, 3, 4],#15 
-
-    [1, 1, 1, 1],#16 # note the depth 4 proofs are not present in mmr 39, but in an mmr large enough the do reach a peak
-    [0, 1, 1, 1],#17
-    [1, 0, 1, 1],#18
-    [0, 0, 1, 1],#19
-
-    [1, 1], #20, here again, we provide an entry for > MMR(39)
+    [1, 1, 1, 1, 1],  # [0, 1, 2, 3, 4],# 0
+    [0, 1, 1, 1, 1],  # [0, 1, 2, 3, 4],# 1
+    [1, 0, 1, 1, 1],  # [0, 1, 2, 3, 4],# 2
+    [0, 0, 1, 1, 1],  # [0, 1, 2, 3, 4],# 3
+    [1, 1, 0, 1, 1],  # [0, 1, 2, 3, 4],# 4
+    [0, 1, 0, 1, 1],  # [0, 1, 2, 3, 4],# 5
+    [1, 0, 0, 1, 1],  # [0, 1, 2, 3, 4],# 6
+    [0, 0, 0, 1, 1],  # [0, 1, 2, 3, 4],# 7
+    [1, 1, 1, 0, 1],  # [0, 1, 2, 3, 4],# 8
+    [0, 1, 1, 0, 1],  # [0, 1, 2, 3, 4],# 9
+    [1, 0, 1, 0, 1],  # [0, 1, 2, 3, 4],#10
+    [0, 0, 1, 0, 1],  # [0, 1, 2, 3, 4],#11
+    [1, 1, 0, 0, 1],  # [0, 1, 2, 3, 4],#12
+    [0, 1, 0, 0, 1],  # [0, 1, 2, 3, 4],#13
+    [1, 0, 0, 0, 1],  # [0, 1, 2, 3, 4],#14
+    [0, 0, 0, 0, 1],  # [0, 1, 2, 3, 4],#15
+    [
+        1,
+        1,
+        1,
+        1,
+    ],  # 16 # note the depth 4 proofs are not present in mmr 39, but in an mmr large enough the do reach a peak
+    [0, 1, 1, 1],  # 17
+    [1, 0, 1, 1],  # 18
+    [0, 0, 1, 1],  # 19
+    [1, 1],  # 20, here again, we provide an entry for > MMR(39)
 ]
 
 leaf_index_peak_witnesses = [
-    [(0, 1), (2, 1), (6, 1), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 0 
-    [(1, 0), (2, 1), (6, 1), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 1
-    [(3, 1), (5, 0), (6, 1), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 2
-    [(4, 0), (5, 0), (6, 1), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 3
-    [(7, 1), (9, 1), (13, 0), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 4
-    [(8, 0), (9, 1), (13, 0), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 5
-    [(10, 1), (12, 0), (13, 0), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 6
-    [(11, 0), (12, 0), (13, 0), (14, 1), (30, 1)],# [0, 1, 2, 3, 4],# 7
-    [(15, 1), (17, 1), (21, 1), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],# 8
-    [(16, 0), (17, 1), (21, 1), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],# 9
-    [(18, 1), (20, 0), (21, 1), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#10
-    [(19, 0), (20, 0), (21, 1), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#11 
-    [(22, 1), (24, 1), (28, 0), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#12
-    [(23, 0), (24, 1), (28, 0), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#13 
-    [(25, 1), (27, 0), (28, 0), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#14 
-    [(26, 0), (27, 0), (28, 0), (29, 0), (30, 1)],# [0, 1, 2, 3, 4],#15 
-
-    [(31, 1), (33, 1), (37, 1)],#16
-    [(32, 0), (33, 1), (37, 1)],#17
-    [(34, 1), (36, 0), (37, 1)],#18
-    [(35, 0), (36, 0), (37, 1)],#19
-
-    [(38, 1)], #20
+    [(0, 1), (2, 1), (6, 1), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 0
+    [(1, 0), (2, 1), (6, 1), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 1
+    [(3, 1), (5, 0), (6, 1), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 2
+    [(4, 0), (5, 0), (6, 1), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 3
+    [(7, 1), (9, 1), (13, 0), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 4
+    [(8, 0), (9, 1), (13, 0), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 5
+    [(10, 1), (12, 0), (13, 0), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 6
+    [(11, 0), (12, 0), (13, 0), (14, 1), (30, 1)],  # [0, 1, 2, 3, 4],# 7
+    [(15, 1), (17, 1), (21, 1), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],# 8
+    [(16, 0), (17, 1), (21, 1), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],# 9
+    [(18, 1), (20, 0), (21, 1), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#10
+    [(19, 0), (20, 0), (21, 1), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#11
+    [(22, 1), (24, 1), (28, 0), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#12
+    [(23, 0), (24, 1), (28, 0), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#13
+    [(25, 1), (27, 0), (28, 0), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#14
+    [(26, 0), (27, 0), (28, 0), (29, 0), (30, 1)],  # [0, 1, 2, 3, 4],#15
+    [(31, 1), (33, 1), (37, 1)],  # 16
+    [(32, 0), (33, 1), (37, 1)],  # 17
+    [(34, 1), (36, 0), (37, 1)],  # 18
+    [(35, 0), (36, 0), (37, 1)],  # 19
+    [(38, 1)],  # 20
 ]
+
 
 def kat39_leaf_table():
     """Returns a row for each leaf entry [mmrIndex, leafIndex, leafHash]"""
@@ -171,7 +219,7 @@ def peaks_table(db=None):
     rows = []
     for i in range(len(complete_mmr_sizes)):
         s = complete_mmr_sizes[i]
-        peak_values = peaks(s-1)
+        peak_values = peaks(s - 1)
         if db:
             rows.append([db.get(p).hex() for p in peak_values])
             continue
@@ -238,12 +286,12 @@ def print_index_height(mmrsize=39, sep="|"):
 def minmax_inclusion_path_table(mmrsize=39):
 
     rows = []
-    max_accumulator = [ip+1 for ip in peaks(mmrsize-1)]
+    max_accumulator = [ip + 1 for ip in peaks(mmrsize - 1)]
     for i in range(mmrsize):
         ix = complete_mmr(i)
         accumulator = [ip for ip in peaks(ix)]
         path = inclusion_proof_path(i, ix)
-        path_maxsz = inclusion_proof_path(i, mmrsize-1)
+        path_maxsz = inclusion_proof_path(i, mmrsize - 1)
 
         rows.append([i, ix, path, accumulator, path_maxsz, max_accumulator])
 
@@ -282,7 +330,7 @@ def print_minmax_inclusion_paths(mmrsize=39):
         + "|"
     )
 
-    for (i, s, path, accumulator, path_max, acc_max) in table:
+    for i, s, path, accumulator, path_max, acc_max in table:
         spath = "[" + ", ".join([str(p) for p in path]) + "]"
         spath_max = "[" + ", ".join([str(p) for p in path_max]) + "]"
 
@@ -322,7 +370,7 @@ def inclusion_paths_table(mmrsize=39):
 
             ai = accumulator_index(e, g)
 
-            rows.append([i, e, ix+1, path, ai, accumulator])
+            rows.append([i, e, ix + 1, path, ai, accumulator])
 
             ix = complete_mmr(ix + 1)
 
@@ -372,7 +420,7 @@ def print_inclusion_paths(mmrsize=39):
 
     table = inclusion_paths_table(mmrsize=mmrsize)
 
-    for (i, e, s, path, ai, accumulator) in table:
+    for i, e, s, path, ai, accumulator in table:
 
         spath = "[" + ", ".join([str(p) for p in path]) + "]"
 
@@ -397,6 +445,7 @@ def print_inclusion_paths(mmrsize=39):
             # + "|"
         )
 
+
 def getreleventindices(lastupdateidx, previdx, d):
     """
     Returns a list of indices of relevent updates, given:
@@ -415,7 +464,7 @@ def getreleventindices(lastupdateidx, previdx, d):
     This python code was provided by Sophia Yakoubov (an author on that paper)
     """
     releventindices = []
-    power = 2 ** d
+    power = 2**d
     releventindex = lastupdateidx + power
     while releventindex <= previdx:
         releventindices.append(releventindex)
@@ -435,15 +484,15 @@ def included_root_tables(mmrsize=39):
     for iw in range(mmrsize):
 
         wits = []
-        ito = complete_mmr(iw+1)
-        table = [[iw, mmrsize-1]]
+        ito = complete_mmr(iw + 1)
+        table = [[iw, mmrsize - 1]]
 
         while ito < mmrsize:
 
             proof = [db.get(i) for i in inclusion_proof_path(iw, ito)]
             root = included_root(iw, db.get(iw), proof)
             table.append([iw, ito, root])
-            ito = complete_mmr(ito+1)
+            ito = complete_mmr(ito + 1)
 
         tables.append(table)
 
@@ -454,8 +503,11 @@ def print_included_roots(mmrsize=39):
 
     mmrsize = int(mmrsize)
 
-    def s(i): return str(i).rjust(2, " ")
-    def j(l): return ", ".join(l)
+    def s(i):
+        return str(i).rjust(2, " ")
+
+    def j(l):
+        return ", ".join(l)
 
     for table in included_root_tables(mmrsize):
 
@@ -464,8 +516,8 @@ def print_included_roots(mmrsize=39):
         # print(f"|{ifrom} in mmr's {ifrom} - {ito}|")
         # print(f"|--|")
         print("[")
-        for (ifrom, ito, root) in table[1:]:
-            print(f"hex2bytes(\"{root.hex()}\") as Uint8Array & {{length: 32}},")
+        for ifrom, ito, root in table[1:]:
+            print(f'hex2bytes("{root.hex()}") as Uint8Array & {{length: 32}},')
         print("],")
 
         print()
@@ -474,13 +526,13 @@ def print_included_roots(mmrsize=39):
 def node_witness_update_tables(mmrsize=39):
 
     rows = []
-    tmax = leaf_count(mmrsize-1)
+    tmax = leaf_count(mmrsize - 1)
 
     for tw in range(tmax):
         iw = mmr_index(tw)
         mmrw = complete_mmr(iw)
         dw = len(inclusion_proof_path(iw, mmrw))
-        for tx in range(tw+1, tmax):
+        for tx in range(tw + 1, tmax):
             leaf_indices = getreleventindices(tw, tx, dw)
             rows.append([iw, tw, tx, "reysop", leaf_indices])
             ix = mmr_index(tx)
@@ -488,6 +540,7 @@ def node_witness_update_tables(mmrsize=39):
             rows.append([iw, tw, tx, "mmrive", leaf_indices_mmriver])
 
     return rows
+
 
 def vgetreleventindices(lastupdateidx, previdx, d):
     """
@@ -507,7 +560,7 @@ def vgetreleventindices(lastupdateidx, previdx, d):
     This python code was provided by Sophia Yakoubov (an author on that paper)
     """
     releventindices = []
-    power = 2 ** d
+    power = 2**d
     releventindex = lastupdateidx + power
 
     print(f":d={d} lupi={lastupdateidx} pow={power} ri={releventindex}")
@@ -522,6 +575,7 @@ def vgetreleventindices(lastupdateidx, previdx, d):
     print(f":{[mmr_index(i) for i in releventindices]}")
 
     return releventindices
+
 
 def print_reysop():
     return
@@ -554,7 +608,7 @@ def print_node_witness_longevity(mmrsize=39):
     # which was once a peak and  has since been "burried", making it an
     # interiour.
 
-    t_max = leaf_count(mmrsize-1)
+    t_max = leaf_count(mmrsize - 1)
     print("| ta  |{tw:s}".format(tw="|".join(["--" for i in range(t_max)])))
     print(
         "|tx:ix|{tw:s}".format(
@@ -634,6 +688,7 @@ def print_node_witness_longevity(mmrsize=39):
                 "|{tx: >2d} {ix: >2d}|{row:s}".format(tx=tx, ix=ix, row="|".join(srow2))
             )
 
+
 def print_witlens(mmrsize=39):
     for e in range(21):
         # A proof for leaf 0 in MMR(39) is 4 elements long
@@ -650,18 +705,21 @@ def print_witlens(mmrsize=39):
             peak_leaves = 1 << g
 
             # the first leaf under the peak
-            first_peak_leaf = (e // (peak_leaves*2)) * peak_leaves
+            first_peak_leaf = (e // (peak_leaves * 2)) * peak_leaves
 
             # the mmr index reached by the proof with length g for all elements under this peak.
             ig = first_peak_leaf + (2 << g) - 1
 
             h0 = index_height(ig)
             h1 = index_height(ig + 1)
-            print(f"{str(e).rjust(2, ' ')} {str(peak_leaves).rjust(2, ' ')} {str(first_peak_leaf).rjust(2, ' ')} {str(g).rjust(2, ' ')} {h0 > h1}")
+            print(
+                f"{str(e).rjust(2, ' ')} {str(peak_leaves).rjust(2, ' ')} {str(first_peak_leaf).rjust(2, ' ')} {str(g).rjust(2, ' ')} {h0 > h1}"
+            )
             if h0 > h1:
                 # if h1 is lower, ig has no left parent and so has been in the accumulator
                 path_lengths.append(g)
         # print(f"{str(e).rjust(2, ' ')} {str(i).rjust(2, ' ')}: {path_lengths}")
+
 
 def print_proven(mmrsize=39):
     for e in range(len(leaf_peak_witnesses)):
@@ -678,13 +736,12 @@ def print_proven(mmrsize=39):
             is_peak = 1 if is_peak is True else 0
             # self.assertEqual(index, expect_index)
             # self.assertEqual(is_peak, expect_is_peak)
-            #row.append((index, is_peak, 1 if expect_index == index and expect_is_peak == is_peak else 0))
+            # row.append((index, is_peak, 1 if expect_index == index and expect_is_peak == is_peak else 0))
             # rowok = rowok and True if expect_index == index and expect_is_peak == is_peak else False
             rowok = rowok and True if expect_is_peak == is_peak else False
             row.append((d, is_peak))
 
         print(f"{e}: {row} [{rowok and 'OK' or 'FAIL'}]")
-
 
 
 def print_indexproven(mmrsize=39):
@@ -700,7 +757,11 @@ def print_indexproven(mmrsize=39):
             (expect_index, expect_is_peak) = leaf_index_peak_witnesses[e][d]
             (index, is_peak) = proves_index_peak(i, d)
             is_peak = 1 if is_peak is True else 0
-            rowok = rowok and True if expect_index == index and expect_is_peak == is_peak else False
+            rowok = (
+                rowok and True
+                if expect_index == index and expect_is_peak == is_peak
+                else False
+            )
             row.append((index, is_peak))
 
         print(f"{e}: {row} [{rowok and 'OK' or 'FAIL'}]")
@@ -710,28 +771,76 @@ def basesz(sz):
     # math.floor(math.log2(sz))
     return sz.bit_length() - 1
 
+
 import sys
 
 if __name__ == "__main__":
 
     if False:
-        def s(i): return str(i).rjust(2, " ")
-        def j(l): return ", ".join(l)
 
-        leaf_mmrindices = [0,   1, 3,   4,  7,   8, 10,  11, 15,  16, 18,  19, 22,  23,   25,   26,  31,  32,   34,  35,   38]
-        leaf_positions = [i+1 for i in leaf_mmrindices]
+        def s(i):
+            return str(i).rjust(2, " ")
+
+        def j(l):
+            return ", ".join(l)
+
+        leaf_mmrindices = [
+            0,
+            1,
+            3,
+            4,
+            7,
+            8,
+            10,
+            11,
+            15,
+            16,
+            18,
+            19,
+            22,
+            23,
+            25,
+            26,
+            31,
+            32,
+            34,
+            35,
+            38,
+        ]
+        leaf_positions = [i + 1 for i in leaf_mmrindices]
 
         rows = []
 
-        def s(v): return str(v).rjust(2, " ")
-        def seqs(seq): return "[" + ", ".join([str(e).rjust(2, " ") for e in seq]) + "]"
+        def s(v):
+            return str(v).rjust(2, " ")
+
+        def seqs(seq):
+            return "[" + ", ".join([str(e).rjust(2, " ") for e in seq]) + "]"
 
         ito = complete_mmr(0)
         while ito <= 38:
 
             print(seqs(peaks(ito)))
             print(seqs(peak_depths(ito)))
-            print(seqs(list(reversed(sorted(list(set([len(inclusion_proof_path(ifrom, ito))+index_height(ifrom) for ifrom in range(ito)])))))))
+            print(
+                seqs(
+                    list(
+                        reversed(
+                            sorted(
+                                list(
+                                    set(
+                                        [
+                                            len(inclusion_proof_path(ifrom, ito))
+                                            + index_height(ifrom)
+                                            for ifrom in range(ito)
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
 
             print("{s}".format(s=bin(leaf_count(ito))))
             print()
@@ -742,14 +851,23 @@ if __name__ == "__main__":
     # print("\n".join(rows))
 
     if False:
-        print(j([s(sz-1) for sz in complete_mmr_sizes]))
+        print(j([s(sz - 1) for sz in complete_mmr_sizes]))
         print(j([s(basesz(sz)) for sz in complete_mmr_sizes]))
         print(j([s(sz - basesz(sz)) for sz in complete_mmr_sizes]))
-        print(j([s(p-((1<<basesz(p))-1)) for p in  complete_mmr_sizes]))
-        print(j(["  "] + [s(complete_mmr_sizes[i]+d) for (i, d) in enumerate([p-((1<<basesz(p))-1) for p in  complete_mmr_sizes][1:])]))
-        print(j([s(p-1) for p in leaf_positions]))
+        print(j([s(p - ((1 << basesz(p)) - 1)) for p in complete_mmr_sizes]))
+        print(
+            j(
+                ["  "]
+                + [
+                    s(complete_mmr_sizes[i] + d)
+                    for (i, d) in enumerate(
+                        [p - ((1 << basesz(p)) - 1) for p in complete_mmr_sizes][1:]
+                    )
+                ]
+            )
+        )
+        print(j([s(p - 1) for p in leaf_positions]))
         print(j([s(depth_inext(p)) for p in leaf_positions]))
-
 
     if len(sys.argv) > 1:
         try:

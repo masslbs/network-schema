@@ -116,11 +116,9 @@
           with ps; [
             protobuf
             web3
-            safe-pysha3
 
             matplotlib # go/hamt_bench_plot.py
             cbor2
-            xxhash
 
             # packaging massmarket_hash_event
             pytest
@@ -190,7 +188,7 @@
           cp VERSION $out
           mkdir -p $out/vectors
           export TEST_DATA_OUT=$out/vectors
-          pushd go/cbor
+          pushd go/patch
           go test
           popd
           cd python

@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-package schema
+package objects
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding"
 	"encoding/binary"
 	"encoding/hex"
@@ -17,8 +18,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/go-playground/validator/v10"
-	"github.com/ipfs/go-cid"
-	"golang.org/x/crypto/sha3"
+
+	masscbor "github.com/masslbs/network-schema/go/cbor"
+	hamt "github.com/masslbs/network-schema/go/hamt"
 )
 
 type ErrBytesTooShort struct {
@@ -49,7 +51,7 @@ func (val *Signature) UnmarshalBinary(data []byte) error {
 }
 
 // PublicKey represents a ecdsa public key
-const PublicKeySize = 33 
+const PublicKeySize = 33
 
 type PublicKey [PublicKeySize]byte
 
@@ -105,16 +107,35 @@ type ChainAddress struct {
 	Address EthereumAddress
 }
 
-func addrFromHex(chain uint64, hexAddr string) ChainAddress {
+func AddrFromHex(chain uint64, hexAddr string) (ChainAddress, error) {
 	addr := ChainAddress{ChainID: chain}
 	hexAddr = strings.TrimPrefix(hexAddr, "0x")
 	decoded, err := hex.DecodeString(hexAddr)
-	check(err)
+	if err != nil {
+		return ChainAddress{}, err
+	}
 	n := copy(addr.Address[:], decoded)
 	if n != EthereumAddressSize {
-		panic(fmt.Sprintf("copy failed: %d != %d", n, EthereumAddressSize))
+		return ChainAddress{}, fmt.Errorf("copy failed: %d != %d", n, EthereumAddressSize)
+	}
+	return addr, nil
+}
+
+func MustAddrFromHex(chain uint64, hexAddr string) ChainAddress {
+	addr, err := AddrFromHex(chain, hexAddr)
+	if err != nil {
+		panic(err)
 	}
 	return addr
+}
+
+func (ca ChainAddress) Equal(other ChainAddress) bool {
+	return ca.ChainID == other.ChainID && ca.Address == other.Address
+}
+
+func (ca *ChainAddress) String() string {
+	addr := common.Address(ca.Address)
+	return fmt.Sprintf("%s (%d)", addr.String(), ca.ChainID)
 }
 
 // Payee represents a payment recipient
@@ -129,6 +150,10 @@ type Payee struct {
 	// commit: 377aba24796e029945696350db581ec1f65da657
 	// file: src/IPayments.sol#L90-L95.
 	CallAsContract bool
+}
+
+func (p *Payee) String() string {
+	return fmt.Sprintf("%s (Contract=%v)", p.Address.String(), p.CallAsContract)
 }
 
 /*
@@ -147,26 +172,32 @@ type Shop struct {
 func NewShop() Shop {
 	s := Shop{}
 	s.SchemaVersion = 42
-	s.Accounts.Trie = NewTrie[Account]()
-	s.Listings.Trie = NewTrie[Listing]()
-	s.Orders.Trie = NewTrie[Order]()
-	s.Tags.Trie = NewTrie[Tag]()
-	s.Inventory.Trie = NewTrie[uint64]()
+	s.Accounts.Trie = hamt.NewTrie[Account]()
+	s.Listings.Trie = hamt.NewTrie[Listing]()
+	s.Orders.Trie = hamt.NewTrie[Order]()
+	s.Tags.Trie = hamt.NewTrie[Tag]()
+	s.Inventory.Trie = hamt.NewTrie[uint64]()
 	return s
 }
 
 type Accounts struct {
-	*Trie[Account]
+	*hamt.Trie[Account]
 }
 
 type Listings struct {
-	*Trie[Listing]
+	*hamt.Trie[Listing]
 }
 
 func (l *Listings) Get(id ObjectId) (Listing, bool) {
 	buf := idToBytes(id)
 	lis, ok := l.Trie.Get(buf)
 	return lis, ok
+}
+
+func (l *Listings) Has(id ObjectId) bool {
+	buf := idToBytes(id)
+	_, ok := l.Trie.Get(buf)
+	return ok
 }
 
 func (l *Listings) Insert(id ObjectId, lis Listing) error {
@@ -186,13 +217,18 @@ func idToBytes(id ObjectId) []byte {
 }
 
 type Tags struct {
-	*Trie[Tag]
+	*hamt.Trie[Tag]
 }
 
 func (t *Tags) Get(name string) (Tag, bool) {
 	buf := []byte(name)
 	tag, ok := t.Trie.Get(buf)
 	return tag, ok
+}
+
+func (t *Tags) Has(name string) bool {
+	_, ok := t.Get(name)
+	return ok
 }
 
 func (t *Tags) Insert(name string, tag Tag) error {
@@ -206,7 +242,7 @@ func (t *Tags) Delete(name string) error {
 }
 
 type Orders struct {
-	*Trie[Order]
+	*hamt.Trie[Order]
 }
 
 func (l *Orders) Get(id ObjectId) (Order, bool) {
@@ -226,7 +262,7 @@ func (l *Orders) Delete(id ObjectId) error {
 }
 
 type Inventory struct {
-	*Trie[uint64]
+	*hamt.Trie[uint64]
 }
 
 func (l *Inventory) Get(id ObjectId, variations []string) (uint64, bool) {
@@ -326,27 +362,52 @@ func HAMTValidation(sl validator.StructLevel) {
 }
 
 func (s *Shop) Hash() (Hash, error) {
-	h := sha3.NewLegacyKeccak256()
-	tagsHash, err := s.Tags.Hash()
+	var err error
+	var hashedShop struct {
+		SchemaVersion uint64
+		Manifest      Manifest
+		Tags          []byte
+		Orders        []byte
+		Accounts      []byte
+		Listings      []byte
+		Inventory     []byte
+	}
+
+	// copy the shop data into the hashedShop struct
+	hashedShop.SchemaVersion = s.SchemaVersion
+	hashedShop.Manifest = s.Manifest
+
+	// hash all the hamts
+	hashedShop.Tags, err = s.Tags.Hash()
 	if err != nil {
 		return Hash{}, err
 	}
-	h.Write(tagsHash)
-
-	ordersHash, err := s.Orders.Hash()
+	hashedShop.Orders, err = s.Orders.Hash()
 	if err != nil {
 		return Hash{}, err
 	}
-	h.Write(ordersHash)
-
-	accountsHash, err := s.Accounts.Hash()
+	hashedShop.Accounts, err = s.Accounts.Hash()
 	if err != nil {
 		return Hash{}, err
 	}
-	h.Write(accountsHash)
-
-	err = DefaultEncoder(h).Encode(s.Manifest)
-	check(err)
+	hashedShop.Listings, err = s.Listings.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	hashedShop.Inventory, err = s.Inventory.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	// finally, hash the whole thing
+	h := sha256.New()
+	// var buf bytes.Buffer
+	// w := io.MultiWriter(h, &buf)
+	err = masscbor.DefaultEncoder(h).Encode(hashedShop)
+	if err != nil {
+		return Hash{}, err
+	}
+	// fmt.Println("\n\ndebug:\n")
+	// fmt.Println(hex.EncodeToString(buf.Bytes()))
 	return Hash(h.Sum(nil)), nil
 }
 
@@ -368,9 +429,9 @@ type Manifest struct {
 	// maps payee names to payee objects
 	Payees Payees `validate:"nonEmptyMapKeys"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	AcceptedCurrencies ChainAddresses `validate:"required,gt=0"`
+	AcceptedCurrencies ChainAddresses
 	// the currency listings are priced in
-	PricingCurrency ChainAddress    `validate:"required"`
+	PricingCurrency ChainAddress
 	ShippingRegions ShippingRegions `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
@@ -382,7 +443,7 @@ type ChainAddresses []ChainAddress
 
 type ShippingRegion struct {
 	Country        string
-	Postcode       string
+	PostalCode     string
 	City           string
 	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
@@ -401,7 +462,7 @@ type priceModifierHack struct {
 
 func (pm *PriceModifier) UnmarshalCBOR(data []byte) error {
 	var pm2 priceModifierHack
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&pm2)
 	if err != nil {
 		return err
@@ -444,7 +505,7 @@ type listingStockStatusHack struct {
 
 func (ls *ListingStockStatus) UnmarshalCBOR(data []byte) error {
 	var ls2 listingStockStatusHack
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&ls2)
 	if err != nil {
 		return err
@@ -495,7 +556,7 @@ const (
 )
 
 func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
@@ -546,8 +607,6 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.PaymentDetails == nil {
 			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
-		fallthrough
-	case OrderStateCommited:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
 		}
@@ -557,6 +616,11 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.InvoiceAddress == nil && order.ShippingAddress == nil {
 			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
+		}
+		fallthrough
+	case OrderStateCommitted:
+		if len(order.Items) == 0 {
+			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
 	case OrderStateCanceled:
 		if order.CanceledAt == nil {
@@ -583,7 +647,7 @@ const (
 	OrderStateUnspecified OrderState = iota
 	OrderStateOpen
 	OrderStateCanceled
-	OrderStateCommited
+	OrderStateCommitted
 	OrderStateUnpaid
 	OrderStatePaid
 
@@ -591,7 +655,7 @@ const (
 )
 
 func (s *OrderState) UnmarshalCBOR(data []byte) error {
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
@@ -610,7 +674,7 @@ type AddressDetails struct {
 	Address1     string  `validate:"required,notblank"`
 	Address2     string  `cbor:",omitempty"`
 	City         string  `validate:"required,notblank"`
-	PostalCode   string  `cbor:",omitempty"` // Malta does use postal codes
+	PostalCode   string  `cbor:",omitempty" validate:"required,notblank"`
 	Country      string  `validate:"required,notblank"`
 	EmailAddress string  `validate:"required,email"`
 	PhoneNumber  *string `cbor:",omitempty" validate:"omitempty,e164"`
@@ -619,8 +683,8 @@ type AddressDetails struct {
 type PaymentDetails struct {
 	PaymentID     Hash
 	Total         Uint256
-	ListingHashes []cid.Cid `validate:"required,gt=0"`
-	TTL           uint64    `validate:"required,gt=0"` // The time to live in block
+	ListingHashes [][]byte `validate:"required,gt=0"`
+	TTL           uint64   `validate:"required,gt=0"` // The time to live in block
 	ShopSignature Signature
 }
 
@@ -634,7 +698,7 @@ func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
 		TxHash    *Hash `cbor:",omitempty"`
 		BlockHash *Hash `cbor:",omitempty"`
 	}
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&tmp)
 	if err != nil {
 		return err

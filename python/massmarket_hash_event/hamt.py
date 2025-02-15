@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import xxhash
+import hashlib
+import hmac
 from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional, Any, Callable
 import cbor2
 
-BITS_PER_STEP = 5
-MAX_DEPTH = (64 + BITS_PER_STEP - 1) // BITS_PER_STEP
+BITS_PER_STEP = 6
+MAX_DEPTH = 256 // BITS_PER_STEP
 
 V = TypeVar("V")
 
@@ -16,25 +17,31 @@ V = TypeVar("V")
 @dataclass
 class HashState:
     original_key: bytes
-    hash: int
-    consumed: int
-    seed: int
+    hash_buf: bytes  # Store the full 32-byte (256-bit) SHA-256 hash
+    consumed: int  # How many bits we've consumed so far
 
     @classmethod
     def new(cls, key: bytes) -> "HashState":
-        return cls(
-            original_key=key, hash=hash_key_with_seed(key, 0), consumed=0, seed=0
-        )
+        # Calculate the full SHA-256 hash once
+        h = hashlib.sha256()
+        h.update(key)
+        hash_buf = h.digest()  # Get the full 32-byte hash
+
+        return cls(original_key=key, hash_buf=hash_buf, consumed=0)
 
     def next(self) -> int:
-        if self.consumed + BITS_PER_STEP > MAX_DEPTH * BITS_PER_STEP:
-            self.seed += 1
-            self.hash = hash_key_with_seed(self.original_key, self.seed)
-            self.consumed = 0
+        bit_offset = self.consumed
+        byte_offset = bit_offset // 8
+        bit_in_byte = bit_offset % 8
 
-        shift = self.consumed
-        mask = (1 << BITS_PER_STEP) - 1
-        chunk = (self.hash >> shift) & mask
+        next16 = 0
+        if byte_offset < 32:
+            next16 = self.hash_buf[byte_offset] << 8
+        if byte_offset + 1 < 32:
+            next16 |= self.hash_buf[byte_offset + 1]
+
+        shift = 16 - BITS_PER_STEP - bit_in_byte
+        chunk = (next16 >> shift) & ((1 << BITS_PER_STEP) - 1)
         self.consumed += BITS_PER_STEP
         return chunk
 
@@ -45,12 +52,32 @@ class Entry(Generic[V]):
     value: Optional[V]
     node: Optional["Node[V]"]
 
+    def to_array(self) -> list:
+        """
+        Convert this entry to an array for compact CBOR serialization:
+          [ key, value, node_array or None ]
+        """
+        if self.node is not None:
+            return [self.key, self.value, self.node.to_array()]
+        else:
+            return [self.key, self.value, None]
+
+    @classmethod
+    def from_array(cls, arr: list) -> "Entry[V]":
+        """
+        Reconstruct an Entry from a compact CBOR array:
+          [ key, value, node_array or None ]
+        """
+        key, value, node_arr = arr
+        node = Node.from_array(node_arr) if node_arr is not None else None
+        return cls(key=key, value=value, node=node)
+
 
 @dataclass
 class Node(Generic[V]):
     bitmap: int = 0
     entries: list[Entry[V]] = None
-    _hash: Optional[bytes] = None
+    _hash: Optional[bytes] = None  # not serialized
 
     def __post_init__(self):
         if self.entries is None:
@@ -61,7 +88,7 @@ class Node(Generic[V]):
             return self.insert_fallback(key, value)
 
         idx = hs.next()
-        if idx >= 32:
+        if idx >= 64:
             raise ValueError(f"idx out of range: {idx}")
 
         pos = count_ones(self.bitmap, idx)
@@ -80,17 +107,18 @@ class Node(Generic[V]):
                 return False
 
             branch = Node()
-            old_hs = HashState(
-                original_key=entry.key,
-                hash=hash_key(entry.key),
-                consumed=hs.consumed,
-                seed=hs.seed,
-            )
+            old_hs = HashState.new(entry.key)
+            # Skip to the current consumption point
+            for _ in range(hs.consumed // BITS_PER_STEP):
+                old_hs.next()
+
             branch.insert(entry.key, entry.value, old_hs)
 
-            new_hs = HashState(
-                original_key=key, hash=hash_key(key), consumed=hs.consumed, seed=hs.seed
-            )
+            new_hs = HashState.new(key)
+            # Skip to the current consumption point
+            for _ in range(hs.consumed // BITS_PER_STEP):
+                new_hs.next()
+
             branch.insert(key, value, new_hs)
 
             self.entries[pos] = Entry(key=None, value=None, node=branch)
@@ -102,30 +130,30 @@ class Node(Generic[V]):
             self._hash = None
         return inserted
 
-    def find(self, key: bytes) -> tuple[Optional[V], bool]:
+    def find(self, key: bytes) -> V | None:
         hs = HashState.new(key)
         current_node = self
 
         while True:
             if current_node is None:
-                return None, False
+                return None
 
             if hs.consumed >= MAX_DEPTH * BITS_PER_STEP:
                 return current_node.find_fallback(key)
 
             idx = hs.next()
             if current_node.bitmap & (1 << idx) == 0:
-                return None, False
+                return None
 
             pos = count_ones(current_node.bitmap, idx)
             if pos >= len(current_node.entries):
-                return None, False
+                return None
 
             entry = current_node.entries[pos]
             if entry.node is None:
                 if entry.key == key:
-                    return entry.value, True
-                return None, False
+                    return entry.value
+                return None
 
             current_node = entry.node
 
@@ -210,9 +238,12 @@ class Node(Generic[V]):
         if self._hash is not None:
             return self._hash
 
-        h = xxhash.xxh64()
+        h = hashlib.sha256()
         for e in self.entries:
+            # TODO: hash the bitmap instead of the key
+            # binary.Write(h, binary.BigEndian, n.Bitmap)
             if e.node is None:
+                # TODO: take this out
                 h.update(e.key)
                 h.update(cbor2.dumps(e.value))
             else:
@@ -221,13 +252,32 @@ class Node(Generic[V]):
         self._hash = h.digest()
         return self._hash
 
+    def to_array(self) -> list:
+        """
+        Convert this node into an array for compact CBOR serialization:
+          [ bitmap, list_of_entry_arrays ]
+        The node's _hash is not serialized.
+        """
+        return [
+            self.bitmap,
+            [entry.to_array() for entry in self.entries],
+        ]
 
-def hash_key(key: bytes) -> int:
-    return xxhash.xxh64(key).intdigest()
-
-
-def hash_key_with_seed(key: bytes, seed: int) -> int:
-    return xxhash.xxh64(key, seed=seed).intdigest()
+    @classmethod
+    def from_array(cls, arr: list) -> "Node[V]":
+        """
+        Reconstruct a Node from its array representation:
+          [ bitmap, list_of_entry_arrays ]
+        """
+        if arr is None:
+            return None
+        bitmap, entries_arr = arr
+        if bitmap == 0 and entries_arr is None:
+            return None
+        node = cls(bitmap=bitmap)
+        for e_arr in entries_arr:
+            node.entries.append(Entry.from_array(e_arr))
+        return node
 
 
 def count_ones(n: int, below: int) -> int:
@@ -235,7 +285,7 @@ def count_ones(n: int, below: int) -> int:
     return bin(n & mask).count("1")
 
 
-def deep_copy_node(node: Node[V]) -> Node[V]:
+def deep_copy_node(node: "Node[V]") -> "Node[V]":
     if node is None:
         return None
 
@@ -253,6 +303,20 @@ def deep_copy_node(node: Node[V]) -> Node[V]:
     return new_node
 
 
+KeyType = bytes | int | str
+
+
+def encode_key(k: KeyType) -> bytes:
+    if isinstance(k, int):
+        return k.to_bytes(8, "big")
+    elif isinstance(k, str):
+        return k.encode("utf-8")
+    elif isinstance(k, bytes):
+        return k
+    else:
+        raise ValueError(f"Invalid key type: {type(k)}")
+
+
 @dataclass
 class Trie(Generic[V]):
     root: Node[V]
@@ -262,22 +326,28 @@ class Trie(Generic[V]):
     def new(cls) -> "Trie[V]":
         return cls(root=Node())
 
-    def insert(self, key: bytes, value: V) -> None:
+    def insert(self, key: KeyType, value: V) -> None:
         if self.root is None:
             self.root = Node()
-
+        key = encode_key(key)
         inserted = self.root.insert(key, value, HashState.new(key))
         if inserted:
             self.size += 1
 
-    def get(self, key: bytes) -> tuple[Optional[V], bool]:
+    def get(self, key: KeyType) -> V | None:
         if self.root is None:
-            return None, False
+            return None
+        key = encode_key(key)
         return self.root.find(key)
 
-    def delete(self, key: bytes) -> None:
+    def has(self, key: KeyType) -> bool:
+        key = encode_key(key)
+        return self.get(key) is not None
+
+    def delete(self, key: KeyType) -> None:
         if self.root is None:
             return
+        key = encode_key(key)
         deleted = self.root.delete(key, HashState.new(key))
         if deleted:
             self.size -= 1
@@ -289,7 +359,7 @@ class Trie(Generic[V]):
 
     def hash(self) -> bytes:
         if self.root is None:
-            return xxhash.xxh64().digest()
+            return hashlib.sha256().digest()
         return self.root.hash()
 
     def copy(self) -> "Trie[V]":
@@ -298,3 +368,40 @@ class Trie(Generic[V]):
         new_trie.root = deep_copy_node(self.root)
         new_trie.size = self.size
         return new_trie
+
+    def to_cbor_array(self) -> list:
+        """
+        Marshal the Trie into a CBOR-encoded byte buffer. Follows the Go approach:
+        only the root node is serialized, and size is recomputed when unmarshaling.
+        """
+        # Convert the root node into its array representation and dump to CBOR
+        return self.root.to_array()
+
+    @classmethod
+    def from_cbor_array(cls, data: list) -> "Trie[V]":
+        """
+        Unmarshal a CBOR-encoded byte buffer into a new Trie. Recomputes size
+        by counting entries recursively.
+        """
+        root = Node.from_array(data)
+        t = cls(root=root)
+        t._recalculate_size()
+        return t
+
+    def _recalculate_size(self) -> None:
+        """
+        Recompute the size by counting leaf entries under the root node.
+        """
+
+        def count_entries(n: Node[V]) -> int:
+            if not n:
+                return 0
+            c = 0
+            for e in n.entries:
+                if e.node is None:
+                    c += 1
+                else:
+                    c += count_entries(e.node)
+            return c
+
+        self.size = count_entries(self.root)

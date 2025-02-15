@@ -1,5 +1,9 @@
+# SPDX-FileCopyrightText: 2025 IETF / draft-bryce-cose-merkle-mountain-range-proofs-02
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 from typing import List, Tuple
-from sha3 import keccak_256
+from hashlib import sha256
 
 
 def add_leaf_hash(db, f: bytes) -> int:
@@ -58,10 +62,10 @@ def inclusion_proof_path(i, c):
     while True:
 
         # Set `siblingoffset` to 2^(g+1)
-        siblingoffset = (2 << g)
+        siblingoffset = 2 << g
 
         # If `index_height(i+1)` is greater than `g`
-        if index_height(i+1) > g:
+        if index_height(i + 1) > g:
 
             # Set isibling to `i - siblingoffset + 1`. because i is the right
             # sibling, its witness is the left which is offset behind.
@@ -91,9 +95,7 @@ def inclusion_proof_path(i, c):
         g += 1
 
 
-def included_root(
-    i: int, nodehash: bytes, proof: List[bytes]
-) -> bytes:
+def included_root(i: int, nodehash: bytes, proof: List[bytes]) -> bytes:
     """Apply the proof to nodehash to produce the implied root
 
     For a valid cose receipt of inclusion, using the returned root as the
@@ -137,8 +139,7 @@ def included_root(
     return root
 
 
-
-def consistency_proof_paths(ifrom : int, ito: int) -> List[List[int]]:
+def consistency_proof_paths(ifrom: int, ito: int) -> List[List[int]]:
     """Returns the proof paths showing consistency between the MMR's identified by ifrom and ito.
 
     The proof is an inclusion path for each peak in MMR(ifrom) in MMR(ito)
@@ -172,9 +173,9 @@ def consistent_roots(
 
     # It is an error if the lengths of frompeaks, paths and accumulatorfrom are not all equal.
     frompeaks = peaks(ifrom)
-    if (len(frompeaks) != len(accumulatorfrom)):
+    if len(frompeaks) != len(accumulatorfrom):
         raise ValueError()
-    if (len(frompeaks) != len(proofs)):
+    if len(frompeaks) != len(proofs):
         raise ValueError()
 
     roots = []
@@ -191,6 +192,7 @@ def consistent_roots(
 # Essential supporting algorithms
 # ------------------------------------------------------------------------------
 
+
 def index_height(i: int) -> int:
     """Returns the 0 based height of the mmr entry indexed by i"""
     # convert the index to a position to take advantage of the bit patterns afforded
@@ -202,7 +204,7 @@ def index_height(i: int) -> int:
 
 
 def peaks(i: int) -> List[int]:
-    """Returns the peak indices for MMR(i) in highest to lowest order 
+    """Returns the peak indices for MMR(i) in highest to lowest order
 
     Assumes MMR(i) is complete, implementations can check for this condition by
     testing the height of i+1
@@ -210,13 +212,13 @@ def peaks(i: int) -> List[int]:
 
     peak = 0
     peaks = []
-    s = i+1
+    s = i + 1
     while s != 0:
-        
+
         # find the highest peak size in the current MMR(s)
-        highest_size = (1 << log2floor(s+1)) - 1
+        highest_size = (1 << log2floor(s + 1)) - 1
         peak = peak + highest_size
-        peaks.append(peak-1)
+        peaks.append(peak - 1)
         s -= highest_size
 
     return peaks
@@ -235,16 +237,18 @@ def hash_pospair64(pos: int, a: bytes, b: bytes) -> bytes:
     Returns:
         The value for the node identified by pos
     """
-    h = keccak_256()
+    h = sha256()
     h.update(pos.to_bytes(8, byteorder="big", signed=False))
     h.update(a)
     h.update(b)
     return h.digest()
 
-# 
+
+#
 # Binary primitives for the essential algorithms
 #
- 
+
+
 def most_sig_bit(pos) -> int:
     """Returns the mask for the the most significant bit in pos"""
     return 1 << (pos.bit_length() - 1)
@@ -256,9 +260,11 @@ def all_ones(pos) -> bool:
     mask = (1 << (imsb + 1)) - 1
     return pos == mask
 
+
 def log2floor(x):
     """Returns the floor of log base 2 (x)"""
     return x.bit_length() - 1
+
 
 # ------------------------------------------------------------------------------
 # Complimentary supporting algorithms, commonly useful when working with MMR data
@@ -313,11 +319,13 @@ def verify_inclusion_path(
     # 1. We have consumed the proof without producing the root, fail the verification.
     return (False, len(proof))
 
+
 def verify_consistent_roots(
-        ifrom: int,
-        accumulatorfrom: List[bytes],
-        accumulatorto: List[bytes],
-        fromproofs: List[List[bytes]]) -> bool:
+    ifrom: int,
+    accumulatorfrom: List[bytes],
+    accumulatorto: List[bytes],
+    fromproofs: List[List[bytes]],
+) -> bool:
     """Verifies that the proofs from a previous accumulator's peaks are consistent
 
     Intended for use when verifying consistency directly against replicated
@@ -327,7 +335,7 @@ def verify_consistent_roots(
     # If all proven nodes match an accumulator peak for MMR(to) then
     # MMR(from) is consistent with MMR(ia). Because both the peaks and
     # the accumulator peaks are listed in descending order of height
-    #this can be accomplished with a linear scan.
+    # this can be accomplished with a linear scan.
     proven = consistent_roots(ifrom, accumulatorfrom, fromproofs)
 
     ito = 0
@@ -358,14 +366,14 @@ def inclusion_proof(db, i, ix) -> List[bytes]:
     return [db.get(i) for i in inclusion_proof_path(i, ix)]
 
 
-def consistency_proof(db, ifrom: int ,ito: int) -> List[List[bytes]]:
+def consistency_proof(db, ifrom: int, ito: int) -> List[List[bytes]]:
     """Return a proof showing MMR(ito) is consistent with MMR(ifrom)"""
 
     return [[db.get(i) for i in path] for path in consistency_proof_paths(ifrom, ito)]
 
 
 def peak_depths(i: int) -> List[int]:
-    """Returns the peak depths indices for MMR(i) in highest to lowest order 
+    """Returns the peak depths indices for MMR(i) in highest to lowest order
 
     The inclusion proof length of any element before i will match the element in
     this list corresponding to the proven accumulator peak. For interior nodes,
@@ -376,11 +384,11 @@ def peak_depths(i: int) -> List[int]:
     """
 
     depths = []
-    s = i+1
+    s = i + 1
     while s != 0:
         # find the highest peak size in the current MMR(s)
         highest_size = (1 << ((s + 1).bit_length() - 1)) - 1
-        depths.append((highest_size).bit_length() -1)
+        depths.append((highest_size).bit_length() - 1)
         s -= highest_size
 
     return depths
@@ -430,7 +438,7 @@ def mmr_index(e: int) -> int:
     return sum
 
 
-def proves_peak(e:int, d: int) -> bool:
+def proves_peak(e: int, d: int) -> bool:
     """Returns true if the path length of d for leaf e proves an accumulator peak
 
     This is a constant time operation
@@ -449,7 +457,7 @@ def proves_index_peak(i: int, d: int) -> Tuple[int, bool]:
     """Returns the index proven by a path length of d through i and a boolean indicating if it is an accumulator peak
 
     This operation is log 2 i
-     
+
     Args:
         d: the height of i + the length of the proof
     """
@@ -472,7 +480,7 @@ def proves_leaf_peak(e: int, d: int) -> Tuple[int, bool]:
     This operation is constant time.
 
     mmr_index(elast) + d is the mmr index of the corresponding node.
-     
+
     Args:
         d: the height of i + the length of the proof
 
@@ -485,7 +493,7 @@ def proves_leaf_peak(e: int, d: int) -> Tuple[int, bool]:
     # divisor is the count of perfect trees of height d in the smallest complete
     # mmr peak containing leaf_index(i) - 1
     # regardless of the height of the perfect tree, the odd ones are the accumulator peaks.
-    dtrees = (e // (1 << d))
+    dtrees = e // (1 << d)
 
     # the first leaf index of the perfect tree, containing i, with height d
     efirst = dtrees * (1 << d)
@@ -493,7 +501,6 @@ def proves_leaf_peak(e: int, d: int) -> Tuple[int, bool]:
     elast = efirst + (1 << d) - 1
 
     return (elast, dtrees & 1 == 0)
-
 
 
 def parent(i: int) -> int:
@@ -522,16 +529,18 @@ def complete_mmr(i) -> int:
 
     return i
 
+
 def max_height_index(i: int) -> int:
     """Returns the height of the maximum accumulator peak height for MMR(i+1)
 
-    This is also the maximum length of the inclusion proof for any node  
+    This is also the maximum length of the inclusion proof for any node
     """
 
 
 # ------------------------------------------------------------------------------
 # Complimentary algorithms for working with accumulators
 # ------------------------------------------------------------------------------
+
 
 def accumulator_root(i: int, ix: int) -> int:
     """Returns the mmr index of the peak root containing `i` in MMR(ix)
@@ -565,7 +574,7 @@ def accumulator_root(i: int, ix: int) -> int:
 
 def accumulator_index(e: int, g: int) -> int:
     """Return the packed accumulator index for the inclusion proof of e
-     
+
     In the MMR whose proof for e is height `g` long
 
     Where e = leaf_count(i) - 1
@@ -593,10 +602,11 @@ def next_witness(ix: int, d: int) -> int:
     te = leaf_count(ix) % ec
     return ec - te
 
+
 def leaf_index_next_witness(e: int, g: int) -> int:
     """Returns the leaf index which will cause an update to the witness for e which has length g"""
     e += 1
-    return  e + (1 << g) - (e % (1 << g))
+    return e + (1 << g) - (e % (1 << g))
 
 
 def leaf_witness_update_due(tx: int, d: int) -> int:
@@ -628,13 +638,13 @@ def roots(iw, ix):
 
     while True:
 
-        if index_height(i+1) > g:
+        if index_height(i + 1) > g:
             i += 1
         else:
 
-            i += (2 << g)
+            i += 2 << g
 
-            while index_height(i+1) > g:
+            while index_height(i + 1) > g:
                 i += 1
                 g += 1
 
@@ -643,7 +653,7 @@ def roots(iw, ix):
             roots.append(i)
         if i >= ix:
             return roots
-       
+
         g += 1
 
 

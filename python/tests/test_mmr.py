@@ -1,12 +1,20 @@
+# SPDX-FileCopyrightText: 2025 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 """
 See the notational conventions in the accompanying draft text for definition of short hand variables.
 """
+
 # import pytest
 
 from typing import List
 
 from massmarket_hash_event.mmr.algorithms import inclusion_proof_path, included_root
-from massmarket_hash_event.mmr.algorithms import consistency_proof_paths, consistent_roots
+from massmarket_hash_event.mmr.algorithms import (
+    consistency_proof_paths,
+    consistent_roots,
+)
 from massmarket_hash_event.mmr.algorithms import consistent_roots
 from massmarket_hash_event.mmr.algorithms import verify_consistent_roots
 from massmarket_hash_event.mmr.algorithms import verify_inclusion_path
@@ -20,8 +28,14 @@ from massmarket_hash_event.mmr.algorithms import leaf_count
 from massmarket_hash_event.mmr.algorithms import parent
 from massmarket_hash_event.mmr.algorithms import complete_mmr
 
-from massmarket_hash_event.mmr.tableprint import complete_mmr_sizes, complete_mmr_indices
-from massmarket_hash_event.mmr.tableprint import leaf_peak_witnesses, leaf_index_peak_witnesses
+from massmarket_hash_event.mmr.tableprint import (
+    complete_mmr_sizes,
+    complete_mmr_indices,
+)
+from massmarket_hash_event.mmr.tableprint import (
+    leaf_peak_witnesses,
+    leaf_index_peak_witnesses,
+)
 from massmarket_hash_event.mmr.tableprint import peaks_table
 from massmarket_hash_event.mmr.tableprint import index_values_table
 from massmarket_hash_event.mmr.tableprint import inclusion_paths_table
@@ -39,8 +53,46 @@ class TestIndexOperations:
         """The heights calculated for each mmr index are correct"""
 
         expect = [
-            0, 0, 1, 0, 0, 1, 2, 0, 0, 1, 0, 0, 1, 2, 3, 0, 0, 1, 0, 0,
-            1, 2, 0, 0, 1, 0, 0, 1, 2, 3, 4, 0, 0, 1, 0, 0, 1, 2, 0 ]
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            2,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            2,
+            3,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            2,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            2,
+            0,
+        ]
 
         heights = index_values_table(mmrsize=39)[0]
 
@@ -50,8 +102,47 @@ class TestIndexOperations:
     def test_index_leaf_counts(self):
         """The leaf counts calculated for each mmr index are correct"""
 
-        expect = [ 1, 1, 2, 3, 3, 3, 4, 5, 5, 6, 7, 7, 7, 7, 8, 9, 9, 10, 11,
-                  11, 11, 12, 13, 13, 14, 15, 15, 15, 15, 15, 16, 17, 17, 18, 19, 19, 19, 20, 21 ]
+        expect = [
+            1,
+            1,
+            2,
+            3,
+            3,
+            3,
+            4,
+            5,
+            5,
+            6,
+            7,
+            7,
+            7,
+            7,
+            8,
+            9,
+            9,
+            10,
+            11,
+            11,
+            11,
+            12,
+            13,
+            13,
+            14,
+            15,
+            15,
+            15,
+            15,
+            15,
+            16,
+            17,
+            17,
+            18,
+            19,
+            19,
+            19,
+            20,
+            21,
+        ]
 
         leaf_counts = index_values_table(mmrsize=39)[1]
 
@@ -60,7 +151,7 @@ class TestIndexOperations:
 
     def test_proves_peak(self):
         """Test the path lengths which prove an accumulator peak are distinguished
-        
+
         from those that prove an interior"""
         for e in range(len(leaf_peak_witnesses)):
             for d in range(len(leaf_peak_witnesses[e])):
@@ -69,8 +160,9 @@ class TestIndexOperations:
 
     def test_proves_index_peak(self):
         """Test the path lengths which prove an accumulator peak are distinguished
-        
-        from those that prove an interior, and that the peak index for the path is obtained"""
+
+        from those that prove an interior, and that the peak index for the path is obtained
+        """
         for e in range(len(leaf_index_peak_witnesses)):
             for d in range(len(leaf_index_peak_witnesses[e])):
 
@@ -103,7 +195,9 @@ class SkipTestAddLeafHash:
         db.init_size(39)
 
         for i in range(39):
-            assert db.store[i] == katdb.store[i], f"node {i} != {katdb.store[i]} ({db.store[i]})"
+            assert (
+                db.store[i] == katdb.store[i]
+            ), f"node {i} != {katdb.store[i]} ({db.store[i]})"
 
     def test_addleafhash_accumulators(self):
         """Adding the 21 canonical leaf values produces the expected accumulators for each  mmr size"""
@@ -214,7 +308,7 @@ class SkipTestAddLeafHash:
             peak_values = peak_values_table[i]
             expect_complete_mmr, expect_values = (expect[i][0], expect[i][1:])
             for j, p in enumerate(peak_indices):
-                assert complete_mmr_sizes[i]-1 == expect_complete_mmr
+                assert complete_mmr_sizes[i] - 1 == expect_complete_mmr
                 assert db.store[p].hex() == peak_values[j]
                 assert db.store[p].hex() == expect_values[j]
 
@@ -242,7 +336,6 @@ class TestVerifyInclusion:
                     path_lengths.append(g)
             print(f"{i}: {path_lengths}.join(',')")
 
-
     def test_verify_inclusion(self):
         """Every node can be verified against an accumulator peak for every subsequent complete MMR size"""
         # Hand populate the db
@@ -267,19 +360,18 @@ class TestVerifyInclusion:
                 # the next time a merge equals or excedes g
                 # valid accumulator paths of length g will only ever have a new peak equal g, others will be greater
 
-
                 r0 = ei // (1 << g)
-                r1 = (ei+(1<<g)) // (1 << g)
+                r1 = (ei + (1 << g)) // (1 << g)
                 m0 = ei % (1 << g)
-                m1 = (ei+(1<<g)) % (1 << g)
+                m1 = (ei + (1 << g)) % (1 << g)
 
                 enext = ei + (1 << g) - (ei % (1 << g))
 
-                if i == 1 and g ==2:
+                if i == 1 and g == 2:
                     # print('1')
                     pass
 
-                if (i == 7 or i == 8 or i == 10 or i == 11): # and g >=2:
+                if i == 7 or i == 8 or i == 10 or i == 11:  # and g >=2:
                     print(f"xx: {i} {ix} {g} {enext - 1} {mmr_index(enext - 1)}")
                 iacc = accumulator_index(e, g)
 
@@ -293,14 +385,13 @@ class TestVerifyInclusion:
 
                 ix = complete_mmr(ix + 1)
 
-
     def test_verify_inclusion_all_mmrs(self):
         """Every inclusion proof for every node proves the expected peak root"""
         db = KatDB()
         db.init_canonical39()
 
         table = inclusion_paths_table(39)
-        for (i, e, s, pathindices, ai, accumulator) in table:
+        for i, e, s, pathindices, ai, accumulator in table:
             root = db.get(accumulator[ai])
             node = db.get(i)
             path = [db.get(ip) for ip in pathindices]
@@ -308,14 +399,13 @@ class TestVerifyInclusion:
             assert ok
             assert pathlen == len(path)
 
-
     def test_verify_included_root_all_mmrs(self):
         """Every inclusion proof for every node proves the expected peak root"""
         db = KatDB()
         db.init_canonical39()
 
         table = inclusion_paths_table(39)
-        for (i, e, s, pathindices, ai, accumulator) in table:
+        for i, e, s, pathindices, ai, accumulator in table:
             root = db.get(accumulator[ai])
             node = db.get(i)
             path = [db.get(ip) for ip in pathindices]
@@ -331,20 +421,21 @@ class TestVerifyConsistency:
         db = KatDB()
         db.init_canonical39()
 
-        for (i, ito) in enumerate(complete_mmr_indices):
+        for i, ito in enumerate(complete_mmr_indices):
 
             for ifrom in complete_mmr_indices[:i]:
 
-                iproofs = consistency_proof_paths(ifrom, ito) 
+                iproofs = consistency_proof_paths(ifrom, ito)
 
                 proofs = [[db.get(ii) for ii in path] for path in iproofs]
 
                 accumulatorfrom = [db.get(ii) for ii in peaks(ifrom)]
                 toaccumulator = [db.get(ii) for ii in peaks(ito)]
 
-                ok = verify_consistent_roots(ifrom, accumulatorfrom, toaccumulator, proofs)
+                ok = verify_consistent_roots(
+                    ifrom, accumulatorfrom, toaccumulator, proofs
+                )
                 assert ok
-
 
     def test_consistent_roots(self):
         """Consistency proofs of arbitrary MMR ranges verify"""
@@ -352,11 +443,14 @@ class TestVerifyConsistency:
         db = KatDB()
         db.init_canonical39()
 
-        for (i, ito) in enumerate(complete_mmr_indices):
+        for i, ito in enumerate(complete_mmr_indices):
 
             for ifrom in complete_mmr_indices[:i]:
 
-                proofs = [[db.get(i) for i in path] for path in consistency_proof_paths(ifrom, ito)]
+                proofs = [
+                    [db.get(i) for i in path]
+                    for path in consistency_proof_paths(ifrom, ito)
+                ]
 
                 accumulatorfrom = [db.get(i) for i in peaks(ifrom)]
                 topeakindices = peaks(ito)
@@ -382,7 +476,6 @@ class TestVerifyConsistency:
 
                 assert numvalid == len(proven)
 
-
     def test_consistent_root_proof_depths(self):
         """Consistency proof lengths can be used to select the proven accumulator entry"""
 
@@ -390,17 +483,22 @@ class TestVerifyConsistency:
         db = KatDB()
         db.init_canonical39()
 
-        for (i, ito) in enumerate(complete_mmr_indices):
+        for i, ito in enumerate(complete_mmr_indices):
 
             for ifrom in complete_mmr_indices[:i]:
 
-                proofs = [[db.get(i)for i in path] for path in consistency_proof_paths(ifrom, ito)]
+                proofs = [
+                    [db.get(i) for i in path]
+                    for path in consistency_proof_paths(ifrom, ito)
+                ]
 
                 peakindicesfrom = peaks(ifrom)
                 accumulatorfrom = [db.get(i) for i in peakindicesfrom]
                 toaccumulator = [db.get(i) for i in peaks(ito)]
 
-                accumulatordepths = dict((d, i) for (i, d) in enumerate(peak_depths(ito)))
+                accumulatordepths = dict(
+                    (d, i) for (i, d) in enumerate(peak_depths(ito))
+                )
 
                 # The proofs start at the from accumulator peaks. The height of
                 # the future peak that commits them is the height of the old
@@ -410,11 +508,12 @@ class TestVerifyConsistency:
                 # accumulator indices.
 
                 proven = consistent_roots(ifrom, accumulatorfrom, proofs)
-                for (iproof, root) in enumerate(proven):
+                for iproof, root in enumerate(proven):
 
                     d = len(proofs[iproof]) + index_height(peakindicesfrom[iproof])
                     assert d in accumulatordepths
                     assert toaccumulator[accumulatordepths[d]] == root
+
 
 class TestWitnessUpdate:
 
@@ -429,7 +528,7 @@ class TestWitnessUpdate:
         for iw in range(mmrsize):
 
             wits = []
-            ito = complete_mmr(iw+1)
+            ito = complete_mmr(iw + 1)
 
             while ito < mmrsize:
 
@@ -455,5 +554,4 @@ class TestWitnessUpdate:
 
                 wits.append(w)
 
-                ito = complete_mmr(ito+1)
-
+                ito = complete_mmr(ito + 1)

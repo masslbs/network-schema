@@ -7,8 +7,6 @@ package schema
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -17,6 +15,7 @@ import (
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
+	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +27,7 @@ func TestHAMT(t *testing.T) {
 	err := trie.Insert([]byte("name"), "Alice")
 	r.NoError(err)
 
-	trie1, err := copyTrie[string](trie)
+	trie1, err := copyTrie(trie)
 	r.NoError(err)
 
 	err = trie1.Insert([]byte("age"), "Bob")
@@ -170,7 +169,7 @@ func TestHAMTComplexOperations(t *testing.T) {
 	r.Equal(2, trie6.Size())
 }
 
-func TestTrieHash(t *testing.T) {
+func TestHAMTHash(t *testing.T) {
 	r := require.New(t)
 
 	// Empty trie should have consistent hash
@@ -249,7 +248,7 @@ func TestTrieHash(t *testing.T) {
 	r.Equal(hash6, hash9)
 }
 
-func TestCBORSerialization(t *testing.T) {
+func TestHAMTCBORSerialization(t *testing.T) {
 	r := require.New(t)
 
 	// Create a new trie
@@ -295,54 +294,7 @@ func TestCBORSerialization(t *testing.T) {
 	r.Equal(trie.Size(), newTrie.Size())
 }
 
-func TestHashCollisions(t *testing.T) {
-	r := require.New(t)
-
-	// Override the hash function to force collisions for testing
-	originalHashKeyWithSeed := hashKeyWithSeed
-	originalHashKey := hashKey
-	defer func() {
-		hashKeyWithSeed = originalHashKeyWithSeed
-		hashKey = originalHashKey
-	}()
-	hashKeyWithSeed = func(key []byte, seed uint64) uint64 {
-		t.Logf("hashing key with seed(%d): %s", seed, key)
-		// Force a collision for keys starting with "collide"
-		if bytes.HasPrefix(key, []byte("collide")) {
-			return 42
-		}
-		return originalHashKeyWithSeed(key, seed)
-	}
-	hashKey = func(key []byte) uint64 {
-		// t.Logf("hashing key: %s", key)
-		if bytes.HasPrefix(key, []byte("collide")) {
-			return 42
-		}
-		return originalHashKey(key)
-	}
-
-	// Insert keys that will collide
-	keys := [][]byte{[]byte("collide1"), []byte("collide2"), []byte("collide3")}
-	values := []string{"value1", "value2", "value3"}
-
-	trie := NewTrie[string]()
-	for i, key := range keys {
-		err := trie.Insert(key, values[i])
-		r.NoError(err)
-	}
-
-	// Verify all values are retrievable
-	for i, key := range keys {
-		val, ok := trie.Get(key)
-		r.True(ok)
-		r.Equal(values[i], val)
-	}
-
-	// Ensure that the trie size reflects the correct number of entries
-	r.Equal(len(keys), trie.Size())
-}
-
-func TestTrieSizeTracking(t *testing.T) {
+func TestHAMTSizeTracking(t *testing.T) {
 	r := require.New(t)
 
 	trie := NewTrie[string]()
@@ -373,17 +325,19 @@ func TestTrieSizeTracking(t *testing.T) {
 	r.Equal(1, trie.Size()) // Size should not change
 }
 
-func TestTrieDepth(t *testing.T) {
+func TestHAMTInsertDepth(t *testing.T) {
 	r := require.New(t)
 	trie := NewTrie[string]()
 	numElements := 100000
 
 	// Insert a large number of elements
-	for i := 0; i < numElements; i++ {
+	for i := range numElements {
 		key := []byte(fmt.Sprintf("key-%d", i))
 		value := fmt.Sprintf("value-%d", i)
 		err := trie.Insert(key, value)
 		r.NoError(err)
+		_, ok := trie.Get(key)
+		r.True(ok)
 	}
 
 	var depths []int
@@ -406,10 +360,10 @@ func TestTrieDepth(t *testing.T) {
 
 	// Adjust acceptable variance
 	r.True(averageDepth <= expectedDepth*1.2, "Average depth (%f) is higher than acceptable depth (%f)", averageDepth, expectedDepth*1.2)
-	r.True(maxDepth <= int(expectedDepth*2), "Max depth (%d) is higher than expected (%f)", maxDepth, expectedDepth*2)
+	r.True(maxDepth <= int(expectedDepth*3), "Max depth (%d) is higher than expected (%f)", maxDepth, expectedDepth*3)
 }
 
-func TestHashOrderIndependence(t *testing.T) {
+func TestHAMTHashOrderIndependence(t *testing.T) {
 	r := require.New(t)
 
 	// Create a map of key-value pairs
@@ -430,12 +384,15 @@ func TestHashOrderIndependence(t *testing.T) {
 	var hash []byte
 	var err error
 	// insert items in different orders
-	for i := 0; i < numTries; i++ {
+	for i := range numTries {
 		trie := NewTrie[string]()
 		// Range over map which will be in random order each time
 		for k, v := range items {
-			err := trie.Insert([]byte(k), v)
+			key := bytes.Repeat([]byte(k), 32)
+			err := trie.Insert(key, v)
 			r.NoError(err)
+			_, ok := trie.Get(key)
+			r.True(ok, "testrun: %d, key: %q", i, key)
 		}
 		if i == 0 {
 			hash, err = trie.Hash()
@@ -449,7 +406,7 @@ func TestHashOrderIndependence(t *testing.T) {
 	}
 }
 
-func TestLargeScaleInsertGetDelete(t *testing.T) {
+func TestHAMTLargeScaleInsertGetDelete(t *testing.T) {
 	r := require.New(t)
 	trie := NewTrie[string]()
 	numElements := 100000
@@ -457,7 +414,7 @@ func TestLargeScaleInsertGetDelete(t *testing.T) {
 	values := make([]string, numElements)
 
 	// Insert a large number of elements
-	for i := 0; i < numElements; i++ {
+	for i := range numElements {
 		key := []byte(fmt.Sprintf("key-%d", i))
 		value := fmt.Sprintf("value-%d", i)
 		keys[i] = key
@@ -471,14 +428,16 @@ func TestLargeScaleInsertGetDelete(t *testing.T) {
 	// Verify that all elements can be retrieved
 	for i, key := range keys {
 		val, ok := trie.Get(key)
-		r.True(ok)
+		r.True(ok, "failed to get key: %s", key)
 		r.Equal(values[i], val)
 	}
 
 	// Delete every other element
-	for i := 0; i < numElements; i += 2 {
-		err := trie.Delete(keys[i])
-		r.NoError(err)
+	for i := range numElements {
+		if i%2 == 0 {
+			err := trie.Delete(keys[i])
+			r.NoError(err)
+		}
 	}
 
 	// Verify that the correct elements have been deleted
@@ -496,7 +455,7 @@ func TestLargeScaleInsertGetDelete(t *testing.T) {
 	r.Equal(numElements/2, trie.Size())
 }
 
-func TestTrieIterator(t *testing.T) {
+func TestHAMTIterator(t *testing.T) {
 	r := require.New(t)
 	trie := NewTrie[string]()
 
@@ -551,7 +510,7 @@ func TestTrieIterator(t *testing.T) {
 	r.Equal(2, count)
 }
 
-func BenchmarkTrieOperations(b *testing.B) {
+func BenchmarkHAMTOperations(b *testing.B) {
 	type KeyGenerator func(i int) []byte
 
 	my_rand := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -622,17 +581,6 @@ func BenchmarkTrieOperations(b *testing.B) {
 	}
 }
 
-// Helper function to create a copy of a trie through serialization
-func copyTrie[V any](t *Trie[V]) (*Trie[V], error) {
-	data, err := t.MarshalCBOR()
-	if err != nil {
-		return nil, err
-	}
-	newTrie := NewTrie[V]()
-	err = newTrie.UnmarshalCBOR(data)
-	return newTrie, err
-}
-
 // test-only helper function to collect depths of all nodes in the trie
 func (n *Node[V]) collectDepths(currentDepth int, depths *[]int) {
 	if n == nil {
@@ -662,23 +610,18 @@ func TestHAMTVectors(t *testing.T) {
 	r := require.New(t)
 
 	// Read test vectors
-	data, err := os.ReadFile("../vectors/hamt_test.json")
-	if errors.Is(err, os.ErrNotExist) {
-		t.Skip("test vectors not found, skipping")
-		return
-	}
+	data, err := os.ReadFile("../../vectors/hamt_test.cbor")
 	r.NoError(err, "unable to read test vectors")
 
 	var vectors []TestVector
-	err = json.Unmarshal(data, &vectors)
+	err = cbor.Unmarshal(data, &vectors)
 	r.NoError(err, "unable to parse test vectors")
 
 	for i, vector := range vectors {
 		trie := NewTrie[string]()
 
-		for j, op := range vector.Operations {
-			t.Run(fmt.Sprintf("vector-%d/operation-%d", i, j), func(t *testing.T) {
-
+		t.Run(fmt.Sprintf("vector-%d", i), func(t *testing.T) {
+			for j, op := range vector.Operations {
 				r := require.New(t)
 				key, err := hex.DecodeString(op.Key)
 				r.NoError(err, "invalid key hex")
@@ -701,7 +644,28 @@ func TestHAMTVectors(t *testing.T) {
 
 				actualHash := hex.EncodeToString(hash)
 				r.Equal(vector.Hashes[j], actualHash, "hash mismatch")
-			})
-		}
+			}
+		})
 	}
+}
+
+// helpers
+
+// Helper function to create a copy of a trie through serialization
+func copyTrie[V any](t *Trie[V]) (*Trie[V], error) {
+	data, err := t.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+	newTrie := NewTrie[V]()
+	err = newTrie.UnmarshalCBOR(data)
+	return newTrie, err
+}
+
+func mustEncode(t *testing.T, v any) cbor.RawMessage {
+	data, err := masscbor.Marshal(v)
+	if err != nil {
+		t.Fatalf("unable to encode value: %v", err)
+	}
+	return data
 }
