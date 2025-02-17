@@ -3,13 +3,17 @@
 # SPDX-License-Identifier: MIT
 
 __all__ = [
+    "get_root_hash_of_patches",
     "get_signer_of_patchset",
+    # protobuf
     "transport_pb2",
     "authentication_pb2",
     "shop_requests_pb2",
     "error_pb2",
     "storage_pb2",
 ]
+
+from typing import List
 
 import cbor2
 from sha3 import keccak_256
@@ -21,15 +25,9 @@ from eth_account.messages import encode_defunct
 from massmarket_hash_event.mmr.db import FlatDB
 from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 
-def get_signer_of_patchset(patchSet):
-    assert "Patches" in patchSet
-    assert "Header" in patchSet
-    header = patchSet["Header"]
-    assert "RootHash" in header
-    want_root = header["RootHash"]
-    patches = patchSet["Patches"]
-    # print(f"Patch Count: {len(patches)}")
+from massmarket_hash_event.cbor.patch import Patch
 
+def get_root_hash_of_patches(patches: List[Patch]):
     patches_bytes = [cbor2.dumps(patch) for patch in patches]
     hashed_patches = [keccak_256(patch).digest() for patch in patches_bytes]
 
@@ -47,6 +45,18 @@ def get_signer_of_patchset(patchSet):
     positions = [add_leaf_hash(tree, patch) for patch in hashed_patches]
     # print(f"Positions: {positions}")
     calculated_root = tree.get(positions[-1]-1)
+    return calculated_root
+
+def get_signer_of_patchset(patchSet):
+    assert "Patches" in patchSet
+    assert "Header" in patchSet
+    header = patchSet["Header"]
+    assert "RootHash" in header
+    want_root = header["RootHash"]
+    patches = patchSet["Patches"]
+    # print(f"Patch Count: {len(patches)}")
+
+    calculated_root = get_root_hash_of_patches(patches)
     assert calculated_root == want_root
 
     header_bytes = cbor2.dumps(header)

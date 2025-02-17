@@ -56,8 +56,8 @@ class SubscriptionPushRequest(_message.Message):
         shop_seq_no: int
         patch_set_header: bytes
         patch_set_signature: bytes
-        mmr_proof: _containers.RepeatedScalarFieldContainer[bytes]
-        def __init__(self, shop_seq_no: _Optional[int] = ..., patch_set_header: _Optional[bytes] = ..., patch_set_signature: _Optional[bytes] = ..., mmr_proof: _Optional[_Iterable[bytes]] = ...) -> None: ...
+        mmr_proof: bytes
+        def __init__(self, shop_seq_no: _Optional[int] = ..., patch_set_header: _Optional[bytes] = ..., patch_set_signature: _Optional[bytes] = ..., mmr_proof: _Optional[bytes] = ...) -> None: ...
     SUBSCRIPTION_ID_FIELD_NUMBER: _ClassVar[int]
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     subscription_id: bytes
