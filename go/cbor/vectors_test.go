@@ -740,8 +740,17 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 func newTestManifest() Shop {
 	s := NewShop()
 	s.SchemaVersion = 666
+	var shopID Uint256
+	var shopIDBuf = make([]byte, 32)
+	for i := range shopIDBuf {
+		if i%2 == 0 {
+			continue
+		}
+		shopIDBuf[i] = byte(0xff)
+	}
+	shopID.SetBytes(shopIDBuf)
 	s.Manifest = Manifest{
-		ShopID: *big.NewInt(1),
+		ShopID: shopID,
 		Payees: map[string]Payee{
 			"default": {
 				CallAsContract: false,
@@ -787,6 +796,8 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 		Address: EthereumAddress([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
 	}
 
+	testManifest := newTestManifest().Manifest
+
 	testCases := []struct {
 		name     string
 		op       OpString
@@ -794,6 +805,15 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 		value    interface{}
 		expected func(*assert.Assertions, Manifest)
 	}{
+		{
+			name:  "replace manifest",
+			op:    ReplaceOp,
+			path:  PatchPath{Type: ObjectTypeManifest},
+			value: testManifest,
+			expected: func(a *assert.Assertions, m Manifest) {
+				a.Equal(testManifest, m)
+			},
+		},
 		// simple field mutations
 		{
 			name:  "replace pricing currency",

@@ -233,8 +233,8 @@ func (lis Listings) MarshalJSON() ([]byte, error) {
 func (inv Inventory) MarshalJSON() ([]byte, error) {
 	stringID := make(map[string]uint64, inv.Size())
 	inv.All(func(id []byte, inv uint64) bool {
-		objId, vars := bytesToCombinedID(id)
-		mapKey := strconv.FormatUint(uint64(objId), 10)
+		objID, vars := bytesToCombinedID(id)
+		mapKey := strconv.FormatUint(uint64(objID), 10)
 		if len(vars) > 0 {
 			mapKey += ":" + strings.Join(vars, "-")
 		}
@@ -451,5 +451,17 @@ func TestNextPowerOf2(t *testing.T) {
 	require.EqualValues(t, NextPowerOf2(1024), 1024)
 	require.EqualValues(t, NextPowerOf2(1025), 2048)
 	require.EqualValues(t, NextPowerOf2(2048), 2048)
-
+	require.EqualValues(t, NextPowerOf2(2049), 4096)
+	require.EqualValues(t, NextPowerOf2(4096), 4096)
+	require.EqualValues(t, NextPowerOf2(4097), 8192)
+	require.EqualValues(t, NextPowerOf2(8192), 8192)
+	require.EqualValues(t, NextPowerOf2(8193), 16384)
+	require.EqualValues(t, NextPowerOf2(16384), 16384)
+	require.EqualValues(t, NextPowerOf2(16385), 32768)
+	require.EqualValues(t, NextPowerOf2(1<<60), 1<<60)
+	require.EqualValues(t, NextPowerOf2(1<<60+1), 1<<61)
+	require.EqualValues(t, NextPowerOf2((1<<61)-1), 1<<61)
+	require.EqualValues(t, NextPowerOf2(1<<61), 1<<61)
+	require.EqualValues(t, NextPowerOf2(1<<61+1), 1<<62)
+	require.EqualValues(t, NextPowerOf2(1<<62), 1<<62)
 }

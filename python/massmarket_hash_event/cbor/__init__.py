@@ -4,12 +4,15 @@
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+from io import BytesIO
+
 import cbor2
 
 from massmarket_hash_event.cbor.uint256 import Uint256
 from massmarket_hash_event.cbor.chain_address import ChainAddress
 
 all = [
+    "cbor_encode",
     # object types
     "Uint256",
     "ChainAddress",
@@ -19,6 +22,16 @@ all = [
     "Payee",
     "Manifest"
 ]
+
+# construct default encoder
+def cbor_encode(obj):
+    with BytesIO() as fp:
+        cbor2.CBOREncoder(
+            fp,
+            canonical=True,
+            date_as_datetime=True,
+        ).encode(obj)
+        return fp.getvalue()
 
 @dataclass
 class ModificationAbsolute:
@@ -164,10 +177,6 @@ class Manifest:
         if self.shipping_regions is not None:
             d["ShippingRegions"] = {k: v.to_cbor_dict() for k, v in self.shipping_regions.items()}
         return d
-
-    def to_cbor(self) -> bytes:
-        return cbor2.dumps(self.to_cbor_dict())
-
     @classmethod
     def from_cbor(cls, cbor_data: bytes) -> "Manifest":
         d = cbor2.loads(cbor_data)

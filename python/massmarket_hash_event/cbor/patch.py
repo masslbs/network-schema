@@ -5,7 +5,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Any
+
 import cbor2
 
 from massmarket_hash_event.cbor.ethereum_address import EthereumAddress
@@ -94,10 +95,6 @@ class PatchPath:
         path.extend(self.fields)
         return path
 
-    def to_cbor(self) -> bytes:
-        """Serialize the patch path to CBOR format"""
-        return cbor2.dumps(self.to_cbor_list())
-
     @classmethod
     def from_cbor(cls, data: List[Any]) -> "PatchPath":
         """Create from CBOR array format"""
@@ -144,21 +141,21 @@ class Patch:
     """Represents a single patch operation"""
     op: OpString
     path: PatchPath
-    value: bytes  # cbor.RawMessage equivalent
+    value: any  # cbor.RawMessage equivalent
 
     def __post_init__(self):
         if not isinstance(self.op, OpString):
             self.op = OpString(self.op)
-        if not isinstance(self.value, bytes) or not self.value:
-            raise ValueError("value must be non-empty bytes")
 
-    def to_cbor(self) -> bytes:
-        """Serialize the patch to CBOR format"""
-        return cbor2.dumps({
-            "Op": str(self.op),
-            "Path": self.path.to_cbor_list() if hasattr(self.path, "to_cbor_list") else self.path,
-            "Value": self.value
-        })
+    def to_cbor_dict(self) -> dict:
+        v = self.value
+        if hasattr(v, "to_cbor_dict"):
+            v = v.to_cbor_dict()
+        return {
+            "Op": self.op.value,
+            "Path": self.path.to_cbor_list(),
+            "Value": v
+        }
 
 @dataclass
 class PatchSetHeader:
@@ -177,7 +174,7 @@ class PatchSetHeader:
     def to_cbor_dict(self) -> dict:
         return {
             "KeyCardNonce": self.key_card_nonce,
-            "ShopID": self.shop_id,
+            "ShopID": self.shop_id.to_cbor_dict(),
             "Timestamp": self.timestamp,
             "RootHash": self.root_hash
         }
@@ -199,20 +196,8 @@ class SignedPatchSet:
         return {
             "Header": self.header.to_cbor_dict(),
             "Signature": self.signature,
-            "Patches": [
-                {
-                    "Op": str(p.op),
-                    "Path": p.path.to_cbor_list() if hasattr(p.path, "to_cbor_list") else p.path,
-                    "Value": p.value
-                }
-                for p in self.patches
-            ]
+            "Patches": [p.to_cbor_dict() for p in self.patches]
         }
-
-    def to_cbor(self) -> bytes:
-        """Convert the SignedPatchSet to CBOR bytes"""
-        return cbor2.dumps(self.to_cbor_dict())
-    
     @classmethod
     def from_cbor(cls, cbor_data: bytes) -> "SignedPatchSet":
         """Create a SignedPatchSet from CBOR bytes"""

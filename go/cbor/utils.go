@@ -39,6 +39,7 @@ func DefaultDecoder(rd io.Reader) cbor.Decoder {
 	opts := cbor.DecOptions{
 		BinaryUnmarshaler: cbor.BinaryUnmarshalerByteString,
 	}
+	opts.TimeTag = cbor.DecTagRequired
 	mode, err := opts.DecModeWithTags(MassMarketTags())
 	check(err)
 	return *mode.NewDecoder(rd)
@@ -53,6 +54,7 @@ func DefaultEncoder(w io.Writer) *cbor.Encoder {
 	opts := cbor.CanonicalEncOptions()
 	opts.BigIntConvert = cbor.BigIntConvertShortest
 	opts.Time = cbor.TimeRFC3339
+	opts.TimeTag = cbor.EncTagRequired
 	mode, err := opts.EncModeWithTags(MassMarketTags())
 	check(err)
 	return mode.NewEncoder(w)
@@ -98,6 +100,8 @@ func bytesToCombinedID(buf []byte) (ObjectId, []string) {
 	return id, variations
 }
 
+// RootHash computes the root hash of a list of patches.
+// It returns the root hash, the MMR tree, and an error if one occurs.
 func RootHash(patches []Patch) (Hash, pgmmr.VerifierTree, error) {
 	sz := mmr.FirstMMRSize(uint64(len(patches)))
 
@@ -119,14 +123,10 @@ func RootHash(patches []Patch) (Hash, pgmmr.VerifierTree, error) {
 		return Hash{}, nil, fmt.Errorf("failed to get leaf count: %w", err)
 	}
 	nextSquare := NextPowerOf2(cnt)
-	for cnt < nextSquare {
+	for i := cnt; i < nextSquare; i++ {
 		_, err = tree.Add([]byte{})
 		if err != nil {
 			return Hash{}, nil, fmt.Errorf("failed to add empty leaf to tree: %w", err)
-		}
-		cnt, err = tree.LeafCount()
-		if err != nil {
-			return Hash{}, nil, fmt.Errorf("failed to get leaf count: %w", err)
 		}
 	}
 
@@ -137,6 +137,8 @@ func RootHash(patches []Patch) (Hash, pgmmr.VerifierTree, error) {
 	return Hash(root), tree, nil
 }
 
+// NextPowerOf2 calculates the smallest power of 2 that is greater than or equal to n.
+// It works by:
 //   - n--: First decrements n by 1. This is done to handle the case where n is already a power of 2.
 //   - The series of bit-shifting operations (|= with right shifts):
 //     This sequence "fills" all the bits to the right of the highest set bit with 1s. For example:

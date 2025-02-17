@@ -115,7 +115,7 @@ def test_cbor_manifest_roundtrip():
             )
         }
     )
-    cbor_bytes = original.to_cbor()
+    cbor_bytes = cbor2.dumps(original.to_cbor_dict())
     decoded = Manifest.from_cbor(cbor_bytes)
     # Depending on your Uint256/ChainAddress objects' implementations, you may need to adjust the equality check.
     assert original == decoded

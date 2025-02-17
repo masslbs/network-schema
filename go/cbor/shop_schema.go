@@ -49,7 +49,7 @@ func (val *Signature) UnmarshalBinary(data []byte) error {
 }
 
 // PublicKey represents a ecdsa public key
-const PublicKeySize = 33 
+const PublicKeySize = 33
 
 type PublicKey [PublicKeySize]byte
 

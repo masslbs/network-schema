@@ -15,7 +15,6 @@ __all__ = [
 
 from typing import List
 
-import cbor2
 from sha3 import keccak_256
 from web3 import Web3
 w3 = Web3()
@@ -25,10 +24,18 @@ from eth_account.messages import encode_defunct
 from massmarket_hash_event.mmr.db import FlatDB
 from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 
+from massmarket_hash_event.cbor import cbor_encode
 from massmarket_hash_event.cbor.patch import Patch
-
+from massmarket_hash_event.cbor.patch import SignedPatchSet
 def get_root_hash_of_patches(patches: List[Patch]):
-    patches_bytes = [cbor2.dumps(patch) for patch in patches]
+    patches_bytes = []
+    for i, patch in enumerate(patches):
+        patch_data = patch
+        if hasattr(patch, "to_cbor_dict"):
+            patch_data = patch.to_cbor_dict()
+        encoded_patch = cbor_encode(patch_data)
+        # print(f"DEBUG patch {i}: {encoded_patch.hex()}")
+        patches_bytes.append(encoded_patch)
     hashed_patches = [keccak_256(patch).digest() for patch in patches_bytes]
 
     # Add zeros until we have a power of 2 length
@@ -47,21 +54,19 @@ def get_root_hash_of_patches(patches: List[Patch]):
     calculated_root = tree.get(positions[-1]-1)
     return calculated_root
 
-def get_signer_of_patchset(patchSet):
-    assert "Patches" in patchSet
-    assert "Header" in patchSet
-    header = patchSet["Header"]
-    assert "RootHash" in header
-    want_root = header["RootHash"]
-    patches = patchSet["Patches"]
+# from pprint import pprint
+
+def get_signer_of_patchset(ps: SignedPatchSet):
     # print(f"Patch Count: {len(patches)}")
 
-    calculated_root = get_root_hash_of_patches(patches)
-    assert calculated_root == want_root
+    calculated_root = get_root_hash_of_patches(ps.patches)
+    # pprint(calculated_root.hex())
+    # pprint(ps.header.root_hash.hex())
+    assert calculated_root == ps.header.root_hash
 
-    header_bytes = cbor2.dumps(header)
+    header_bytes = cbor_encode(ps.header.to_cbor_dict())
     encoded_header = encode_defunct(header_bytes)
-    pub_key = w3.eth.account.recover_message(encoded_header, signature=patchSet["Signature"])
+    pub_key = w3.eth.account.recover_message(encoded_header, signature=ps.signature)
     return pub_key
 
     

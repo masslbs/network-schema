@@ -12,6 +12,8 @@ from massmarket_hash_event.cbor.patch import (
 from massmarket_hash_event.cbor.ethereum_address import EthereumAddress
 from massmarket_hash_event.cbor.uint256 import Uint256
 
+import cbor2
+
 def test_patch_path_manifest():
     # Test manifest path (no ID needed)
     path = PatchPath(
@@ -77,8 +79,13 @@ def test_patch():
     )
     
     # Use new to_cbor() method to get the serialized bytes
-    serialized = patch.to_cbor()
+    serialized = cbor2.dumps(patch.to_cbor_dict())
     assert isinstance(serialized, bytes)
+
+    decoded = cbor2.loads(serialized)
+    assert decoded["Op"] == "replace"
+    assert decoded["Path"] == ["manifest", "pricingCurrency"]
+    assert decoded["Value"] == b"some_cbor_data"
 
 def test_signed_patch_set():
     path = PatchPath(

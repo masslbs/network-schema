@@ -16,6 +16,9 @@ import (
 // ========
 
 func (existing *Manifest) PatchReplace(fields []string, value cbor.RawMessage) error {
+	if len(fields) == 0 {
+		return Unmarshal(value, existing)
+	}
 	switch fields[0] {
 	case "payees":
 		return existing.Payees.PatchReplace(fields[1:], value)

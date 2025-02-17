@@ -24,7 +24,7 @@ import (
 // To validate a patchset, construct the merkle tree of the patches and validate the root hash.
 type SignedPatchSet struct {
 	// The header of the patch set
-	Header PatchSetHeader `validate:"required"`
+	Header PatchSetHeader `validate:"required"` // TODO: dive doesn't work?
 
 	// The signature of the header, containing the merkle root of the patches
 	Signature Signature `validate:"required,gt=0,dive"`
@@ -284,6 +284,10 @@ func (obj ObjectType) IsValid() bool {
 
 type Patcher struct {
 	validator *validator.Validate
+}
+
+func NewPatcher(v *validator.Validate) *Patcher {
+	return &Patcher{validator: v}
 }
 
 func (p *Patcher) Shop(in *Shop, patch Patch) error {
