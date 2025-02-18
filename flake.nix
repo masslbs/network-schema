@@ -1,15 +1,21 @@
 # SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
-
 {
   description = "Mass Market Network Schema";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     gomod2nix = {
-      url = "github:tweag/gomod2nix";
+      # url = "github:tweag/gomod2nix";
+      # fix builds with go 1.23
+      # https://github.com/nix-community/gomod2nix/pull/168
+      url = "github:obreitwi/gomod2nix/fix/go_mod_vendor";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    bryce-mmrs-py = {
+      url = "github:robinbryce/draft-bryce-cose-merkle-mountain-range-proofs";
+      flake = false;
     };
   };
 
@@ -17,56 +23,116 @@
     nixpkgs,
     utils,
     gomod2nix,
+    bryce-mmrs-py,
     ...
   }:
     utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ gomod2nix.overlays.default ];
+        overlays = [gomod2nix.overlays.default];
       };
 
-      # web3 needs parsimonious v0.9.0
-      # https://github.com/ethereum/web3.py/issues/3110#issuecomment-1737826910
+      ourPython = pkgs.python312;
+
+      # https://github.com/ethereum/eth-typing/issues/63#issuecomment-2291678106
+      pyunormalize = ourPython.pkgs.buildPythonPackage rec {
+        pname = "pyunormalize";
+        version = "15.1.0";
+        src = ourPython.pkgs.fetchPypi {
+          inherit pname version;
+          hash = "sha256-z0qHRRoPHLdpEaqX9DL0V54fVkovDITOSIxzpzkBtsE=";
+        };
+        buildInputs = [pinnedPython.pkgs.setuptools];
+        # le sigh...
+        postUnpack = ''
+          sed -i 's/version=get_version()/version="${version}"/' ${pname}-${version}/setup.py
+          sed -i 's/del _version//' ${pname}-${version}/${pname}/__init__.py
+        '';
+      };
+
       packageOverrides = self: super: {
         parsimonious = super.parsimonious.overridePythonAttrs (old: rec {
           pname = "parsimonious";
-          version = "0.9.0";
-          src = pkgs.python3.pkgs.fetchPypi {
+          version = "0.10.0";
+          src = self.fetchPypi {
             inherit pname version;
-            sha256 = "sha256-sq0a5jovZb149eCorFEKmPNgekPx2yqNRmNqXZ5KMME=";
+            sha256 = "sha256-goFgDaGA7IrjVCekq097gr/sHj0eUvgMtg6oK5USUBw=";
+          };
+        });
+
+        websockets = super.websockets.overridePythonAttrs (old: rec {
+          pname = "websockets";
+          version = "13.1";
+          src = self.fetchPypi {
+            inherit pname version;
+            sha256 = "sha256-o7M2YIfBvAonlREe3K3duLO1lQnV211+o/3Wn5VKiHg=";
           };
           doCheck = false;
         });
+
+        web3 = super.web3.overridePythonAttrs (old: rec {
+          pname = "web3";
+          version = "7.8.0";
+          src = self.fetchPypi {
+            inherit pname version;
+            sha256 = "sha256-cSvJ/Wse9uRn7iTCW1geGVHKssuhf59UjxJYdzTyyFc=";
+          };
+          propagatedBuildInputs =
+            super.web3.propagatedBuildInputs
+            ++ [
+              pyunormalize
+            ];
+          doCheck = false;
+        });
+
+        # transient test failures
+        asn1tools = super.asn1tools.overridePythonAttrs (old: {
+          doCheck = false; # TODO: just on darwin..?
+        });
+
+        eth-account = super.eth-account.overridePythonAttrs (old: {
+          doCheck = false;
+          doInstallCheck = false;
+          propagatedBuildInputs =
+            super.eth-account.propagatedBuildInputs
+            ++ [
+              pinnedPython.pkgs.pydantic
+            ];
+        });
+
+        django = super.django.overrideAttrs (old: rec {
+          doInstallCheck = false;
+        });
       };
 
-      pinnedPython = pkgs.python3.override {
+      pinnedPython = ourPython.override {
         inherit packageOverrides;
-        self = pkgs.python3;
+        self = ourPython;
       };
 
-      mass-python = pinnedPython.withPackages (ps:
-        with ps; [
-          protobuf
-          web3
-          safe-pysha3
+      mass-python = pinnedPython.withPackages (
+        ps:
+          with ps; [
+            protobuf
+            web3
+            safe-pysha3
 
-          matplotlib # go/hamt_bench_plot.py
-          cbor2
-          xxhash
+            matplotlib # go/hamt_bench_plot.py
+            cbor2
+            xxhash
 
-          # packaging massmarket_hash_event
-          pytest
-          setuptools
-          setuptools-scm
-          wheel
-          build
-          twine
-
-        ]
+            # packaging massmarket_hash_event
+            pytest
+            setuptools
+            setuptools-scm
+            wheel
+            build
+            twine
+          ]
       );
 
       buildInputs = with pkgs; [
-        go
+        go_1_23
         go-outline
         gopls
         gopkgs
@@ -92,21 +158,39 @@
       devShell = pkgs.mkShell {
         inherit buildInputs;
         shellHook = ''
+          test -d go || {
+            echo "go/ directory not found, skipping gomod2nix update"
+            exit 0
+          }
           gomod2nix generate
+          # vendored mmr code
+          # TODO: this should be an actual python package
+          # but i dont want to package it up right now
+          test -d python/massmarket_hash_event/mmr || {
+            cp -r ${bryce-mmrs-py} python/massmarket_hash_event/mmr
+          }
           export PYTHON=${mass-python}/bin/python
           export PYTHONPATH=$PYTHONPATH:$PWD/python
+          export TEST_DATA_OUT=$PWD/vectors
         '';
       };
       packages.default = pkgs.buildGoApplication {
-          name = "MassMarket Test Vectors";
-          modules = ./gomod2nix.toml;
-          buildInputs = [ pkgs.go ];
-          src = ./.;
-          buildPhase = ''
-            cd ./go
-            mkdir -p $out
-            TEST_DATA_OUT=$out go test
-            '';
-        };
+        name = "MassMarket Test Vectors";
+        modules = ./gomod2nix.toml;
+        buildInputs = [pkgs.go_1_23];
+        src = ./.;
+        buildPhase = ''
+          test -d go || {
+            echo "go/ directory not found, skipping vector generation"
+            exit 0
+          }
+          cd ./go
+          mkdir -p $out
+          export TEST_DATA_OUT=$out
+          go test
+          cd ../python
+          ${mass-python}/bin/python generate_hamt_test_vectors.py
+        '';
+      };
     });
 }

@@ -21,7 +21,18 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type PatchSet struct {
+// To validate a patchset, construct the merkle tree of the patches and validate the root hash.
+type SignedPatchSet struct {
+	// The header of the patch set
+	Header PatchSetHeader `validate:"required"`
+
+	// The signature of the header, containing the merkle root of the patches
+	Signature Signature `validate:"required,gt=0,dive"`
+
+	Patches []Patch `validate:"required,gt=0,dive"`
+}
+
+type PatchSetHeader struct {
 	// The nonce must be unique for each event a keycard creates.
 	// The sequence values need to increase monotonicly.
 	KeyCardNonce uint64 `validate:"required,gt=0"`
@@ -34,14 +45,18 @@ type PatchSet struct {
 	// The relay should reject any events from the future
 	Timestamp time.Time `validate:"required"`
 
-	// The patches to apply to the shop.
-	Patches []Patch `validate:"required,gt=0,dive"`
+	// The merkle root of the patches
+	RootHash Hash `validate:"required"`
 }
 
 type Patch struct {
 	Op    OpString        `validate:"required,oneof=add replace remove increment decrement"`
 	Path  PatchPath       `validate:"required"`
 	Value cbor.RawMessage `validate:"required,gt=0"`
+}
+
+func (p Patch) Serialize() ([]byte, error) {
+	return Marshal(p)
 }
 
 // TODO: type change to enum/number instead of string?
@@ -240,12 +255,13 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 type ObjectType string
 
 const (
-	ObjectTypeManifest  ObjectType = "manifest"
-	ObjectTypeAccount   ObjectType = "account"
-	ObjectTypeListing   ObjectType = "listing"
-	ObjectTypeOrder     ObjectType = "order"
-	ObjectTypeTag       ObjectType = "tag"
-	ObjectTypeInventory ObjectType = "inventory"
+	ObjectTypeSchemaVersion ObjectType = "schemaVersion"
+	ObjectTypeManifest      ObjectType = "manifest"
+	ObjectTypeAccount       ObjectType = "account"
+	ObjectTypeListing       ObjectType = "listing"
+	ObjectTypeOrder         ObjectType = "order"
+	ObjectTypeTag           ObjectType = "tag"
+	ObjectTypeInventory     ObjectType = "inventory"
 )
 
 func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
@@ -263,7 +279,7 @@ func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
 }
 
 func (obj ObjectType) IsValid() bool {
-	return obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
+	return obj == ObjectTypeSchemaVersion || obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
 }
 
 type Patcher struct {
@@ -273,6 +289,23 @@ type Patcher struct {
 func (p *Patcher) Shop(in *Shop, patch Patch) error {
 	var err error
 	switch patch.Path.Type {
+	case ObjectTypeSchemaVersion:
+		if in.SchemaVersion != 0 && patch.Op != ReplaceOp {
+			return fmt.Errorf("schema version can only be replaced once it is set")
+		}
+		if in.SchemaVersion == 0 && patch.Op != AddOp {
+			return fmt.Errorf("schema version can only be initialized once")
+		}
+		var newVal uint64
+		err = cbor.Unmarshal(patch.Value, &newVal)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal schema version: %w", err)
+		}
+		if newVal <= in.SchemaVersion {
+			return fmt.Errorf("schema version can only be incremented")
+		}
+		in.SchemaVersion = newVal
+		return nil
 	case ObjectTypeManifest:
 		err = p.Manifest(&in.Manifest, patch)
 	case ObjectTypeAccount:
