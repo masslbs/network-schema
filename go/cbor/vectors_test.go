@@ -263,7 +263,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		{
 			Name:  "add-account",
 			Op:    AddOp,
-			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr},
+			Path:  PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr},
 			Value: mustEncode(t, testAcc1),
 			Check: func(r *require.Assertions, state Shop) {
 				acc, ok := state.Accounts.Get(testAcc1Addr[:])
@@ -274,7 +274,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		{
 			Name: "remove-keycard",
 			Op:   RemoveOp,
-			Path: PatchPath{Type: ObjectTypeAccount, AccountID: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
+			Path: PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
 			Check: func(r *require.Assertions, state Shop) {
 				acc, ok := state.Accounts.Get(testAcc1Addr[:])
 				r.True(ok)
@@ -284,7 +284,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		{
 			Name:  "add-guest-account",
 			Op:    AddOp,
-			Path:  PatchPath{Type: ObjectTypeAccount, AccountID: &guestAccAddr},
+			Path:  PatchPath{Type: ObjectTypeAccount, AccountAddr: &guestAccAddr},
 			Value: mustEncode(t, testAcc2),
 			Check: func(r *require.Assertions, state Shop) {
 				r.Equal(2, state.Accounts.Size())

@@ -23,7 +23,7 @@ func TestPatchObjectIDs(t *testing.T) {
 	goodTestCases := []testCase{
 		{Path: PatchPath{Type: ObjectTypeManifest}},
 		{Path: PatchPath{Type: ObjectTypeListing, ObjectID: uint64ptr(1)}},
-		{Path: PatchPath{Type: ObjectTypeAccount, AccountID: &testAddr}},
+		{Path: PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAddr}},
 		{Path: PatchPath{Type: ObjectTypeTag, TagName: strptr("test-tag")}},
 	}
 	for idx, tc := range goodTestCases {
@@ -49,13 +49,13 @@ func TestPatchObjectIDs(t *testing.T) {
 
 		// wrong contextual field
 		{Path: PatchPath{Type: ObjectTypeManifest, ObjectID: uint64ptr(1)}},
-		{Path: PatchPath{Type: ObjectTypeManifest, AccountID: &testAddr}},
+		{Path: PatchPath{Type: ObjectTypeManifest, AccountAddr: &testAddr}},
 
 		{Path: PatchPath{Type: ObjectTypeAccount, ObjectID: uint64ptr(1)}},
 		{Path: PatchPath{Type: ObjectTypeAccount, TagName: strptr("test-tag")}},
 
 		{Path: PatchPath{Type: ObjectTypeTag, ObjectID: uint64ptr(1)}},
-		{Path: PatchPath{Type: ObjectTypeTag, AccountID: &testAddr}},
+		{Path: PatchPath{Type: ObjectTypeTag, AccountAddr: &testAddr}},
 
 		{Path: PatchPath{Type: ObjectTypeOrder, TagName: strptr("test-tag")}},
 	}
@@ -91,8 +91,8 @@ type TestPath struct {
 func (p TestPath) MarshalCBOR() ([]byte, error) {
 	var path []any
 	path = append(path, string(p.Type))
-	if p.AccountID != nil {
-		path = append(path, *p.AccountID)
+	if p.AccountAddr != nil {
+		path = append(path, *p.AccountAddr)
 	}
 	if p.ObjectID != nil {
 		path = append(path, *p.ObjectID)

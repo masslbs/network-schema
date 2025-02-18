@@ -28,17 +28,17 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftransport.proto\x12\x0bmarket.mass\"&\n\x11\x45ventWriteRequest\x12\x11\n\tpatch_set\x18\x01 \x01(\x0c\",\n\x11SyncStatusRequest\x12\x17\n\x0funpushed_events\x18\x01 \x01(\x04\"\r\n\x0bPingRequestb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftransport.proto\x12\x0bmarket.mass\")\n\x14PatchSetWriteRequest\x12\x11\n\tpatch_set\x18\x01 \x01(\x0c\"F\n\x11SyncStatusRequest\x12\x17\n\x0fsubscription_id\x18\x01 \x01(\x04\x12\x18\n\x10unpushed_patches\x18\x02 \x01(\x04\"\r\n\x0bPingRequestb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'transport_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_EVENTWRITEREQUEST']._serialized_start=32
-  _globals['_EVENTWRITEREQUEST']._serialized_end=70
-  _globals['_SYNCSTATUSREQUEST']._serialized_start=72
-  _globals['_SYNCSTATUSREQUEST']._serialized_end=116
-  _globals['_PINGREQUEST']._serialized_start=118
-  _globals['_PINGREQUEST']._serialized_end=131
+  _globals['_PATCHSETWRITEREQUEST']._serialized_start=32
+  _globals['_PATCHSETWRITEREQUEST']._serialized_end=73
+  _globals['_SYNCSTATUSREQUEST']._serialized_start=75
+  _globals['_SYNCSTATUSREQUEST']._serialized_end=145
+  _globals['_PINGREQUEST']._serialized_start=147
+  _globals['_PINGREQUEST']._serialized_end=160
 # @@protoc_insertion_point(module_scope)

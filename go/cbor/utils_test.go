@@ -264,8 +264,8 @@ func (patch PatchPath) MarshalJSON() ([]byte, error) {
 	if patch.ObjectID != nil {
 		path = append(path, *patch.ObjectID)
 		either = true
-	} else if patch.AccountID != nil {
-		path = append(path, *patch.AccountID)
+	} else if patch.AccountAddr != nil {
+		path = append(path, *patch.AccountAddr)
 		either = true
 	} else if patch.TagName != nil {
 		path = append(path, *patch.TagName)

@@ -84,9 +84,9 @@ type PatchPath struct {
 	// inventory: ObjectId with optional variations as fields
 	//
 	// exclusion: manifest, which has no id
-	ObjectID  *ObjectId
-	AccountID *EthereumAddress
-	TagName   *string
+	ObjectID    *ObjectId
+	AccountAddr *EthereumAddress
+	TagName     *string
 
 	Fields []string // extra fields
 }
@@ -103,17 +103,17 @@ func (p PatchPath) MarshalCBOR() ([]byte, error) {
 		if p.ObjectID != nil {
 			return nil, fmt.Errorf("manifest patch should not have an id")
 		}
-		if p.AccountID != nil {
+		if p.AccountAddr != nil {
 			return nil, fmt.Errorf("manifest patch should not have an account id")
 		}
 		if p.TagName != nil {
 			return nil, fmt.Errorf("manifest patch should not have a tag name")
 		}
 	case ObjectTypeAccount:
-		if p.AccountID == nil {
+		if p.AccountAddr == nil {
 			return nil, fmt.Errorf("account patch needs an id")
 		}
-		path[1] = *p.AccountID
+		path[1] = *p.AccountAddr
 	case ObjectTypeListing, ObjectTypeOrder:
 		if p.ObjectID == nil {
 			return nil, fmt.Errorf("listing/order patch needs an id")
@@ -163,7 +163,7 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		}
 		var addr EthereumAddress
 		copy(addr[:], data)
-		p.AccountID = &addr
+		p.AccountAddr = &addr
 	case ObjectTypeOrder, ObjectTypeListing:
 		if len(path) < 1 {
 			return fmt.Errorf("invalid object id: %w", err)
@@ -197,14 +197,14 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if p.ObjectID != nil {
 			return fmt.Errorf("manifest patch should not have an id")
 		}
-		if p.AccountID != nil {
+		if p.AccountAddr != nil {
 			return fmt.Errorf("manifest patch should not have an account id")
 		}
 		if p.TagName != nil {
 			return fmt.Errorf("manifest patch should not have a tag name")
 		}
 	case ObjectTypeAccount:
-		if p.AccountID == nil {
+		if p.AccountAddr == nil {
 			return fmt.Errorf("account patch needs an id")
 		}
 		if p.ObjectID != nil {
@@ -217,7 +217,7 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if p.ObjectID == nil {
 			return fmt.Errorf("listing/order patch needs an id")
 		}
-		if p.AccountID != nil {
+		if p.AccountAddr != nil {
 			return fmt.Errorf("listing/order patch should not have an account id")
 		}
 		if p.TagName != nil {
@@ -233,7 +233,7 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if p.ObjectID != nil {
 			return fmt.Errorf("tag patch should not have an object id")
 		}
-		if p.AccountID != nil {
+		if p.AccountAddr != nil {
 			return fmt.Errorf("tag patch should not have an account id")
 		}
 	default:
@@ -382,10 +382,10 @@ func (p *Patcher) Accounts(in Accounts, patch Patch) error {
 	if patch.Path.Type != ObjectTypeAccount {
 		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
 	}
-	if patch.Path.AccountID == nil {
+	if patch.Path.AccountAddr == nil {
 		return fmt.Errorf("account patch needs an ID")
 	}
-	accID := *patch.Path.AccountID
+	accID := *patch.Path.AccountAddr
 	acc, ok := in.Trie.Get(accID[:])
 	switch patch.Op {
 	case AddOp:

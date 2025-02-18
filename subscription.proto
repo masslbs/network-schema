@@ -57,16 +57,23 @@ message SubscriptionRequest {
 // To close a subscription, respond with ERROR_CODES_CLOSE_SUBSCRIPTION
 message SubscriptionPushRequest {
   bytes subscription_id = 1;
-  repeated SequencedEvent events = 2;
-  message SequencedEvent {
-    uint64 shop_seq_no = 1; // sequence number of the event in the shop log
-    bytes patch_set_header = 2; // contains the root hash of the patch set
-    bytes patch_set_signature = 3; // signature of the patch set
+  repeated SequencedPatch patches = 2;
+  message SequencedPatch {
+    uint64 shop_seq_no = 1;      // sequence number of the event in the shop log
+    uint32 patch_leaf_index = 2; // index of the patch in the patch set
+    bytes patch_data = 3;        // cbor patch data
     bytes mmr_proof = 4; // cbor data [index, tree_size, [proof1, proof2, ...]]
+  }
+  // Map of shop_seq_no to patch set header and signature.
+  // This allows deduplication since multiple patches in the same patch set
+  // will share the same header and signature.
+  // see cbor/patch.go#SignedPatchSet for more details.
+  map<uint64, PatchSetMeta> patch_set_meta = 4;
+  message PatchSetMeta {
+    bytes header = 1;
+    bytes signature = 2;
   }
 }
 
 // Used by a client to stop sending more events for an subscription
-message SubscriptionCancelRequest {
-  bytes subscription_id = 1;
-}
+message SubscriptionCancelRequest { bytes subscription_id = 1; }
