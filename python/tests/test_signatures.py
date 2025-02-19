@@ -12,13 +12,14 @@ from massmarket_hash_event import (
 )
 from massmarket_hash_event.cbor.patch import SignedPatchSet
 
+
 # check that we can recompute the signatures from the test vectors
 def test_verify_vector_file():
     files = [f for f in os.listdir("../vectors") if f.endswith("Okay.cbor")]
     assert len(files) > 0, "no test vectors found"
     for file in files:
         if file in ["InventoryOkay.cbor", "ShopOkay.cbor"]:
-            continue # TODO: canonical fix needed
+            continue  # TODO: canonical fix needed
         with open(f"../vectors/{file}", "rb") as f:
             print(file)
             vector = cbor2.load(f)
@@ -46,6 +47,7 @@ def check_vector(vector):
     # 2. verify the signature
     their_addr = Web3.to_checksum_address(extracted_signer)
     assert their_addr == signer, f"invalid signer on event"
+
 
 if __name__ == "__main__":
     test_verify_vector_file()

@@ -6,12 +6,13 @@ from typing import Union
 import os
 from decimal import Decimal
 
+
 class Uint256:
     """Represents a 256-bit unsigned integer, similar to Go's big.Int"""
-    
+
     @classmethod
     def random(cls) -> "Uint256":
-        return cls(int.from_bytes(os.urandom(32), byteorder='big'))
+        return cls(int.from_bytes(os.urandom(32), byteorder="big"))
 
     def __init__(self, value: Union[int, str, "Uint256", Decimal]):
         if isinstance(value, Uint256):
@@ -28,7 +29,7 @@ class Uint256:
             self._value = int(value)
         else:
             raise TypeError(f"Cannot create Uint256 from {type(value)}")
-        
+
         # Ensure value fits in 256 bits
         if self._value >= (1 << 256):
             raise ValueError("Value exceeds 256 bits")
@@ -58,7 +59,7 @@ class Uint256:
 
     def to_bytes(self, length: int = 32) -> bytes:
         """Convert to big-endian bytes representation"""
-        return self._value.to_bytes(length, byteorder='big')
+        return self._value.to_bytes(length, byteorder="big")
 
     def to_cbor_dict(self) -> dict:
         return int(self._value)
@@ -66,7 +67,7 @@ class Uint256:
     @classmethod
     def from_bytes(cls, data: bytes) -> "Uint256":
         """Create from big-endian bytes representation"""
-        return cls(int.from_bytes(data, byteorder='big'))
+        return cls(int.from_bytes(data, byteorder="big"))
 
     @classmethod
     def from_cbor(cls, data) -> "Uint256":

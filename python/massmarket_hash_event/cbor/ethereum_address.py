@@ -5,9 +5,10 @@
 import re
 from typing import Union
 
+
 class EthereumAddress:
     """Represents an Ethereum address"""
-    
+
     SIZE = 20  # common.AddressLength in Go
 
     def __init__(self, value: Union[str, bytes, "EthereumAddress"]):
@@ -15,8 +16,8 @@ class EthereumAddress:
             self._bytes = value._bytes
         elif isinstance(value, str):
             # Strip 0x prefix if present
-            hex_str = value.lower().replace('0x', '')
-            if not re.match(r'^[0-9a-f]{40}$', hex_str):
+            hex_str = value.lower().replace("0x", "")
+            if not re.match(r"^[0-9a-f]{40}$", hex_str):
                 raise ValueError("Invalid Ethereum address format")
             self._bytes = bytes.fromhex(hex_str)
         elif isinstance(value, bytes):
@@ -36,6 +37,9 @@ class EthereumAddress:
         if not isinstance(other, EthereumAddress):
             raise ValueError("Cannot compare EthereumAddress with non-EthereumAddress")
         return self._bytes == other._bytes
+
+    def __hash__(self) -> int:
+        return hash(self._bytes)
 
     def __bytes__(self) -> bytes:
         return self._bytes
