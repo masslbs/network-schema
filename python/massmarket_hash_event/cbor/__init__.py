@@ -33,6 +33,42 @@ def cbor_encode(obj):
         ).encode(obj)
         return fp.getvalue()
 
+
+@dataclass
+class PublicKey:
+    key: bytes
+
+    def to_cbor_dict(self) -> dict:
+        return self.key
+
+    @classmethod
+    def from_cbor_dict(cls, d: dict) -> "PublicKey":
+        return cls(d)
+
+    def __post_init__(self):
+        if len(self.key) != 33:
+            raise ValueError("PublicKey must be 33 bytes but got %d" % len(self.key))
+
+
+@dataclass
+class Account:
+    keycards: List[PublicKey]
+    guest: bool
+
+    def to_cbor_dict(self) -> dict:
+        return {
+            "KeyCards": [k.to_cbor_dict() for k in self.keycards],
+            "Guest": self.guest,
+        }
+    
+    @classmethod
+    def from_cbor_dict(cls, d: dict) -> "Account":
+        return cls(
+            keycards=[PublicKey(k) for k in d["KeyCards"]],
+            guest=d["Guest"],
+        )
+
+# manifest and friends
 @dataclass
 class ModificationAbsolute:
     amount: Uint256

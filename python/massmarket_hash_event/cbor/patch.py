@@ -156,6 +156,20 @@ class Patch:
             "Path": self.path.to_cbor_list(),
             "Value": v
         }
+    
+    @classmethod
+    def from_cbor(cls, cbor_data: bytes) -> "Patch":
+        """Create a Patch from CBOR bytes"""
+        d = cbor2.loads(cbor_data)
+        return cls.from_cbor_dict(d)
+    
+    @classmethod
+    def from_cbor_dict(cls, d: dict) -> "Patch":
+        return cls(
+            op=OpString(d["Op"]),
+            path=PatchPath.from_cbor(d["Path"]),
+            value=d["Value"]
+        )
 
 @dataclass
 class PatchSetHeader:
