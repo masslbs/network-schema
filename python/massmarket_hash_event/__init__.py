@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 __all__ = [
+    "verify_proof",
     "get_root_hash_of_patches",
     "get_signer_of_patchset",
     # protobuf
@@ -27,6 +28,7 @@ from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 from massmarket_hash_event.cbor import cbor_encode
 from massmarket_hash_event.cbor.patch import Patch
 from massmarket_hash_event.cbor.patch import SignedPatchSet
+
 def get_root_hash_of_patches(patches: List[Patch]):
     patches_bytes = []
     for i, patch in enumerate(patches):
@@ -69,4 +71,32 @@ def get_signer_of_patchset(ps: SignedPatchSet):
     pub_key = w3.eth.account.recover_message(encoded_header, signature=ps.signature)
     return pub_key
 
+
+from massmarket_hash_event.mmr.algorithms import included_root, verify_inclusion_path
+
+class RootMismatchError(Exception):
+    def __init__(self, calculated_root: bytes, expected_root: bytes):
+        self.calculated_root = calculated_root
+        self.expected_root = expected_root
+        super().__init__(f"Root mismatch: calculated {calculated_root.hex()} but expected {expected_root.hex()}")
+
+class VerificationError(Exception):
+    def __init__(self):
+        super().__init__("Failed to verify inclusion path")
+
+class PathLengthError(Exception):
+    def __init__(self, consumed: int, total: int):
+        self.consumed = consumed
+        self.total = total
+        super().__init__(f"Path length mismatch: consumed {consumed} elements but path has {total}")
+
+def verify_proof(leaf_index: int, element: bytes, path: list[bytes], wanted_root: bytes) -> None:
+    root = included_root(leaf_index, element, path)
+    if root != wanted_root:
+        raise RootMismatchError(root, wanted_root)
     
+    (ok, pathconsumed) = verify_inclusion_path(leaf_index, element, path, wanted_root)
+    if not ok:
+        raise VerificationError()
+    if pathconsumed != len(path):
+        raise PathLengthError(pathconsumed, len(path))

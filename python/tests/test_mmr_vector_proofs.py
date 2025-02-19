@@ -1,9 +1,12 @@
 import cbor2
 from sha3 import keccak_256
+import pytest
 
 # TODO: move to dedicated package instead of vendoring the code
-from massmarket_hash_event.mmr.algorithms import included_root, verify_inclusion_path, add_leaf_hash
+from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 from massmarket_hash_event.mmr.db import FlatDB
+
+from massmarket_hash_event import verify_proof, RootMismatchError
 
 def hex(x: bytes) -> str:
     return "0x" + x.hex()
@@ -43,18 +46,32 @@ def test_merkle_proofs():
             # TODO: format vectors differently
             if path is None:
                 path = []
-            # print(f"proof {proof_index}:\n\tleaf_index: {leaf_index}\n\tsize: {size}\n\tpath: {[hex(p) for p in path]}")
 
-            root = included_root(leaf_index, tree.get(leaf_index), path)
+            verify_proof(leaf_index, tree.get(leaf_index), path, wantRoot)
 
-            assert root == wantRoot
-            
-            (ok, pathconsumed) = verify_inclusion_path(leaf_index, tree.get(leaf_index), path, wantRoot)
-            assert ok
-            # print(f"proof {proof_index} ok. consumed {pathconsumed} of {len(path)}")
-            assert pathconsumed == len(path)
+def test_verify_proof_errors():
+    # Create a simple tree with one element
+    tree = FlatDB()
+    element = keccak_256(b'test').digest()
+    leaf_index = add_leaf_hash(tree, element) - 1
+    root = tree.get(leaf_index)
+    path = []
 
+    # Test with wrong root hash
+    wrong_root = keccak_256(b'wrong').digest()
+    with pytest.raises(RootMismatchError) as exc_info:
+        verify_proof(leaf_index, element, path, wrong_root)
+    assert exc_info.value.calculated_root == root
+    assert exc_info.value.expected_root == wrong_root
 
-         
+    # Test with wrong element
+    wrong_element = keccak_256(b'wrong element').digest()
+    with pytest.raises(RootMismatchError):
+        verify_proof(leaf_index, wrong_element, path, root)
+    assert exc_info.value.calculated_root == root
+    assert exc_info.value.expected_root == wrong_root
+
+    # TODO: add path length error
+
 if __name__ == "__main__":
     test_merkle_proofs()
