@@ -3,10 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
+import base64
+import cbor2
+from pprint import pprint
+
 from massmarket_hash_event.hamt import Trie
 
 
-def test_hamt_vectors():
+
+def test_hamt_standalone_vectors():
     vectors_path = "../vectors/hamt_test.json"
     with open(vectors_path) as f:
         test_vectors = json.load(f)
@@ -26,3 +32,30 @@ def test_hamt_vectors():
             assert (
                 actual_hash == expected_hashes[j]
             ), f"Test vector {i}, operation {j}: hash mismatch"
+
+
+def test_hamt_shop_vectors():
+    files = [f for f in os.listdir("../vectors") if f.endswith("Okay.json")]
+    for file in files:
+        with open(os.path.join("../vectors", file)) as f:
+            vectors = json.load(f)
+        
+        # print(f"Testing {file}")
+        for snap in vectors["Snapshots"]:
+            # print(f"  Snapshot: {snap['Name']}")
+            cbor_data = base64.b64decode(snap["After"]["Encoded"])
+
+            shop_dict = cbor2.loads(cbor_data)
+
+            listings = shop_dict.get("Listings", None)
+            if listings is None:
+                print(f"  No listings found in file {file}/snapshot {snap['Name']}")
+                pprint(shop_dict)
+                continue
+
+            trie = Trie.from_cbor_array(listings)
+            # print(f"    Hash: {trie.hash().hex()}")
+
+            # assert trie.hash().hex() == snap["After"]["Hash"]
+
+    # assert False

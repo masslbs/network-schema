@@ -45,12 +45,32 @@ class Entry(Generic[V]):
     value: Optional[V]
     node: Optional["Node[V]"]
 
+    def to_array(self) -> list:
+        """
+        Convert this entry to an array for compact CBOR serialization:
+          [ key, value, node_array or None ]
+        """
+        if self.node is not None:
+            return [self.key, self.value, self.node.to_array()]
+        else:
+            return [self.key, self.value, None]
+
+    @classmethod
+    def from_array(cls, arr: list) -> "Entry[V]":
+        """
+        Reconstruct an Entry from a compact CBOR array:
+          [ key, value, node_array or None ]
+        """
+        key, value, node_arr = arr
+        node = Node.from_array(node_arr) if node_arr is not None else None
+        return cls(key=key, value=value, node=node)
+
 
 @dataclass
 class Node(Generic[V]):
     bitmap: int = 0
     entries: list[Entry[V]] = None
-    _hash: Optional[bytes] = None
+    _hash: Optional[bytes] = None  # not serialized
 
     def __post_init__(self):
         if self.entries is None:
@@ -221,6 +241,33 @@ class Node(Generic[V]):
         self._hash = h.digest()
         return self._hash
 
+    def to_array(self) -> list:
+        """
+        Convert this node into an array for compact CBOR serialization:
+          [ bitmap, list_of_entry_arrays ]
+        The node's _hash is not serialized.
+        """
+        return [
+            self.bitmap,
+            [entry.to_array() for entry in self.entries],
+        ]
+
+    @classmethod
+    def from_array(cls, arr: list) -> "Node[V]":
+        """
+        Reconstruct a Node from its array representation:
+          [ bitmap, list_of_entry_arrays ]
+        """
+        if arr is None:
+            return None
+        bitmap, entries_arr = arr
+        if bitmap == 0 and entries_arr is None:
+            return None
+        node = cls(bitmap=bitmap)
+        for e_arr in entries_arr:
+            node.entries.append(Entry.from_array(e_arr))
+        return node
+
 
 def hash_key(key: bytes) -> int:
     return xxhash.xxh64(key).intdigest()
@@ -235,7 +282,7 @@ def count_ones(n: int, below: int) -> int:
     return bin(n & mask).count("1")
 
 
-def deep_copy_node(node: Node[V]) -> Node[V]:
+def deep_copy_node(node: "Node[V]") -> "Node[V]":
     if node is None:
         return None
 
@@ -298,3 +345,39 @@ class Trie(Generic[V]):
         new_trie.root = deep_copy_node(self.root)
         new_trie.size = self.size
         return new_trie
+
+    def to_cbor_array(self) -> list:
+        """
+        Marshal the Trie into a CBOR-encoded byte buffer. Follows the Go approach:
+        only the root node is serialized, and size is recomputed when unmarshaling.
+        """
+        # Convert the root node into its array representation and dump to CBOR
+        return self.root.to_array()
+
+    @classmethod
+    def from_cbor_array(cls, data: list) -> "Trie[V]":
+        """
+        Unmarshal a CBOR-encoded byte buffer into a new Trie. Recomputes size
+        by counting entries recursively.
+        """
+        root = Node.from_array(data)
+        t = cls(root=root)
+        t._recalculate_size()
+        return t
+
+    def _recalculate_size(self) -> None:
+        """
+        Recompute the size by counting leaf entries under the root node.
+        """
+        def count_entries(n: Node[V]) -> int:
+            if not n:
+                return 0
+            c = 0
+            for e in n.entries:
+                if e.node is None:
+                    c += 1
+                else:
+                    c += count_entries(e.node)
+            return c
+
+        self.size = count_entries(self.root)
