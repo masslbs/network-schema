@@ -49,10 +49,7 @@ def test_cbor_manifest_cbor_keys():
                 city="",
                 price_modifiers={
                     "some_modifier": PriceModifier(
-                        modification_percents="5",  # dummy value; use proper Uint256 type in real code
-                        modification_absolute=ModificationAbsolute(
-                            amount="100", plus=True  # dummy value
-                        ),
+                        modification_percents=Uint256(5),
                     )
                 },
             )
@@ -104,9 +101,9 @@ def test_cbor_manifest_roundtrip():
                 city="",
                 price_modifiers={
                     "mod": PriceModifier(
-                        modification_percents="10",
                         modification_absolute=ModificationAbsolute(
-                            amount="1000", plus=False
+                            amount=Uint256(1000),
+                            plus=False,
                         ),
                     )
                 },

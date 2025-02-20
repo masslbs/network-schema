@@ -93,7 +93,7 @@ class ModificationAbsolute:
 
     def to_cbor_dict(self) -> dict:
         return {
-            "Amount": self.amount,
+            "Amount": self.amount.to_cbor_dict(),
             "Plus": self.plus,
         }
 
@@ -107,6 +107,13 @@ class PriceModifier:
         if self.modification_percents is None and self.modification_absolute is None:
             raise ValueError(
                 "One of modification_percents or modification_absolute must be set"
+            )
+        if (
+            self.modification_percents is not None
+            and self.modification_absolute is not None
+        ):
+            raise ValueError(
+                "Only one of modification_percents or modification_absolute can be set"
             )
 
     @classmethod
