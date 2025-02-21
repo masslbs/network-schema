@@ -309,22 +309,30 @@ class Trie(Generic[V]):
     def new(cls) -> "Trie[V]":
         return cls(root=Node())
 
-    def insert(self, key: bytes, value: V) -> None:
+    def insert(self, key: bytes | int, value: V) -> None:
         if self.root is None:
             self.root = Node()
-
+        if isinstance(key, int):
+            key = key.to_bytes(8, "big")
         inserted = self.root.insert(key, value, HashState.new(key))
         if inserted:
             self.size += 1
 
-    def get(self, key: bytes) -> tuple[Optional[V], bool]:
+    def get(self, key: bytes | int) -> tuple[Optional[V], bool]:
         if self.root is None:
             return None, False
+        if isinstance(key, int):
+            key = key.to_bytes(8, "big")
         return self.root.find(key)
 
-    def delete(self, key: bytes) -> None:
+    def has(self, key: bytes | int) -> bool:
+        return self.get(key)[1]
+
+    def delete(self, key: bytes | int) -> None:
         if self.root is None:
             return
+        if isinstance(key, int):
+            key = key.to_bytes(8, "big")
         deleted = self.root.delete(key, HashState.new(key))
         if deleted:
             self.size -= 1
@@ -369,6 +377,7 @@ class Trie(Generic[V]):
         """
         Recompute the size by counting leaf entries under the root node.
         """
+
         def count_entries(n: Node[V]) -> int:
             if not n:
                 return 0

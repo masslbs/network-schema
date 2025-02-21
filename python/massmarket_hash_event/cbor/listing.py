@@ -124,7 +124,7 @@ class Listing:
     id: int
     price: Uint256
     metadata: ListingMetadata
-    view_state: ListingViewState
+    view_state: ListingViewState = ListingViewState.UNSPECIFIED
     options: Optional[Dict[str, ListingOption]] = None
     stock_statuses: Optional[List[ListingStockStatus]] = None
 
