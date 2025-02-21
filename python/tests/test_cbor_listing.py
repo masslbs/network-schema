@@ -11,7 +11,10 @@ from massmarket_hash_event.cbor.base_types import (
     ModificationAbsolute,
     PriceModifier,
 )
-from massmarket_hash_event.cbor import cbor_encode
+from massmarket_hash_event.cbor import (
+    cbor_encode,
+    Shop,
+)
 
 from massmarket_hash_event.cbor.listing import (
     Listing,
@@ -201,66 +204,112 @@ def test_listing_view_state():
     assert ListingViewState.PUBLISHED.value == 1
     assert ListingViewState.DELETED.value == 2
 
-def skip_test_listing_from_vectors_file():
+
+# this does not test the patching logic, just the roundtrip from the _after_ state
+def test_listing_from_vectors_file():
     file_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "vectors", "ListingOkay.json"
     )
     with open(file_path, "r") as f:
         vectors = json.load(f)
 
-    def verify_listing_snapshot(snapshot):
-        encoded_b64 = snapshot["After"]["Encoded"]
+    for snap in vectors["Snapshots"]:
+        print(f"Testing {snap['Name']}")
+        encoded_b64 = snap["After"]["Encoded"]
+        expected_listings = snap["After"]["Value"]["Listings"]
         cbor_data = base64.b64decode(encoded_b64)
 
         # Decode using our helper
-        shop_obj = cbor2.loads(cbor_data)
-        # TODO: hamt deserialize
-        for listing_id in shop_obj["Listings"].keys():
-            expected = shop_obj["Listings"][listing_id]
-            listing_obj = Listing.from_cbor_dict(shop_obj["Listings"][listing_id])
+        shop = Shop.from_cbor(cbor_data)
+        for listing_id, expected in expected_listings.items():
+            if isinstance(listing_id, str):
+                listing_id = int(listing_id).to_bytes(8, "big")
+            (got, has) = shop.listings.get(listing_id)
+            assert has, f"Listing {listing_id} not found"
+            listing_obj = Listing.from_cbor_dict(got)
+            verify_listing(listing_obj, expected)
 
-            assert listing_obj.id == expected["ID"]
-            assert listing_obj.price == Uint256(expected["Price"]) if "Price" in expected else None
-            
-            # Check metadata
-            if "Metadata" in expected:
-                assert listing_obj.metadata.title == expected["Metadata"]["Title"]
-                assert listing_obj.metadata.description == expected["Metadata"]["Description"]
-                assert listing_obj.metadata.images == expected["Metadata"]["Images"]
 
-            # Check view state
-            if "ViewState" in expected:
-                assert listing_obj.view_state == ListingViewState(expected["ViewState"])
+# from pprint import pprint
 
-            # Check options
-            if "Options" in expected:
-                assert len(listing_obj.options) == len(expected["Options"])
-                for option_key, option_value in expected["Options"].items():
-                    assert option_key in listing_obj.options
-                    assert listing_obj.options[option_key].title == option_value["Title"]
-                    
-                    # Check variations
-                    if "Variations" in option_value:
-                        for var_key, var_value in option_value["Variations"].items():
-                            assert var_key in listing_obj.options[option_key].variations
-                            variation = listing_obj.options[option_key].variations[var_key]
-                            assert variation.variation_info.title == var_value["VariationInfo"]["Title"]
-                            assert variation.variation_info.description == var_value["VariationInfo"]["Description"]
-                            assert variation.sku == var_value["SKU"]
 
-            # Check stock statuses
-            if "StockStatuses" in expected:
-                assert len(listing_obj.stock_statuses) == len(expected["StockStatuses"])
-                for actual, expected_status in zip(listing_obj.stock_statuses, expected["StockStatuses"]):
-                    assert actual.variation_ids == expected_status["VariationIDs"]
-                    assert actual.in_stock == expected_status["InStock"]
-                    if "ExpectedInStockBy" in expected_status and expected_status["ExpectedInStockBy"]:
-                        assert actual.expected_in_stock_by is not None
-                    else:
-                        assert actual.expected_in_stock_by is None
+def verify_listing(listing_obj: Listing, expected: dict):
+    assert listing_obj.id == expected["ID"]
 
-    # Verify each snapshot in the vector file
-    for snapshot in vectors["Snapshots"]:
-        print(f"Verifying snapshot {snapshot['Name']}")
-        verify_listing_snapshot(snapshot)
+    # TODO: JSON idiosyncrasies
+    # TODO: uint256 is {} in JSON..!!
+    # if "Price" in expected:
+    # assert listing_obj.price == Uint256(expected["Price"])
 
+    # Check metadata
+    if "Metadata" in expected:
+        assert listing_obj.metadata.title == expected["Metadata"]["Title"]
+        assert listing_obj.metadata.description == expected["Metadata"]["Description"]
+        # TODO: JSON idiosyncrasies
+        if len(expected["Metadata"]["Images"]) > 0:
+            assert listing_obj.metadata.images == expected["Metadata"]["Images"]
+        else:
+            assert listing_obj.metadata.images == None
+
+    # Check view state
+    if "ViewState" in expected:
+        assert listing_obj.view_state == ListingViewState(expected["ViewState"])
+
+    # Check options
+    if "Options" in expected:
+        # TODO: JSON idiosyncrasies
+        if len(expected["Options"]) == 0:
+            assert listing_obj.options is None
+        else:
+            assert len(listing_obj.options) == len(expected["Options"])
+            for expected_key, expected_value in expected["Options"].items():
+                assert expected_key in listing_obj.options
+                assert (
+                    listing_obj.options[expected_key].title == expected_value["Title"]
+                )
+
+                # Check variations
+                if "Variations" in expected_value:
+                    for expected_var_key, expected_var_value in expected_value[
+                        "Variations"
+                    ].items():
+                        assert (
+                            expected_var_key
+                            in listing_obj.options[expected_key].variations
+                        )
+                        variation = listing_obj.options[expected_key].variations[
+                            expected_var_key
+                        ]
+                        assert (
+                            variation.variation_info.title
+                            == expected_var_value["VariationInfo"]["Title"]
+                        )
+                        assert (
+                            variation.variation_info.description
+                            == expected_var_value["VariationInfo"]["Description"]
+                        )
+                        # TODO: JSON idiosyncrasies
+                        if expected_var_value["SKU"] != "":
+                            assert variation.sku == expected_var_value["SKU"]
+                        else:
+                            assert variation.sku == None
+
+    # Check stock statuses
+    if "StockStatuses" in expected:
+        # TODO: JSON idiosyncrasies
+        if len(expected["StockStatuses"]) == 0:
+            assert listing_obj.stock_statuses is None
+        else:
+            assert len(listing_obj.stock_statuses) == len(expected["StockStatuses"])
+            for actual, expected_status in zip(
+                listing_obj.stock_statuses, expected["StockStatuses"]
+            ):
+                assert actual.variation_ids == expected_status["VariationIDs"]
+                assert actual.in_stock == expected_status["InStock"]
+                if (
+                    "ExpectedInStockBy" in expected_status
+                    and expected_status["ExpectedInStockBy"]
+                ):
+                    assert actual.expected_in_stock_by is not None
+                else:
+                    assert actual.expected_in_stock_by is None
