@@ -3,9 +3,11 @@ from dataclasses import dataclass
 
 import cbor2
 
-from massmarket_hash_event.cbor.uint256 import Uint256
-from massmarket_hash_event.cbor.chain_address import ChainAddress
-from massmarket_hash_event.cbor.base_types import ShippingRegion
+from massmarket_hash_event.cbor.base_types import (
+    Uint256,
+    ChainAddress,
+    ShippingRegion,
+)
 
 
 @dataclass

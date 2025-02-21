@@ -4,9 +4,11 @@
 
 import pytest
 
-from massmarket_hash_event.cbor.ethereum_address import EthereumAddress
-from massmarket_hash_event.cbor.chain_address import ChainAddress
-from massmarket_hash_event.cbor.uint256 import Uint256
+from massmarket_hash_event.cbor.base_types import (
+    Uint256,
+    EthereumAddress,
+    ChainAddress,
+)
 
 
 def test_ethereum_address_as_dict_key():

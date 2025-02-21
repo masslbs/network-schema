@@ -9,11 +9,11 @@ import pytest
 import cbor2
 
 from massmarket_hash_event.cbor.base_types import (
+    ChainAddress,
     Uint256,
     PriceModifier,
     ModificationAbsolute,
 )
-from massmarket_hash_event.cbor.chain_address import ChainAddress
 from massmarket_hash_event.cbor.manifest import (
     Manifest,
     Payee,

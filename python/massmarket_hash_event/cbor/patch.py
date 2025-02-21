@@ -9,8 +9,10 @@ from typing import List, Optional, Any
 
 import cbor2
 
-from massmarket_hash_event.cbor.ethereum_address import EthereumAddress
-from massmarket_hash_event.cbor.uint256 import Uint256
+from massmarket_hash_event.cbor.base_types import (
+    Uint256,
+    EthereumAddress,
+)
 
 
 class ObjectType(str, Enum):

@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
+import cbor2
 
 from massmarket_hash_event.cbor.patch import (
     ObjectType,
@@ -13,10 +15,10 @@ from massmarket_hash_event.cbor.patch import (
     PatchSetHeader,
     SignedPatchSet,
 )
-from massmarket_hash_event.cbor.ethereum_address import EthereumAddress
-from massmarket_hash_event.cbor.uint256 import Uint256
-
-import cbor2
+from massmarket_hash_event.cbor.base_types import (
+    Uint256,
+    EthereumAddress,
+)
 
 
 def test_patch_path_manifest():
