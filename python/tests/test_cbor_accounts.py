@@ -4,7 +4,7 @@
 
 import cbor2
 
-from massmarket_hash_event.cbor import Account, PublicKey
+from massmarket_hash_event.cbor.base_types import Account, PublicKey
 
 
 def test_cbor_account():

@@ -3,8 +3,7 @@ from typing import Optional, List, Dict
 from datetime import datetime
 from enum import IntEnum
 
-from massmarket_hash_event.cbor.uint256 import Uint256
-from massmarket_hash_event.cbor import PriceModifier
+from massmarket_hash_event.cbor.base_types import Uint256, PriceModifier
 
 
 @dataclass

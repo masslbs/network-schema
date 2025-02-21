@@ -8,17 +8,17 @@ import os
 import pytest
 import cbor2
 
-from massmarket_hash_event.cbor import (
-    Manifest,
-    Payee,
-    ShippingRegion,
+from massmarket_hash_event.cbor.base_types import (
+    Uint256,
     PriceModifier,
     ModificationAbsolute,
 )
-from massmarket_hash_event.cbor import Uint256
-from massmarket_hash_event.cbor import ChainAddress
-
-# (Assume Uint256 and ChainAddress already implement comparison and any from_cbor_dict/to_cbor_dict if needed)
+from massmarket_hash_event.cbor.chain_address import ChainAddress
+from massmarket_hash_event.cbor.manifest import (
+    Manifest,
+    Payee,
+    ShippingRegion,
+)
 
 
 def test_cbor_manifest_cbor_keys():
