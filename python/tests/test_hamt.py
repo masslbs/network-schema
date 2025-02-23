@@ -301,3 +301,29 @@ def test_hash_order_independence():
             first_hash = current_hash
         else:
             assert current_hash == first_hash
+
+
+def test_key_type_support():
+    trie = Trie.new()
+
+    # Test integer keys
+    trie.insert(42, "int-value")
+    val, ok = trie.get(42)
+    assert ok
+    assert val == "int-value"
+
+    # Test string keys
+    trie.insert("hello", "str-value")
+    val, ok = trie.get("hello")
+    assert ok
+    assert val == "str-value"
+
+    # Verify size
+    assert trie.size == 2
+
+    # Test deletion
+    trie.delete(42)
+    val, ok = trie.get(42)
+    assert not ok
+    assert val is None
+    assert trie.size == 1

@@ -300,6 +300,20 @@ def deep_copy_node(node: "Node[V]") -> "Node[V]":
     return new_node
 
 
+KeyType = bytes | int | str
+
+
+def encode_key(k: KeyType) -> bytes:
+    if isinstance(k, int):
+        return k.to_bytes(8, "big")
+    elif isinstance(k, str):
+        return k.encode("utf-8")
+    elif isinstance(k, bytes):
+        return k
+    else:
+        raise ValueError(f"Invalid key type: {type(k)}")
+
+
 @dataclass
 class Trie(Generic[V]):
     root: Node[V]
@@ -309,30 +323,28 @@ class Trie(Generic[V]):
     def new(cls) -> "Trie[V]":
         return cls(root=Node())
 
-    def insert(self, key: bytes | int, value: V) -> None:
+    def insert(self, key: KeyType, value: V) -> None:
         if self.root is None:
             self.root = Node()
-        if isinstance(key, int):
-            key = key.to_bytes(8, "big")
+        key = encode_key(key)
         inserted = self.root.insert(key, value, HashState.new(key))
         if inserted:
             self.size += 1
 
-    def get(self, key: bytes | int) -> tuple[Optional[V], bool]:
+    def get(self, key: KeyType) -> tuple[Optional[V], bool]:
         if self.root is None:
             return None, False
-        if isinstance(key, int):
-            key = key.to_bytes(8, "big")
+        key = encode_key(key)
         return self.root.find(key)
 
-    def has(self, key: bytes | int) -> bool:
+    def has(self, key: KeyType) -> bool:
+        key = encode_key(key)
         return self.get(key)[1]
 
-    def delete(self, key: bytes | int) -> None:
+    def delete(self, key: KeyType) -> None:
         if self.root is None:
             return
-        if isinstance(key, int):
-            key = key.to_bytes(8, "big")
+        key = encode_key(key)
         deleted = self.root.delete(key, HashState.new(key))
         if deleted:
             self.size -= 1
