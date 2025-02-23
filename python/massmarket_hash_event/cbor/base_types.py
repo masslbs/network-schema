@@ -312,3 +312,22 @@ class ShippingRegion:
                 k: v.to_cbor_dict() for k, v in self.price_modifiers.items()
             }
         return d
+
+
+@dataclass
+class Tag:
+    name: str
+    listings: List[int]
+
+    def to_cbor_dict(self) -> dict:
+        return {
+            "Name": self.name,
+            "Listings": self.listings,
+        }
+
+    @classmethod
+    def from_cbor_dict(cls, d: dict) -> "Tag":
+        return cls(
+            name=d["Name"],
+            listings=d["Listings"],
+        )
