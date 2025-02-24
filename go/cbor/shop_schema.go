@@ -195,6 +195,11 @@ func (t *Tags) Get(name string) (Tag, bool) {
 	return tag, ok
 }
 
+func (t *Tags) Has(name string) bool {
+	_, ok := t.Get(name)
+	return ok
+}
+
 func (t *Tags) Insert(name string, tag Tag) error {
 	buf := []byte(name)
 	return t.Trie.Insert(buf, tag)
