@@ -140,11 +140,11 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 	}
 	objType, ok := path[0].(string)
 	if !ok {
-		return fmt.Errorf("invalid object type: %v", path[0])
+		return fmt.Errorf("patch.path: invalid object type: %v", path[0])
 	}
 	p.Type = ObjectType(objType)
 	if !p.Type.IsValid() {
-		return fmt.Errorf("invalid object type: %s", objType)
+		return fmt.Errorf("patch.path: invalid object type: %s", objType)
 	}
 	path = path[1:] // slice of type
 	// path[0] can be a uint64, an ethereum address or empty (for manifest)
@@ -153,39 +153,39 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		// noop
 	case ObjectTypeAccount:
 		if len(path) < 1 {
-			return fmt.Errorf("invalid ethereum address: %w", err)
+			return fmt.Errorf("patch.path: invalid ethereum address: %w", err)
 		}
 		data, ok := path[0].([]byte)
 		if !ok {
-			return fmt.Errorf("invalid ethereum address: %v", path[0])
+			return fmt.Errorf("patch.path: invalid ethereum address: %v", path[0])
 		}
 		if len(data) != EthereumAddressSize {
-			return fmt.Errorf("invalid ethereum address size: %d != %d", len(data), EthereumAddressSize)
+			return fmt.Errorf("patch.path: invalid ethereum address size: %d != %d", len(data), EthereumAddressSize)
 		}
 		var addr EthereumAddress
 		copy(addr[:], data)
 		p.AccountAddr = &addr
 	case ObjectTypeOrder, ObjectTypeListing:
 		if len(path) < 1 {
-			return fmt.Errorf("invalid object id: %w", err)
+			return fmt.Errorf("patch.path: invalid object id: %w", err)
 		}
 		id, ok := path[0].(uint64)
 		if !ok {
-			return fmt.Errorf("invalid object id: %v", path[0])
+			return fmt.Errorf("patch.path: invalid object id: %v", path[0])
 		}
 		objId := ObjectId(id)
 		p.ObjectID = &objId
 	case ObjectTypeTag:
 		if len(path) < 1 {
-			return fmt.Errorf("invalid tag name: %w", err)
+			return fmt.Errorf("patch.path: invalid tag name: %w", err)
 		}
 		tagName, ok := path[0].(string)
 		if !ok {
-			return fmt.Errorf("invalid tag name: %v", path[0])
+			return fmt.Errorf("patch.path: invalid tag name: %v", path[0])
 		}
 		p.TagName = &tagName
 	default:
-		return fmt.Errorf("invalid id type: %s", path[0])
+		return fmt.Errorf("patch.path: invalid id type: %s", path[0])
 	}
 
 	if p.Type != ObjectTypeManifest {
@@ -1164,14 +1164,21 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 		if err := Unmarshal(patch.Value, &opt); err != nil {
 			return fmt.Errorf("failed to unmarshal option: %w", err)
 		}
+		// Check if any variation name in the new option is already used in existing options
+		for newVarName := range opt.Variations {
+			for existingOptName, existingOpt := range listing.Options {
+				if _, ok := existingOpt.Variations[newVarName]; ok {
+					return fmt.Errorf("variation name '%q' already exists under option '%q'", newVarName, existingOptName)
+				}
+			}
+		}
+		if listing.Options == nil {
+			listing.Options = make(map[string]ListingOption)
+		}
 		listing.Options[optionName] = opt
 		return nil
-	}
-	if len(patch.Path.Fields) == 3 && patch.Path.Fields[2] == "variations" {
-		return fmt.Errorf("missing variation ID in path")
-	}
-	if len(patch.Path.Fields) == 4 && patch.Path.Fields[2] == "variations" {
-		varID := patch.Path.Fields[3]
+	} else if len(patch.Path.Fields) == 4 && patch.Path.Fields[2] == "variations" {
+		varName := patch.Path.Fields[3]
 		opt, exists := listing.Options[optionName]
 		if !exists {
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
@@ -1179,18 +1186,21 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 		if opt.Variations == nil {
 			opt.Variations = make(map[string]ListingVariation)
 		}
-		if _, ok := opt.Variations[varID]; ok {
-			return fmt.Errorf("variation ID '%s' already exists under option '%s'", varID, optionName)
+		// Check if variation ID exists under any option
+		for otherOptName, existingOpt := range listing.Options {
+			if _, ok := existingOpt.Variations[varName]; ok {
+				return fmt.Errorf("variation name '%q' already exists under option '%q'", varName, otherOptName)
+			}
 		}
 		var v ListingVariation
 		if err := Unmarshal(patch.Value, &v); err != nil {
 			return fmt.Errorf("failed to unmarshal variation: %w", err)
 		}
-		opt.Variations[varID] = v
+		opt.Variations[varName] = v
 		listing.Options[optionName] = opt
 		return nil
 	}
-	return fmt.Errorf("invalid options path")
+	return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 }
 
 func (p *Patcher) removeListingOption(listing *Listing, patch Patch) error {
