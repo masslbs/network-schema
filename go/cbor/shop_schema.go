@@ -105,6 +105,11 @@ type ChainAddress struct {
 	Address EthereumAddress
 }
 
+func (ca *ChainAddress) String() string {
+	addr := common.NewMixedcaseAddress(common.Address(ca.Address))
+	return fmt.Sprintf("%s (%d)", addr.String(), ca.ChainID)
+}
+
 func addrFromHex(chain uint64, hexAddr string) ChainAddress {
 	addr := ChainAddress{ChainID: chain}
 	hexAddr = strings.TrimPrefix(hexAddr, "0x")
@@ -129,6 +134,10 @@ type Payee struct {
 	// commit: 377aba24796e029945696350db581ec1f65da657
 	// file: src/IPayments.sol#L90-L95.
 	CallAsContract bool
+}
+
+func (p *Payee) String() string {
+	return fmt.Sprintf("%s (Contract=%v)", p.Address.String(), p.CallAsContract)
 }
 
 /*
@@ -167,6 +176,12 @@ func (l *Listings) Get(id ObjectId) (Listing, bool) {
 	buf := idToBytes(id)
 	lis, ok := l.Trie.Get(buf)
 	return lis, ok
+}
+
+func (l *Listings) Has(id ObjectId) bool {
+	buf := idToBytes(id)
+	_, ok := l.Trie.Get(buf)
+	return ok
 }
 
 func (l *Listings) Insert(id ObjectId, lis Listing) error {

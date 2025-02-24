@@ -13,6 +13,7 @@ package schema
 
 import (
 	"fmt"
+	"math/big"
 	"slices"
 	"strconv"
 	"time"
@@ -282,476 +283,1424 @@ func (obj ObjectType) IsValid() bool {
 	return obj == ObjectTypeSchemaVersion || obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
 }
 
+type ObjectNotFoundError struct {
+	ObjectType ObjectType
+	Path       PatchPath
+}
+
+func (e ObjectNotFoundError) Error() string {
+	var id string
+	if e.Path.ObjectID != nil {
+		id = fmt.Sprintf("type=%s id=%d", e.ObjectType, *e.Path.ObjectID)
+	} else if e.Path.TagName != nil {
+		id = fmt.Sprintf("tag=%s", *e.Path.TagName)
+	} else if e.Path.AccountAddr != nil {
+		id = fmt.Sprintf("account=%s", *e.Path.AccountAddr)
+	} else {
+		id = fmt.Sprintf("type=%s", e.ObjectType)
+	}
+	if len(e.Path.Fields) > 0 {
+		return fmt.Sprintf("object %s with fields=%v not found", id, e.Path.Fields)
+	}
+	return fmt.Sprintf("object %s not found", id)
+}
+
+// Centralize patch operations in the Patcher type
 type Patcher struct {
 	validator *validator.Validate
+	shop      *Shop // Add reference to shop for lookups
 }
 
-func NewPatcher(v *validator.Validate) *Patcher {
-	return &Patcher{validator: v}
+func NewPatcher(v *validator.Validate, shop *Shop) *Patcher {
+	return &Patcher{validator: v, shop: shop}
 }
 
-func (p *Patcher) Shop(in *Shop, patch Patch) error {
-	var err error
+// Main entry point for applying patches
+func (p *Patcher) ApplyPatch(patch Patch) error {
 	switch patch.Path.Type {
-	case ObjectTypeSchemaVersion:
-		if in.SchemaVersion != 0 && patch.Op != ReplaceOp {
-			return fmt.Errorf("schema version can only be replaced once it is set")
-		}
-		if in.SchemaVersion == 0 && patch.Op != AddOp {
-			return fmt.Errorf("schema version can only be initialized once")
-		}
-		var newVal uint64
-		err = cbor.Unmarshal(patch.Value, &newVal)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal schema version: %w", err)
-		}
-		if newVal <= in.SchemaVersion {
-			return fmt.Errorf("schema version can only be incremented")
-		}
-		in.SchemaVersion = newVal
-		return nil
 	case ObjectTypeManifest:
-		err = p.Manifest(&in.Manifest, patch)
+		return p.patchManifest(patch)
 	case ObjectTypeAccount:
-		err = p.Accounts(in.Accounts, patch)
+		return p.patchAccount(patch)
 	case ObjectTypeListing:
-		err = p.Listings(in.Listings, patch)
-	case ObjectTypeOrder:
-		err = p.Orders(in.Orders, patch)
+		return p.patchListing(patch)
 	case ObjectTypeTag:
-		err = p.Tags(in.Tags, patch)
+		return p.patchTag(patch)
+	case ObjectTypeOrder:
+		return p.patchOrder(patch)
 	case ObjectTypeInventory:
-		// validate patch edits an existing listing
-		if patch.Path.ObjectID == nil {
-			return fmt.Errorf("inventory patch needs an id")
-		}
-		objId := *patch.Path.ObjectID
-		lis, ok := in.Listings.Get(objId)
-		if !ok {
-			return fmt.Errorf("listing %d not found", objId)
-		}
-		// if it is a variation, check that they exist
-		if n := len(patch.Path.Fields); n > 0 {
-			var found = uint(n)
-			for _, field := range patch.Path.Fields {
-				for _, opt := range lis.Options {
-					_, has := opt.Variations[field]
-					if has {
-						found--
-						break // found
-					}
+		return p.patchInventory(&p.shop.Inventory, patch)
+	default:
+		return fmt.Errorf("unsupported shop object type: %s", patch.Path.Type)
+	}
+}
+
+// Example of centralized tag patching with referential checks
+func (p *Patcher) patchTag(patch Patch) error {
+	if patch.Path.TagName == nil {
+		return fmt.Errorf("tag patch needs a tag name")
+	}
+	tagName := *patch.Path.TagName
+	tag, exists := p.shop.Tags.Get(tagName)
+
+	switch patch.Op {
+	case AddOp:
+		if len(patch.Path.Fields) == 0 {
+			if exists {
+				return fmt.Errorf("tag %s already exists", tagName)
+			}
+			var newTag Tag
+			if err := Unmarshal(patch.Value, &newTag); err != nil {
+				return fmt.Errorf("failed to unmarshal tag: %w", err)
+			}
+			if err := p.validator.Struct(newTag); err != nil {
+				return err
+			}
+			// Verify all referenced listings exist
+			for _, listingId := range newTag.ListingIds {
+				if _, exists := p.shop.Listings.Get(listingId); !exists {
+					return fmt.Errorf("listing %d referenced by tag does not exist", listingId)
 				}
 			}
-			if found > 0 {
-				return fmt.Errorf("some variation of object %d not found", objId)
+			newTag.Name = tagName
+			return p.shop.Tags.Insert(tagName, newTag)
+		}
+
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
+		}
+
+		// Handle adding listing IDs with referential checks
+		if patch.Path.Fields[0] == "listingIds" {
+			if err := p.addListingToTag(&tag, patch); err != nil {
+				return err
 			}
+			return p.shop.Tags.Insert(tagName, tag)
 		}
-		err = p.Inventory(&in.Inventory, patch)
-	default:
-		return fmt.Errorf("unsupported path: %s", patch.Path.Type)
-	}
-	if err != nil {
-		return err
-	}
-	return p.validator.Struct(in)
-}
 
-func (p *Patcher) Manifest(in *Manifest, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeManifest {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
-	}
-	switch patch.Op {
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
-	if err != nil {
-		return err
-	}
-	return p.validator.Struct(in)
-}
+		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
 
-func (p *Patcher) Accounts(in Accounts, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeAccount {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
-	}
-	if patch.Path.AccountAddr == nil {
-		return fmt.Errorf("account patch needs an ID")
-	}
-	accID := *patch.Path.AccountAddr
-	acc, ok := in.Trie.Get(accID[:])
-	switch patch.Op {
-	case AddOp:
-		if ok {
-			return fmt.Errorf("account %s already exists", accID)
-		}
-		err = cbor.Unmarshal(patch.Value, &acc)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal account: %w", err)
-		}
-		err = in.Trie.Insert(accID[:], acc)
-		if err != nil {
-			return fmt.Errorf("failed to insert account %s: %w", accID, err)
-		}
 	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("account %s not found", accID)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
 		}
+
 		if len(patch.Path.Fields) == 0 {
-			err = in.Trie.Delete(accID[:])
+			return p.shop.Tags.Delete(tagName)
+		}
+
+		if len(patch.Path.Fields) == 2 && patch.Path.Fields[0] == "listingIds" {
+			idx, err := strconv.Atoi(patch.Path.Fields[1])
 			if err != nil {
-				return fmt.Errorf("failed to delete account %s: %w", accID, err)
+				return fmt.Errorf("invalid listing index: %w", err)
 			}
-		} else {
-			if patch.Path.Fields[0] != "keyCards" {
-				return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
+			if idx < 0 || idx >= len(tag.ListingIds) {
+				return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
+			}
+			tag.ListingIds = slices.Delete(tag.ListingIds, idx, idx+1)
+			return p.shop.Tags.Insert(tagName, tag)
+		}
+
+		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
+
+	case ReplaceOp:
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
+		}
+
+		if len(patch.Path.Fields) == 0 {
+			var newTag Tag
+			if err := Unmarshal(patch.Value, &newTag); err != nil {
+				return fmt.Errorf("failed to unmarshal tag: %w", err)
+			}
+			if err := p.validator.Struct(newTag); err != nil {
+				return err
+			}
+			// Verify all referenced listings exist
+			for _, listingId := range newTag.ListingIds {
+				if _, exists := p.shop.Listings.Get(listingId); !exists {
+					return fmt.Errorf("listing %d referenced by tag does not exist", listingId)
+				}
+			}
+			newTag.Name = tagName
+			return p.shop.Tags.Insert(tagName, newTag)
+		}
+
+		switch patch.Path.Fields[0] {
+		case "name":
+			var newName string
+			if err := Unmarshal(patch.Value, &newName); err != nil {
+				return fmt.Errorf("failed to unmarshal tag name: %w", err)
+			}
+			tag.Name = newName
+			return p.shop.Tags.Insert(tagName, tag)
+
+		case "listingIds":
+			if len(patch.Path.Fields) != 2 {
+				return fmt.Errorf("invalid listingIds path")
 			}
 			idx, err := strconv.Atoi(patch.Path.Fields[1])
 			if err != nil {
-				return fmt.Errorf("failed to convert index to int: %w", err)
+				return fmt.Errorf("invalid listing index: %w", err)
 			}
-			if idx < 0 || idx >= len(acc.KeyCards) {
-				return fmt.Errorf("index out of bounds: %d", idx)
+			if idx < 0 || idx >= len(tag.ListingIds) {
+				return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
 			}
-			acc.KeyCards = slices.Delete(acc.KeyCards, idx, idx+1)
-			err = in.Trie.Insert(accID[:], acc)
-			if err != nil {
-				return fmt.Errorf("failed to insert account %s: %w", accID, err)
+			var listingId ObjectId
+			if err := Unmarshal(patch.Value, &listingId); err != nil {
+				return fmt.Errorf("failed to unmarshal listing ID: %w", err)
 			}
+			if _, exists := p.shop.Listings.Get(listingId); !exists {
+				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: PatchPath{ObjectID: &listingId}}
+			}
+			tag.ListingIds[idx] = listingId
+			return p.shop.Tags.Insert(tagName, tag)
 		}
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+
+		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
 	}
+
+	return fmt.Errorf("unsupported operation: %s", patch.Op)
+}
+
+// Helper for adding listings to tags with referential checks
+func (p *Patcher) addListingToTag(tag *Tag, patch Patch) error {
+	if len(patch.Path.Fields) != 2 {
+		return fmt.Errorf("invalid listingIds path")
+	}
+
+	var listingId ObjectId
+	if err := Unmarshal(patch.Value, &listingId); err != nil {
+		return fmt.Errorf("failed to unmarshal listing ID: %w", err)
+	}
+
+	// Check if listing exists before adding reference
+	if _, exists := p.shop.Listings.Get(listingId); !exists {
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: PatchPath{ObjectID: &listingId}}
+	}
+
+	// Handle append vs insert at index
+	if patch.Path.Fields[1] == "-" {
+		// Append to end
+		tag.ListingIds = append(tag.ListingIds, listingId)
+		return nil
+	}
+
+	// Try to parse numerical index
+	idx, err := strconv.Atoi(patch.Path.Fields[1])
+	if err != nil {
+		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[1])
+	}
+
+	// Validate index bounds
+	if idx < 0 || idx > len(tag.ListingIds) {
+		return fmt.Errorf("index out of bounds: %d", idx)
+	}
+
+	// Insert at index by growing slice and shifting elements
+	tag.ListingIds = append(tag.ListingIds, 0)
+	copy(tag.ListingIds[idx+1:], tag.ListingIds[idx:])
+	tag.ListingIds[idx] = listingId
 	return nil
 }
 
-func (p *Patcher) Inventory(in *Inventory, patch Patch) error {
-	if patch.Path.ObjectID == nil {
-		return fmt.Errorf("inventory patch needs an ID")
+func (p *Patcher) patchManifest(patch Patch) error {
+	if patch.Path.Type != ObjectTypeManifest {
+		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
 	}
-	var (
-		err    error
-		newVal uint64
-	)
-	if patch.Op != RemoveOp {
-		err = cbor.Unmarshal(patch.Value, &newVal)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal inventory value: %w", err)
+
+	switch patch.Op {
+	case ReplaceOp:
+		return p.replaceManifestField(patch)
+	case AddOp:
+		return p.addManifestField(patch)
+	case RemoveOp:
+		return p.removeManifestField(patch)
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+}
+
+func (p *Patcher) replaceManifestField(patch Patch) error {
+	if len(patch.Path.Fields) == 0 {
+		// Replace entire manifest
+		var newManifest Manifest
+		if err := Unmarshal(patch.Value, &newManifest); err != nil {
+			return fmt.Errorf("failed to unmarshal manifest: %w", err)
 		}
+		if err := p.validator.Struct(newManifest); err != nil {
+			return err
+		}
+		p.shop.Manifest = newManifest
+		return nil
 	}
-	objId := *patch.Path.ObjectID
-	current, ok := in.Get(objId, patch.Path.Fields)
+
+	switch patch.Path.Fields[0] {
+	case "shopId":
+		var value Uint256
+		if err := Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal shopId: %w", err)
+		}
+		p.shop.Manifest.ShopID = value
+
+	case "pricingCurrency":
+		var c ChainAddress
+		if err := Unmarshal(patch.Value, &c); err != nil {
+			return fmt.Errorf("failed to unmarshal pricingCurrency: %w", err)
+		}
+		p.shop.Manifest.PricingCurrency = c
+
+	case "payees":
+		// Replace entire payees map or a single payee
+		if len(patch.Path.Fields) == 1 {
+			var payees Payees
+			if err := Unmarshal(patch.Value, &payees); err != nil {
+				return fmt.Errorf("failed to unmarshal payees: %w", err)
+			}
+			p.shop.Manifest.Payees = payees
+		} else if len(patch.Path.Fields) == 2 {
+			payeeName := patch.Path.Fields[1]
+			var payee Payee
+			if err := Unmarshal(patch.Value, &payee); err != nil {
+				return fmt.Errorf("failed to unmarshal payee: %w", err)
+			}
+			if _, exists := p.shop.Manifest.Payees[payeeName]; !exists {
+				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+			}
+			p.shop.Manifest.Payees[payeeName] = payee
+		} else {
+			return fmt.Errorf("invalid payees path")
+		}
+
+	case "shippingRegions":
+		// Replace entire shippingRegions or just one region
+		if len(patch.Path.Fields) == 1 {
+			var regions ShippingRegions
+			if err := Unmarshal(patch.Value, &regions); err != nil {
+				return fmt.Errorf("failed to unmarshal shippingRegions: %w", err)
+			}
+			p.shop.Manifest.ShippingRegions = regions
+		} else if len(patch.Path.Fields) == 2 {
+			regionName := patch.Path.Fields[1]
+			var region ShippingRegion
+			if err := Unmarshal(patch.Value, &region); err != nil {
+				return fmt.Errorf("failed to unmarshal shippingRegion: %w", err)
+			}
+			if _, exists := p.shop.Manifest.ShippingRegions[regionName]; !exists {
+				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+			}
+			p.shop.Manifest.ShippingRegions[regionName] = region
+		} else {
+			return fmt.Errorf("invalid shippingRegions path")
+		}
+
+	case "acceptedCurrencies":
+		// Replace entire acceptedCurrencies or a single index
+		if len(patch.Path.Fields) == 1 {
+			var currencies ChainAddresses
+			if err := Unmarshal(patch.Value, &currencies); err != nil {
+				return fmt.Errorf("failed to unmarshal acceptedCurrencies: %w", err)
+			}
+			p.shop.Manifest.AcceptedCurrencies = currencies
+		} else if len(patch.Path.Fields) == 2 {
+			i, err := strconv.Atoi(patch.Path.Fields[1])
+			if err != nil {
+				return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
+			}
+			if i < 0 || i >= len(p.shop.Manifest.AcceptedCurrencies) {
+				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+			}
+			var currency ChainAddress
+			if err := Unmarshal(patch.Value, &currency); err != nil {
+				return fmt.Errorf("failed to unmarshal accepted currency: %w", err)
+			}
+			p.shop.Manifest.AcceptedCurrencies[i] = currency
+		} else {
+			return fmt.Errorf("invalid acceptedCurrencies path")
+		}
+
+	default:
+		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
+	}
+
+	return p.validator.Struct(p.shop.Manifest)
+}
+
+func (p *Patcher) addManifestField(patch Patch) error {
+	if len(patch.Path.Fields) == 0 {
+		return fmt.Errorf("cannot add to root manifest")
+	}
+
+	switch patch.Path.Fields[0] {
+	case "payees":
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid payees path")
+		}
+		payeeName := patch.Path.Fields[1]
+		if _, exists := p.shop.Manifest.Payees[payeeName]; exists {
+			return fmt.Errorf("payee %s already exists", payeeName)
+		}
+		var payee Payee
+		if err := Unmarshal(patch.Value, &payee); err != nil {
+			return fmt.Errorf("failed to unmarshal payee: %w", err)
+		}
+		p.shop.Manifest.Payees[payeeName] = payee
+	case "shippingRegions":
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid shippingRegions path")
+		}
+		regionName := patch.Path.Fields[1]
+		if _, exists := p.shop.Manifest.ShippingRegions[regionName]; exists {
+			return fmt.Errorf("shipping region %s already exists", regionName)
+		}
+		var region ShippingRegion
+		if err := Unmarshal(patch.Value, &region); err != nil {
+			return fmt.Errorf("failed to unmarshal shipping region: %w", err)
+		}
+		p.shop.Manifest.ShippingRegions[regionName] = region
+	case "acceptedCurrencies":
+		// Handle array insert/append for acceptedCurrencies
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid acceptedCurrencies path")
+		}
+		index := patch.Path.Fields[1]
+
+		var newCurrency ChainAddress
+		if err := Unmarshal(patch.Value, &newCurrency); err != nil {
+			return fmt.Errorf("failed to unmarshal new currency: %w", err)
+		}
+		// If index == "-", append to the end
+		if index == "-" {
+			p.shop.Manifest.AcceptedCurrencies = append(p.shop.Manifest.AcceptedCurrencies, newCurrency)
+		} else {
+			// Otherwise, parse insertion index
+			i, err := strconv.Atoi(index)
+			if err != nil {
+				return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
+			}
+			if i < 0 || i > len(p.shop.Manifest.AcceptedCurrencies) {
+				return fmt.Errorf("index out of bounds: %d", i)
+			}
+			// Insert at position i
+			ac := p.shop.Manifest.AcceptedCurrencies
+			ac = append(ac[:i], append([]ChainAddress{newCurrency}, ac[i:]...)...)
+			p.shop.Manifest.AcceptedCurrencies = ac
+		}
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+	}
+
+	return p.validator.Struct(p.shop.Manifest)
+}
+
+func (p *Patcher) removeManifestField(patch Patch) error {
+	if len(patch.Path.Fields) == 0 {
+		return fmt.Errorf("cannot remove root manifest")
+	}
+
+	switch patch.Path.Fields[0] {
+	case "payees":
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid payees path")
+		}
+		payeeName := patch.Path.Fields[1]
+		if p.shop.Manifest.Payees == nil {
+			return fmt.Errorf("payees map not initialized")
+		}
+		if _, exists := p.shop.Manifest.Payees[payeeName]; !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+		}
+		delete(p.shop.Manifest.Payees, payeeName)
+
+	case "shippingRegions":
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid shippingRegions path")
+		}
+		regionName := patch.Path.Fields[1]
+		if p.shop.Manifest.ShippingRegions == nil {
+			return fmt.Errorf("shippingRegions map not initialized")
+		}
+		if _, exists := p.shop.Manifest.ShippingRegions[regionName]; !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+		}
+		delete(p.shop.Manifest.ShippingRegions, regionName)
+
+	case "acceptedCurrencies":
+		// Handle array removal from acceptedCurrencies
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid acceptedCurrencies path")
+		}
+		i, err := strconv.Atoi(patch.Path.Fields[1])
+		if err != nil {
+			return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
+		}
+		if i < 0 || i >= len(p.shop.Manifest.AcceptedCurrencies) {
+			return fmt.Errorf("index out of bounds: %d", i)
+		}
+		ac := p.shop.Manifest.AcceptedCurrencies
+		p.shop.Manifest.AcceptedCurrencies = append(ac[:i], ac[i+1:]...)
+
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+	}
+
+	return p.validator.Struct(p.shop.Manifest)
+}
+
+func (p *Patcher) patchAccount(patch Patch) error {
+	if patch.Path.AccountAddr == nil {
+		return fmt.Errorf("account patch needs an address")
+	}
+
+	acc, exists := p.shop.Accounts.Get(patch.Path.AccountAddr[:])
+
 	switch patch.Op {
 	case AddOp:
-		if ok {
-			return fmt.Errorf("inventory %d already exists", objId)
+		if len(patch.Path.Fields) == 0 {
+			if exists {
+				return fmt.Errorf("account already exists")
+			}
+			var newAcc Account
+			if err := Unmarshal(patch.Value, &newAcc); err != nil {
+				return fmt.Errorf("failed to unmarshal account: %w", err)
+			}
+			if err := p.validator.Struct(newAcc); err != nil {
+				return err
+			}
+			return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], newAcc)
 		}
-		err = in.Insert(objId, patch.Path.Fields, newVal)
+		return fmt.Errorf("add operation not supported for account fields")
+
 	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("inventory %d not found", objId)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeAccount, Path: patch.Path}
 		}
-		err = in.Delete(objId, patch.Path.Fields)
+
+		if len(patch.Path.Fields) == 0 {
+			return p.shop.Accounts.Delete(patch.Path.AccountAddr[:])
+		}
+
+		if len(patch.Path.Fields) != 2 || patch.Path.Fields[0] != "keyCards" {
+			return fmt.Errorf("can only remove from keyCards array")
+		}
+
+		i, err := strconv.Atoi(patch.Path.Fields[1])
+		if err != nil {
+			return fmt.Errorf("invalid keyCards index: %w", err)
+		}
+		if i < 0 || i >= len(acc.KeyCards) {
+			return fmt.Errorf("index out of bounds: %d", i)
+		}
+
+		acc.KeyCards = append(acc.KeyCards[:i], acc.KeyCards[i+1:]...)
+		return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], acc)
+
 	case ReplaceOp:
-		if !ok {
-			return fmt.Errorf("inventory %d not found", objId)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeAccount, Path: patch.Path}
 		}
-		err = in.Insert(objId, patch.Path.Fields, newVal)
-	case IncrementOp:
-		current += newVal
-		err = in.Insert(objId, patch.Path.Fields, current)
-	case DecrementOp:
-		if current < newVal {
-			return fmt.Errorf("inventory %d cannot decrement below 0", objId)
+		if len(patch.Path.Fields) == 0 {
+			var newAcc Account
+			if err := Unmarshal(patch.Value, &newAcc); err != nil {
+				return fmt.Errorf("failed to unmarshal account: %w", err)
+			}
+			if err := p.validator.Struct(newAcc); err != nil {
+				return err
+			}
+			return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], newAcc)
 		}
-		current -= newVal
-		err = in.Insert(objId, patch.Path.Fields, current)
+		return fmt.Errorf("replace operation not supported for account fields")
+
 	default:
 		return fmt.Errorf("unsupported op: %s", patch.Op)
 	}
-	if err != nil {
-		return fmt.Errorf("failed to patch(%s) inventory %d: %w", patch.Op, objId, err)
-	}
-	return nil
+
 }
 
-func (p *Patcher) Listings(listings Listings, patch Patch) error {
+func (p *Patcher) patchListing(patch Patch) error {
 	if patch.Path.ObjectID == nil {
 		return fmt.Errorf("listing patch needs an ID")
 	}
 	objId := *patch.Path.ObjectID
-	lis, ok := listings.Get(objId)
+	listing, exists := p.shop.Listings.Get(objId)
+
 	switch patch.Op {
 	case AddOp:
-		var err error
 		if len(patch.Path.Fields) == 0 {
-			if ok {
+			if exists {
 				return fmt.Errorf("listing %d already exists", objId)
 			}
-			err = Unmarshal(patch.Value, &lis)
-		} else {
-			if !ok {
-				return fmt.Errorf("listing %d not found", objId)
+			var newListing Listing
+			if err := Unmarshal(patch.Value, &newListing); err != nil {
+				return fmt.Errorf("failed to unmarshal listing: %w", err)
 			}
-			err = p.Listing(&lis, patch)
+			if err := p.validator.Struct(newListing); err != nil {
+				return err
+			}
+			return p.shop.Listings.Insert(objId, newListing)
 		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
+
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
-		err = listings.Insert(objId, lis)
-		if err != nil {
-			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
+
+		if err := p.addListingField(&listing, patch); err != nil {
+			return err
 		}
+		return p.shop.Listings.Insert(objId, listing)
+
 	case ReplaceOp:
-		if !ok {
-			return fmt.Errorf("listing %d not found", objId)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
-		var err error
 		if len(patch.Path.Fields) == 0 {
-			err = Unmarshal(patch.Value, &lis)
-		} else {
-			err = p.Listing(&lis, patch)
+			var newListing Listing
+			if err := Unmarshal(patch.Value, &newListing); err != nil {
+				return fmt.Errorf("failed to unmarshal listing: %w", err)
+			}
+			if err := p.validator.Struct(newListing); err != nil {
+				return err
+			}
+			return p.shop.Listings.Insert(objId, newListing)
 		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
+		if err := p.replaceListingField(&listing, patch); err != nil {
+			return err
 		}
-		err = listings.Insert(objId, lis)
-		if err != nil {
-			return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
-		}
+		return p.shop.Listings.Insert(objId, listing)
+
 	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("listing %d not found", objId)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
 		if len(patch.Path.Fields) == 0 {
-			err := listings.Delete(objId)
-			if err != nil {
-				return fmt.Errorf("failed to delete Listing %d: %w", objId, err)
+			referenced := false
+			tagNames := []string{}
+			p.shop.Tags.All(func(key []byte, tag Tag) bool {
+				if slices.Contains(tag.ListingIds, objId) {
+					referenced = true
+					tagNames = append(tagNames, string(key))
+				}
+				return true
+			})
+			if referenced {
+				return fmt.Errorf("listing %d is referenced by tags: %v", objId, tagNames)
 			}
-		} else {
-			err := p.Listing(&lis, patch)
-			if err != nil {
-				return fmt.Errorf("failed to patch Listing %d: %w", objId, err)
-			}
-			err = listings.Insert(objId, lis)
-			if err != nil {
-				return fmt.Errorf("failed to insert Listing %d: %w", objId, err)
-			}
+			return p.shop.Listings.Delete(objId)
 		}
+		if err := p.removeListingField(&listing, patch); err != nil {
+			return err
+		}
+		return p.shop.Listings.Insert(objId, listing)
+	}
+
+	return fmt.Errorf("unsupported operation: %s", patch.Op)
+}
+
+func (p *Patcher) addListingField(listing *Listing, patch Patch) error {
+	switch patch.Path.Fields[0] {
+	case "metadata":
+		return p.addListingMetadata(listing, patch)
+	case "stockStatuses":
+		return p.addListingStockStatus(listing, patch)
+	case "options":
+		return p.addListingOption(listing, patch)
 	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+	}
+}
+
+func (p *Patcher) removeListingField(listing *Listing, patch Patch) error {
+	switch patch.Path.Fields[0] {
+	case "metadata":
+		return p.removeListingMetadata(listing, patch)
+	case "stockStatuses":
+		return p.removeListingStockStatus(listing, patch)
+	case "options":
+		return p.removeListingOption(listing, patch)
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+	}
+}
+
+func (p *Patcher) replaceListingField(listing *Listing, patch Patch) error {
+	switch patch.Path.Fields[0] {
+	case "metadata":
+		return p.replaceListingMetadata(listing, patch)
+	case "stockStatuses":
+		return p.replaceListingStockStatuses(listing, patch)
+	case "options":
+		return p.replaceListingOptions(listing, patch)
+	case "price":
+		var newPrice big.Int
+		if err := Unmarshal(patch.Value, &newPrice); err != nil {
+			return fmt.Errorf("failed to unmarshal price: %w", err)
+		}
+		listing.Price = newPrice
+	case "viewState":
+		var v ListingViewState
+		if err := Unmarshal(patch.Value, &v); err != nil {
+			return fmt.Errorf("failed to unmarshal viewState: %w", err)
+		}
+		listing.ViewState = v
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 	}
 	return nil
 }
 
-func (p *Patcher) Listing(in *Listing, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeListing {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+func (p *Patcher) addListingMetadata(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid metadata path")
 	}
-	switch patch.Op {
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
+	switch patch.Path.Fields[1] {
+	case "images":
+		if len(patch.Path.Fields) < 3 {
+			return fmt.Errorf("invalid images path")
+		}
+		index := patch.Path.Fields[2]
+
+		var newImage string
+		if err := Unmarshal(patch.Value, &newImage); err != nil {
+			return fmt.Errorf("failed to unmarshal image: %w", err)
+		}
+
+		if index == "-" {
+			listing.Metadata.Images = append(listing.Metadata.Images, newImage)
+		} else {
+			i, err := strconv.Atoi(index)
+			if err != nil {
+				return fmt.Errorf("invalid images index: %w", err)
+			}
+			if i < 0 || i > len(listing.Metadata.Images) {
+				return fmt.Errorf("index out of bounds: %d", i)
+			}
+			arr := listing.Metadata.Images
+			arr = append(arr[:i], append([]string{newImage}, arr[i:]...)...)
+			listing.Metadata.Images = arr
+		}
 	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+		return fmt.Errorf("invalid metadata path")
 	}
+	return nil
+}
+
+func (p *Patcher) removeListingMetadata(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid metadata path")
+	}
+	switch patch.Path.Fields[1] {
+	case "images":
+		if len(patch.Path.Fields) != 3 {
+			return fmt.Errorf("invalid images path")
+		}
+		i, err := strconv.Atoi(patch.Path.Fields[2])
+		if err != nil {
+			return fmt.Errorf("invalid images index: %w", err)
+		}
+		if i < 0 || i >= len(listing.Metadata.Images) {
+			return fmt.Errorf("index out of bounds: %d", i)
+		}
+		arr := listing.Metadata.Images
+		listing.Metadata.Images = append(arr[:i], arr[i+1:]...)
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+	}
+	return nil
+}
+
+func (p *Patcher) replaceListingMetadata(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) == 1 {
+		var newMd ListingMetadata
+		if err := Unmarshal(patch.Value, &newMd); err != nil {
+			return fmt.Errorf("failed to unmarshal metadata: %w", err)
+		}
+		listing.Metadata = newMd
+		return nil
+	}
+	switch patch.Path.Fields[1] {
+	case "title":
+		var val string
+		if err := Unmarshal(patch.Value, &val); err != nil {
+			return fmt.Errorf("failed to unmarshal title: %w", err)
+		}
+		listing.Metadata.Title = val
+	case "description":
+		var val string
+		if err := Unmarshal(patch.Value, &val); err != nil {
+			return fmt.Errorf("failed to unmarshal description: %w", err)
+		}
+		listing.Metadata.Description = val
+	case "images":
+		if len(patch.Path.Fields) == 2 {
+			var images []string
+			if err := Unmarshal(patch.Value, &images); err != nil {
+				return fmt.Errorf("failed to unmarshal images: %w", err)
+			}
+			listing.Metadata.Images = images
+			return nil
+		}
+		if len(patch.Path.Fields) == 3 {
+			i, err := strconv.Atoi(patch.Path.Fields[2])
+			if err != nil {
+				return fmt.Errorf("invalid images index: %w", err)
+			}
+			if i < 0 || i >= len(listing.Metadata.Images) {
+				return fmt.Errorf("index out of bounds: %d", i)
+			}
+			var val string
+			if err := Unmarshal(patch.Value, &val); err != nil {
+				return fmt.Errorf("failed to unmarshal image: %w", err)
+			}
+			listing.Metadata.Images[i] = val
+			return nil
+		}
+		return fmt.Errorf("invalid images path")
+	default:
+		return fmt.Errorf("unsupported metadata field: %s", patch.Path.Fields[1])
+	}
+	return nil
+}
+
+func (p *Patcher) addListingStockStatus(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid stockStatuses path")
+	}
+	index := patch.Path.Fields[1]
+
+	var newSS ListingStockStatus
+	if err := Unmarshal(patch.Value, &newSS); err != nil {
+		return fmt.Errorf("failed to unmarshal stock status: %w", err)
+	}
+
+	if index == "-" {
+		listing.StockStatuses = append(listing.StockStatuses, newSS)
+	} else {
+		i, err := strconv.Atoi(index)
+		if err != nil {
+			return fmt.Errorf("invalid stockStatuses index: %w", err)
+		}
+		if i < 0 || i > len(listing.StockStatuses) {
+			return fmt.Errorf("index out of bounds: %d", i)
+		}
+		slice := listing.StockStatuses
+		slice = append(slice[:i], append([]ListingStockStatus{newSS}, slice[i:]...)...)
+		listing.StockStatuses = slice
+	}
+	return nil
+}
+
+func (p *Patcher) removeListingStockStatus(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid stockStatuses path")
+	}
+	i, err := strconv.Atoi(patch.Path.Fields[1])
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid stockStatuses index: %w", err)
 	}
-	return p.validator.Struct(in)
-}
-
-func (p *Patcher) Tags(in Tags, patch Patch) error {
-	if patch.Path.TagName == nil {
-		return fmt.Errorf("tag patch needs a tag name")
+	if i < 0 || i >= len(listing.StockStatuses) {
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 	}
-
-	tagName := *patch.Path.TagName
-	tag, ok := in.Get(tagName)
-	var err error
-	switch patch.Op {
-	case AddOp:
-		if len(patch.Path.Fields) == 0 {
-			if ok {
-				return fmt.Errorf("tag %s already exists", tagName)
-			}
-			err = Unmarshal(patch.Value, &tag)
-		} else {
-			if !ok {
-				return fmt.Errorf("tag %s not found", tagName)
-			}
-			err = p.Tag(&tag, patch)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
-		}
-		err = in.Insert(tagName, tag)
-		if err != nil {
-			return fmt.Errorf("failed to insert Tag %s: %w", tagName, err)
-		}
-	case ReplaceOp:
-		if !ok {
-			return fmt.Errorf("tag %s not found", tagName)
-		}
-		if len(patch.Path.Fields) == 0 {
-			err = Unmarshal(patch.Value, &tag)
-			if err != nil {
-				return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
-			}
-		} else {
-			err = p.Tag(&tag, patch)
-			if err != nil {
-				return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
-			}
-		}
-		err = in.Insert(tagName, tag)
-		if err != nil {
-			return fmt.Errorf("failed to insert Tag %s: %w", tagName, err)
-		}
-	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("tag %s not found", tagName)
-		}
-		if len(patch.Path.Fields) == 0 {
-			err = in.Delete(tagName)
-		} else {
-			err = p.Tag(&tag, patch)
-			if err != nil {
-				return fmt.Errorf("failed to patch Tag %s: %w", tagName, err)
-			}
-			err = in.Insert(tagName, tag)
-			if err != nil {
-				return fmt.Errorf("failed to insert Tag %s: %w", tagName, err)
-			}
-		}
-		if err != nil {
-			return fmt.Errorf("failed to delete Tag %s: %w", tagName, err)
-		}
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
-	}
+	slice := listing.StockStatuses
+	listing.StockStatuses = append(slice[:i], slice[i+1:]...)
 	return nil
 }
 
-func (p *Patcher) Tag(in *Tag, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeTag {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+func (p *Patcher) replaceListingStockStatuses(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) == 1 {
+		var statuses []ListingStockStatus
+		if err := Unmarshal(patch.Value, &statuses); err != nil {
+			return fmt.Errorf("failed to unmarshal stock statuses: %w", err)
+		}
+		listing.StockStatuses = statuses
+		return nil
 	}
-	if patch.Path.TagName == nil {
-		return fmt.Errorf("tag patch needs a tag name")
-	}
-	switch patch.Op {
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	}
+	i, err := strconv.Atoi(patch.Path.Fields[1])
 	if err != nil {
-		return fmt.Errorf("failed to patch Tag %s: %w", *patch.Path.TagName, err)
+		return fmt.Errorf("invalid stockStatuses index: %w", err)
 	}
+	if i < 0 || i >= len(listing.StockStatuses) {
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+	}
+	if len(patch.Path.Fields) == 2 {
+		var ss ListingStockStatus
+		if err := Unmarshal(patch.Value, &ss); err != nil {
+			return fmt.Errorf("failed to unmarshal stock status: %w", err)
+		}
+		listing.StockStatuses[i] = ss
+		return nil
+	}
+	switch patch.Path.Fields[2] {
+	case "inStock":
+		var val bool
+		if err := Unmarshal(patch.Value, &val); err != nil {
+			return fmt.Errorf("failed to unmarshal inStock: %w", err)
+		}
+		listing.StockStatuses[i].InStock = &val
+		listing.StockStatuses[i].ExpectedInStockBy = nil
+	case "expectedInStockBy":
+		var t time.Time
+		if err := Unmarshal(patch.Value, &t); err != nil {
+			return fmt.Errorf("failed to unmarshal expectedInStockBy: %w", err)
+		}
+		listing.StockStatuses[i].ExpectedInStockBy = &t
+		listing.StockStatuses[i].InStock = nil
+	default:
+		return fmt.Errorf("unsupported stockStatus field: %s", patch.Path.Fields[2])
+	}
+
 	return nil
 }
 
-func (p *Patcher) Orders(in Orders, patch Patch) error {
+func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid options path")
+	}
+	optionName := patch.Path.Fields[1]
+	if len(patch.Path.Fields) == 2 {
+		if _, exists := listing.Options[optionName]; exists {
+			return fmt.Errorf("option '%s' already exists", optionName)
+		}
+		var opt ListingOption
+		if err := Unmarshal(patch.Value, &opt); err != nil {
+			return fmt.Errorf("failed to unmarshal option: %w", err)
+		}
+		listing.Options[optionName] = opt
+		return nil
+	}
+	if len(patch.Path.Fields) == 3 && patch.Path.Fields[2] == "variations" {
+		return fmt.Errorf("missing variation ID in path")
+	}
+	if len(patch.Path.Fields) == 4 && patch.Path.Fields[2] == "variations" {
+		varID := patch.Path.Fields[3]
+		opt, exists := listing.Options[optionName]
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		if opt.Variations == nil {
+			opt.Variations = make(map[string]ListingVariation)
+		}
+		if _, ok := opt.Variations[varID]; ok {
+			return fmt.Errorf("variation ID '%s' already exists under option '%s'", varID, optionName)
+		}
+		var v ListingVariation
+		if err := Unmarshal(patch.Value, &v); err != nil {
+			return fmt.Errorf("failed to unmarshal variation: %w", err)
+		}
+		opt.Variations[varID] = v
+		listing.Options[optionName] = opt
+		return nil
+	}
+	return fmt.Errorf("invalid options path")
+}
+
+func (p *Patcher) removeListingOption(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) < 2 {
+		return fmt.Errorf("invalid options path")
+	}
+	optionName := patch.Path.Fields[1]
+	opt, exists := listing.Options[optionName]
+	if !exists {
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+	}
+	if len(patch.Path.Fields) == 2 {
+		delete(listing.Options, optionName)
+		return nil
+	}
+	if len(patch.Path.Fields) == 4 && patch.Path.Fields[2] == "variations" {
+		varID := patch.Path.Fields[3]
+		if _, ok := opt.Variations[varID]; !ok {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		delete(opt.Variations, varID)
+		listing.Options[optionName] = opt
+		return nil
+	}
+	return fmt.Errorf("invalid variation path")
+}
+
+func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
+	if len(patch.Path.Fields) == 1 {
+		var newOptions ListingOptions
+		if err := Unmarshal(patch.Value, &newOptions); err != nil {
+			return fmt.Errorf("failed to unmarshal options: %w", err)
+		}
+		listing.Options = newOptions
+		return nil
+	}
+	optionName := patch.Path.Fields[1]
+	if len(patch.Path.Fields) == 2 {
+		var newOpt ListingOption
+		if err := Unmarshal(patch.Value, &newOpt); err != nil {
+			return fmt.Errorf("failed to unmarshal listing option: %w", err)
+		}
+		listing.Options[optionName] = newOpt
+		return nil
+	}
+	if len(patch.Path.Fields) == 3 && patch.Path.Fields[2] == "title" {
+		var val string
+		if err := Unmarshal(patch.Value, &val); err != nil {
+			return fmt.Errorf("failed to unmarshal option title: %w", err)
+		}
+		opt := listing.Options[optionName]
+		opt.Title = val
+		listing.Options[optionName] = opt
+		return nil
+	}
+	if len(patch.Path.Fields) == 4 && patch.Path.Fields[2] == "variations" {
+		varID := patch.Path.Fields[3]
+		opt, ok := listing.Options[optionName]
+		if !ok {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		var newVar ListingVariation
+		if err := Unmarshal(patch.Value, &newVar); err != nil {
+			return fmt.Errorf("failed to unmarshal listing variation: %w", err)
+		}
+		if _, has := opt.Variations[varID]; !has {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		opt.Variations[varID] = newVar
+		listing.Options[optionName] = opt
+		return nil
+	}
+	if len(patch.Path.Fields) == 5 &&
+		patch.Path.Fields[2] == "variations" &&
+		patch.Path.Fields[4] == "variationInfo" {
+		varID := patch.Path.Fields[3]
+		opt, ok := listing.Options[optionName]
+		if !ok {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		v, ok := opt.Variations[varID]
+		if !ok {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
+		}
+		var newInfo ListingMetadata
+		if err := Unmarshal(patch.Value, &newInfo); err != nil {
+			return fmt.Errorf("failed to unmarshal listing variation info: %w", err)
+		}
+		v.VariationInfo = newInfo
+		opt.Variations[varID] = v
+		listing.Options[optionName] = opt
+		return nil
+	}
+	return fmt.Errorf("invalid variation path")
+}
+
+func (p *Patcher) patchOrder(patch Patch) error {
 	if patch.Path.ObjectID == nil {
 		return fmt.Errorf("order patch needs an ID")
 	}
 	objId := *patch.Path.ObjectID
-	order, ok := in.Get(objId)
-	var err error
+	order, exists := p.shop.Orders.Get(objId)
+
 	switch patch.Op {
 	case AddOp:
 		if len(patch.Path.Fields) == 0 {
-			if ok {
+			if exists {
 				return fmt.Errorf("order %d already exists", objId)
 			}
-			err = Unmarshal(patch.Value, &order)
-			if err != nil {
+			var newOrder Order
+			if err := Unmarshal(patch.Value, &newOrder); err != nil {
 				return fmt.Errorf("failed to unmarshal order: %w", err)
 			}
-		} else {
-			err := p.Order(&order, patch)
-			if err != nil {
-				return fmt.Errorf("failed to patch Order %d: %w", objId, err)
+			if err := p.validateOrderReferences(&newOrder); err != nil {
+				return err
 			}
+			if err := p.validator.Struct(newOrder); err != nil {
+				return err
+			}
+			return p.shop.Orders.Insert(objId, newOrder)
 		}
-		err = in.Insert(objId, order)
+
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
+		return p.addOrderField(&order, patch)
+
 	case ReplaceOp:
-		if !ok {
-			return fmt.Errorf("order %d not found", objId)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 		}
 		if len(patch.Path.Fields) == 0 {
-			err = Unmarshal(patch.Value, &order)
-		} else {
-			err = p.Order(&order, patch)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to patch Order %d: %w", objId, err)
-		}
-		err = in.Insert(objId, order)
-	case RemoveOp:
-		if !ok {
-			return fmt.Errorf("order %d not found", objId)
-		}
-		if len(patch.Path.Fields) == 0 {
-			err = in.Delete(objId)
-		} else {
-			err = p.Order(&order, patch)
-			if err != nil {
-				return fmt.Errorf("failed to patch Order %d: %w", objId, err)
+			var newOrder Order
+			if err := Unmarshal(patch.Value, &newOrder); err != nil {
+				return fmt.Errorf("failed to unmarshal order: %w", err)
 			}
-			err = in.Insert(objId, order)
+			if err := p.validateOrderReferences(&newOrder); err != nil {
+				return err
+			}
+			if err := p.validator.Struct(newOrder); err != nil {
+				return err
+			}
+			return p.shop.Orders.Insert(objId, newOrder)
 		}
-	case IncrementOp:
-		err = p.Order(&order, patch)
-	case DecrementOp:
-		err = p.Order(&order, patch)
-	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+		return p.replaceOrderField(&order, patch)
+
+	case RemoveOp:
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
+		if len(patch.Path.Fields) == 0 {
+			return p.shop.Orders.Delete(objId)
+		}
+		return p.removeOrderField(&order, patch)
+
+	case IncrementOp, DecrementOp:
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
+		return p.modifyOrderQuantity(&order, patch)
 	}
-	if err != nil {
-		return fmt.Errorf("failed to patch Order %d: %w", objId, err)
+
+	return fmt.Errorf("unsupported operation: %s", patch.Op)
+}
+
+func (p *Patcher) validateOrderReferences(order *Order) error {
+	for _, item := range order.Items {
+		listing, exists := p.shop.Listings.Get(item.ListingID)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: PatchPath{ObjectID: &item.ListingID}}
+		}
+
+		for _, varID := range item.VariationIDs {
+			found := false
+			for _, opt := range listing.Options {
+				if _, exists := opt.Variations[varID]; exists {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: PatchPath{ObjectID: &item.ListingID, Fields: []string{"options", varID}}}
+			}
+		}
 	}
+
+	if order.ChosenPayee != nil {
+		found := false
+		for _, payee := range p.shop.Manifest.Payees {
+			if payee == *order.ChosenPayee {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return ObjectNotFoundError{
+				ObjectType: ObjectTypeOrder,
+				Path:       PatchPath{Fields: []string{"chosenPayee", order.ChosenPayee.Address.String()}}}
+		}
+	}
+
+	if order.ChosenCurrency != nil {
+		found := false
+		for _, currency := range p.shop.Manifest.AcceptedCurrencies {
+			if currency == *order.ChosenCurrency {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return ObjectNotFoundError{
+				ObjectType: ObjectTypeManifest,
+				Path:       PatchPath{Fields: []string{"acceptedCurrencies", order.ChosenCurrency.String()}}}
+		}
+	}
+
 	return nil
 }
 
-func (p *Patcher) Order(in *Order, patch Patch) error {
-	var err error
-	if patch.Path.Type != ObjectTypeOrder {
-		return fmt.Errorf("invalid path type: %s", patch.Path.Type)
+func (p *Patcher) addOrderField(order *Order, patch Patch) error {
+	if len(patch.Path.Fields) == 0 {
+		return fmt.Errorf("field path required for add operation")
 	}
-	switch patch.Op {
-	case AddOp:
-		err = in.PatchAdd(patch.Path.Fields, patch.Value)
-	case ReplaceOp:
-		err = in.PatchReplace(patch.Path.Fields, patch.Value)
-	case RemoveOp:
-		err = in.PatchRemove(patch.Path.Fields)
-	case IncrementOp:
-		err = in.PatchIncrement(patch.Path.Fields, patch.Value)
-	case DecrementOp:
-		err = in.PatchDecrement(patch.Path.Fields, patch.Value)
+
+	switch patch.Path.Fields[0] {
+	case "items":
+		var item OrderedItem
+		if err := Unmarshal(patch.Value, &item); err != nil {
+			return fmt.Errorf("failed to unmarshal order item: %w", err)
+		}
+		listing, exists := p.shop.Listings.Get(item.ListingID)
+		if !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: PatchPath{ObjectID: &item.ListingID}}
+		}
+		for _, varID := range item.VariationIDs {
+			found := false
+			for _, opt := range listing.Options {
+				if _, exists := opt.Variations[varID]; exists {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
+			}
+		}
+		order.Items = append(order.Items, item)
+	case "shippingAddress":
+		if order.ShippingAddress != nil {
+			return fmt.Errorf("shipping address already set")
+		}
+		var shippingAddress AddressDetails
+		if err := Unmarshal(patch.Value, &shippingAddress); err != nil {
+			return fmt.Errorf("failed to unmarshal shipping address: %w", err)
+		}
+		order.ShippingAddress = &shippingAddress
+	case "invoiceAddress":
+		if order.InvoiceAddress != nil {
+			return fmt.Errorf("invoice address already set")
+		}
+		var invoiceAddress AddressDetails
+		if err := Unmarshal(patch.Value, &invoiceAddress); err != nil {
+			return fmt.Errorf("failed to unmarshal invoice address: %w", err)
+		}
+		order.InvoiceAddress = &invoiceAddress
+	case "paymentDetails":
+		if order.PaymentDetails != nil {
+			return fmt.Errorf("payment details already set")
+		}
+		var paymentDetails PaymentDetails
+		if err := Unmarshal(patch.Value, &paymentDetails); err != nil {
+			return fmt.Errorf("failed to unmarshal payment details: %w", err)
+		}
+		order.PaymentDetails = &paymentDetails
+	case "chosenPayee":
+		if order.ChosenPayee != nil {
+			return fmt.Errorf("chosen payee already set")
+		}
+		var payee Payee
+		if err := Unmarshal(patch.Value, &payee); err != nil {
+			return fmt.Errorf("failed to unmarshal payee: %w", err)
+		}
+		order.ChosenPayee = &payee
+	case "chosenCurrency":
+		if order.ChosenCurrency != nil {
+			return fmt.Errorf("chosen currency already set")
+		}
+		var currency ChainAddress
+		if err := Unmarshal(patch.Value, &currency); err != nil {
+			return fmt.Errorf("failed to unmarshal currency: %w", err)
+		}
+		order.ChosenCurrency = &currency
+	case "txDetails":
+		if order.TxDetails != nil {
+			return fmt.Errorf("tx details already set")
+		}
+		var txDetails OrderPaid
+		if err := Unmarshal(patch.Value, &txDetails); err != nil {
+			return fmt.Errorf("failed to unmarshal tx details: %w", err)
+		}
+		order.TxDetails = &txDetails
 	default:
-		return fmt.Errorf("unsupported op: %s", patch.Op)
+		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
+	if err := p.validator.Struct(order); err != nil {
+		return err
+	}
+	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
+}
+
+func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
+	nFields := len(patch.Path.Fields)
+
+	switch patch.Path.Fields[0] {
+	case "state":
+		var state OrderState
+		if err := Unmarshal(patch.Value, &state); err != nil {
+			return fmt.Errorf("failed to unmarshal order state: %w", err)
+		}
+		order.State = state
+
+	case "chosenPayee":
+		var payee Payee
+		if err := Unmarshal(patch.Value, &payee); err != nil {
+			return fmt.Errorf("failed to unmarshal payee: %w", err)
+		}
+		found := false
+		for _, p := range p.shop.Manifest.Payees {
+			if p == payee {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("payee not found in manifest payees")
+		}
+		order.ChosenPayee = &payee
+
+	case "chosenCurrency":
+		var currency ChainAddress
+		if err := Unmarshal(patch.Value, &currency); err != nil {
+			return fmt.Errorf("failed to unmarshal currency: %w", err)
+		}
+		found := false
+		for _, c := range p.shop.Manifest.AcceptedCurrencies {
+			if c == currency {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("currency not found in accepted currencies")
+		}
+		order.ChosenCurrency = &currency
+
+	case "paymentDetails":
+		var details PaymentDetails
+		if err := Unmarshal(patch.Value, &details); err != nil {
+			return fmt.Errorf("failed to unmarshal payment details: %w", err)
+		}
+		order.PaymentDetails = &details
+
+	case "txDetails":
+		var details OrderPaid
+		if err := Unmarshal(patch.Value, &details); err != nil {
+			return fmt.Errorf("failed to unmarshal tx details: %w", err)
+		}
+		order.TxDetails = &details
+
+	case "items":
+
+		switch {
+		case nFields == 1:
+			// Replace entire items array
+			var items []OrderedItem
+			if err := Unmarshal(patch.Value, &items); err != nil {
+				return fmt.Errorf("failed to unmarshal items: %w", err)
+			}
+			order.Items = items
+
+		case nFields >= 2:
+			// Get the item index
+			index, err := strconv.Atoi(patch.Path.Fields[1])
+			if err != nil {
+				return fmt.Errorf("failed to convert index to int: %w", err)
+			}
+			if index < 0 || index >= len(order.Items) {
+				return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+			}
+
+			if nFields == 2 {
+				// Replace entire item at index
+				var item OrderedItem
+				if err := Unmarshal(patch.Value, &item); err != nil {
+					return fmt.Errorf("failed to unmarshal item: %w", err)
+				}
+				order.Items[index] = item
+			} else if patch.Path.Fields[2] == "quantity" {
+				// Replace just the quantity
+				var quantity uint32
+				if err := Unmarshal(patch.Value, &quantity); err != nil {
+					return fmt.Errorf("failed to unmarshal quantity: %w", err)
+				}
+				order.Items[index].Quantity = quantity
+			} else {
+				return fmt.Errorf("unsupported field: %s", patch.Path.Fields[2])
+			}
+		default:
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
+
+	case "invoiceAddress":
+		if order.InvoiceAddress == nil {
+			return fmt.Errorf("invoice address not set")
+		}
+
+		switch {
+		case nFields == 1:
+			var newAddress AddressDetails
+			if err := Unmarshal(patch.Value, &newAddress); err != nil {
+				return fmt.Errorf("failed to unmarshal invoice address: %w", err)
+			}
+			order.InvoiceAddress = &newAddress
+		case nFields == 2:
+			switch patch.Path.Fields[1] {
+			case "name":
+				var newName string
+				if err := Unmarshal(patch.Value, &newName); err != nil {
+					return fmt.Errorf("failed to unmarshal invoice address name: %w", err)
+				}
+				order.InvoiceAddress.Name = newName
+			default:
+				return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+			}
+		default:
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
+
+	default:
+		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+	}
+
+	if err := p.validator.Struct(order); err != nil {
+		return err
+	}
+	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
+}
+
+func (p *Patcher) removeOrderField(order *Order, patch Patch) error {
+	switch patch.Path.Fields[0] {
+	case "items":
+		if len(patch.Path.Fields) != 2 {
+			return fmt.Errorf("invalid items path")
+		}
+		index, err := strconv.Atoi(patch.Path.Fields[1])
+		if err != nil {
+			return fmt.Errorf("invalid item index: %w", err)
+		}
+		if index < 0 || index >= len(order.Items) {
+			return fmt.Errorf("item index out of bounds: %d", index)
+		}
+
+		order.Items = slices.Delete(order.Items, index, index+1)
+
+	case "shippingAddress":
+		if order.ShippingAddress == nil {
+			return fmt.Errorf("shipping address not set")
+		}
+		order.ShippingAddress = nil
+
+	case "invoiceAddress":
+		if order.InvoiceAddress == nil {
+			return fmt.Errorf("invoice address not set")
+		}
+		order.InvoiceAddress = nil
+
+	default:
+		return fmt.Errorf("cannot remove field: %s", patch.Path.Fields[0])
+	}
+
+	if err := p.validator.Struct(order); err != nil {
+		return err
+	}
+	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
+}
+
+func (p *Patcher) modifyOrderQuantity(order *Order, patch Patch) error {
+	index, err := order.checkPathAndIndex(patch.Path.Fields)
 	if err != nil {
 		return err
 	}
-	return p.validator.Struct(in)
+
+	var value uint32
+	if err := Unmarshal(patch.Value, &value); err != nil {
+		return fmt.Errorf("failed to unmarshal value: %w", err)
+	}
+
+	if patch.Op == IncrementOp {
+		order.Items[index].Quantity += value
+	} else {
+		if value > order.Items[index].Quantity {
+			return fmt.Errorf("cannot decrement below zero")
+		}
+		order.Items[index].Quantity -= value
+	}
+
+	if err := p.validator.Struct(order); err != nil {
+		return err
+	}
+	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
 }
 
 func (existing *Order) checkPathAndIndex(fields []string) (int, error) {
@@ -768,30 +1717,79 @@ func (existing *Order) checkPathAndIndex(fields []string) (int, error) {
 	return index, nil
 }
 
-func (existing *Order) PatchIncrement(fields []string, data cbor.RawMessage) error {
-	index, err := existing.checkPathAndIndex(fields)
-	if err != nil {
-		return err
-	}
-	var value uint32
-	err = Unmarshal(data, &value)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal value: %w", err)
-	}
-	existing.Items[index].Quantity += value
-	return nil
-}
+func (p *Patcher) patchInventory(inventory *Inventory, patch Patch) error {
 
-func (existing *Order) PatchDecrement(fields []string, data cbor.RawMessage) error {
-	index, err := existing.checkPathAndIndex(fields)
-	if err != nil {
-		return err
+	// validate patch edits an existing listing
+	if patch.Path.ObjectID == nil {
+		return fmt.Errorf("inventory patch needs an id")
 	}
-	var value uint32
-	err = Unmarshal(data, &value)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal value: %w", err)
+	objId := *patch.Path.ObjectID
+	lis, ok := p.shop.Listings.Get(objId)
+	if !ok {
+		return fmt.Errorf("listing %d not found", objId)
 	}
-	existing.Items[index].Quantity -= value
+	// if it is a variation, check that they exist
+	if n := len(patch.Path.Fields); n > 0 {
+		var found = uint(n)
+		for _, field := range patch.Path.Fields {
+			for _, opt := range lis.Options {
+				_, has := opt.Variations[field]
+				if has {
+					found--
+					break // found
+				}
+			}
+		}
+		if found > 0 {
+			return fmt.Errorf("some variation of object %d not found", objId)
+		}
+	}
+
+	if patch.Path.ObjectID == nil {
+		return fmt.Errorf("inventory patch needs an ID")
+	}
+	var (
+		err    error
+		newVal uint64
+	)
+	if patch.Op != RemoveOp {
+		err = cbor.Unmarshal(patch.Value, &newVal)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal inventory value: %w", err)
+		}
+	}
+
+	current, ok := inventory.Get(objId, patch.Path.Fields)
+	switch patch.Op {
+	case AddOp:
+		if ok {
+			return fmt.Errorf("inventory %d already exists", objId)
+		}
+		err = inventory.Insert(objId, patch.Path.Fields, newVal)
+	case RemoveOp:
+		if !ok {
+			return fmt.Errorf("inventory %d not found", objId)
+		}
+		err = inventory.Delete(objId, patch.Path.Fields)
+	case ReplaceOp:
+		if !ok {
+			return fmt.Errorf("inventory %d not found", objId)
+		}
+		err = inventory.Insert(objId, patch.Path.Fields, newVal)
+	case IncrementOp:
+		current += newVal
+		err = inventory.Insert(objId, patch.Path.Fields, current)
+	case DecrementOp:
+		if current < newVal {
+			return fmt.Errorf("inventory %d cannot decrement below 0", objId)
+		}
+		current -= newVal
+		err = inventory.Insert(objId, patch.Path.Fields, current)
+	default:
+		return fmt.Errorf("unsupported op: %s", patch.Op)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to patch(%s) inventory %d: %w", patch.Op, objId, err)
+	}
 	return nil
 }
