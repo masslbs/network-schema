@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 import cbor2
 
 from massmarket_hash_event.cbor.base_types import Tag

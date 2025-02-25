@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Mass Labs
+#
+# SPDX-License-Identifier: MIT
+
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Union
 import os

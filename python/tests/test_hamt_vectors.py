@@ -11,7 +11,6 @@ from pprint import pprint
 from massmarket_hash_event.hamt import Trie
 
 
-
 def test_hamt_standalone_vectors():
     vectors_path = "../vectors/hamt_test.json"
     with open(vectors_path) as f:
@@ -39,7 +38,7 @@ def test_hamt_shop_vectors():
     for file in files:
         with open(os.path.join("../vectors", file)) as f:
             vectors = json.load(f)
-        
+
         # print(f"Testing {file}")
         for snap in vectors["Snapshots"]:
             # print(f"  Snapshot: {snap['Name']}")
