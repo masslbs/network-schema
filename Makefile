@@ -4,19 +4,22 @@
 
 .phony: all lint reuse go-pb-code
 
-all: vectors/hamt_test.json vectors/ShopOkay.cbor python-package go-pb-code reuse
+all: vectors/hamt_test.cbor vectors/ShopOkay.cbor python-package go-pb-code go-tests reuse
 
-python-package: vectors/ShopOkay.cbor vectors/hamt_test.json
+python-package: vectors/ShopOkay.cbor vectors/hamt_test.cbor
 	make -C python
 
 go-pb-code: *.proto
 	./generate_protoc_go.bash
 
-vectors/hamt_test.json:
+vectors/hamt_test.cbor:
 	cd python && $(PYTHON) ./generate_hamt_test_vectors.py
 
 vectors/ShopOkay.cbor:
 	cd go/patch && TEST_DATA_OUT=../../vectors go test
+
+go-tests: vectors/hamt_test.cbor
+	cd go && go test ./...
 
 lint:
 	$(PYTHON) ./check.py

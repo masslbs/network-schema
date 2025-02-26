@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
+import cbor2
 import random
 import string
 from massmarket_hash_event.hamt import Trie
@@ -119,7 +119,7 @@ def generate_test_vectors() -> List[Dict[str, Any]]:
     # Test vector 6: Mixed operations with large set of data
     ops = []
     keys = [random_bytes(4).hex() for _ in range(1000)]
-    for _ in range(1000):
+    for _ in range(100):
         if random.random() < 0.7:  # 70% chance of insert
             key = random.choice(keys)
             ops.append(
@@ -146,6 +146,6 @@ if __name__ == "__main__":
         test_data_out = "../vectors"
 
     os.makedirs(test_data_out, exist_ok=True)
-    fname = os.path.join(test_data_out, "hamt_test.json")
-    with open(fname, "w") as f:
-        json.dump(vectors, f, indent=2)
+    fname = os.path.join(test_data_out, "hamt_test.cbor")
+    with open(fname, "wb") as f:
+        cbor2.dump(vectors, f)

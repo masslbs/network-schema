@@ -13,9 +13,9 @@ from massmarket_hash_event.cbor import Shop
 
 
 def test_hamt_standalone_vectors():
-    vectors_path = "../vectors/hamt_test.json"
-    with open(vectors_path) as f:
-        test_vectors = json.load(f)
+    vectors_path = "../vectors/hamt_test.cbor"
+    with open(vectors_path, "rb") as f:
+        test_vectors = cbor2.load(f)
 
     for i, vector in enumerate(test_vectors):
         trie = Trie.new()

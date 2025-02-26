@@ -7,8 +7,6 @@ package schema
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -612,15 +610,11 @@ func TestHAMTVectors(t *testing.T) {
 	r := require.New(t)
 
 	// Read test vectors
-	data, err := os.ReadFile("../../vectors/hamt_test.json")
-	if errors.Is(err, os.ErrNotExist) {
-		t.Skip("test vectors not found, skipping")
-		return
-	}
+	data, err := os.ReadFile("../../vectors/hamt_test.cbor")
 	r.NoError(err, "unable to read test vectors")
 
 	var vectors []TestVector
-	err = json.Unmarshal(data, &vectors)
+	err = cbor.Unmarshal(data, &vectors)
 	r.NoError(err, "unable to parse test vectors")
 
 	for i, vector := range vectors {

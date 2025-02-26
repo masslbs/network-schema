@@ -188,7 +188,7 @@
           cp VERSION $out
           mkdir -p $out/vectors
           export TEST_DATA_OUT=$out/vectors
-          pushd go/cbor
+          pushd go/patch
           go test
           popd
           cd python
