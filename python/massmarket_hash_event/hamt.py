@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import xxhash
+import hashlib
+import hmac
 from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional, Any, Callable
 import cbor2
@@ -12,32 +13,40 @@ MAX_DEPTH = (64 + BITS_PER_STEP - 1) // BITS_PER_STEP
 
 V = TypeVar("V")
 
-
 @dataclass
 class HashState:
     original_key: bytes
-    hash: int
-    consumed: int
-    seed: int
+    hash_buf: bytes  # Store the full 32-byte (256-bit) SHA-256 hash
+    consumed: int    # How many bits we've consumed so far
 
     @classmethod
     def new(cls, key: bytes) -> "HashState":
+        # Calculate the full SHA-256 hash once
+        h = hashlib.sha256()
+        h.update(key)
+        hash_buf = h.digest()  # Get the full 32-byte hash
+        
         return cls(
-            original_key=key, hash=hash_key_with_seed(key, 0), consumed=0, seed=0
+            original_key=key,
+            hash_buf=hash_buf,
+            consumed=0
         )
 
     def next(self) -> int:
-        if self.consumed + BITS_PER_STEP > MAX_DEPTH * BITS_PER_STEP:
-            self.seed += 1
-            self.hash = hash_key_with_seed(self.original_key, self.seed)
-            self.consumed = 0
+        bit_offset = self.consumed
+        byte_offset = bit_offset // 8
+        bit_in_byte = bit_offset % 8
 
-        shift = self.consumed
-        mask = (1 << BITS_PER_STEP) - 1
-        chunk = (self.hash >> shift) & mask
+        next16 = 0
+        if byte_offset < 32:
+            next16 = self.hash_buf[byte_offset] << 8
+        if byte_offset + 1 < 32:
+            next16 |= self.hash_buf[byte_offset + 1]
+
+        shift = 16 - BITS_PER_STEP - bit_in_byte
+        chunk = (next16 >> shift) & 0x1F
         self.consumed += BITS_PER_STEP
         return chunk
-
 
 @dataclass
 class Entry(Generic[V]):
@@ -100,17 +109,18 @@ class Node(Generic[V]):
                 return False
 
             branch = Node()
-            old_hs = HashState(
-                original_key=entry.key,
-                hash=hash_key(entry.key),
-                consumed=hs.consumed,
-                seed=hs.seed,
-            )
+            old_hs = HashState.new(entry.key)
+            # Skip to the current consumption point
+            for _ in range(hs.consumed // BITS_PER_STEP):
+                old_hs.next()
+                
             branch.insert(entry.key, entry.value, old_hs)
 
-            new_hs = HashState(
-                original_key=key, hash=hash_key(key), consumed=hs.consumed, seed=hs.seed
-            )
+            new_hs = HashState.new(key)
+            # Skip to the current consumption point
+            for _ in range(hs.consumed // BITS_PER_STEP):
+                new_hs.next()
+                
             branch.insert(key, value, new_hs)
 
             self.entries[pos] = Entry(key=None, value=None, node=branch)
@@ -230,7 +240,7 @@ class Node(Generic[V]):
         if self._hash is not None:
             return self._hash
 
-        h = xxhash.xxh64()
+        h = hashlib.sha256()
         for e in self.entries:
             if e.node is None:
                 h.update(e.key)
@@ -267,14 +277,6 @@ class Node(Generic[V]):
         for e_arr in entries_arr:
             node.entries.append(Entry.from_array(e_arr))
         return node
-
-
-def hash_key(key: bytes) -> int:
-    return xxhash.xxh64(key).intdigest()
-
-
-def hash_key_with_seed(key: bytes, seed: int) -> int:
-    return xxhash.xxh64(key, seed=seed).intdigest()
 
 
 def count_ones(n: int, below: int) -> int:
@@ -356,7 +358,7 @@ class Trie(Generic[V]):
 
     def hash(self) -> bytes:
         if self.root is None:
-            return xxhash.xxh64().digest()
+            return hashlib.sha256().digest()
         return self.root.hash()
 
     def copy(self) -> "Trie[V]":

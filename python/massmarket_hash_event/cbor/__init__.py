@@ -10,6 +10,7 @@ import cbor2
 from massmarket_hash_event.hamt import Trie
 from massmarket_hash_event.cbor.manifest import Manifest
 from massmarket_hash_event.cbor.listing import Listing
+from massmarket_hash_event.cbor.base_types import Tag
 
 
 # construct default encoder
@@ -28,12 +29,14 @@ class Shop:
     schema_version: int
     manifest: Manifest
     listings: Trie[Listing]
+    tags: Trie[Tag]
 
     def to_cbor_dict(self) -> dict:
         return {
             "SchemaVersion": self.schema_version,
             "Manifest": self.manifest.to_cbor_dict(),
             "Listings": self.listings.to_cbor_array(),
+            "Tags": self.tags.to_cbor_array(),
         }
 
     @classmethod
@@ -42,6 +45,7 @@ class Shop:
             schema_version=d["SchemaVersion"],
             manifest=Manifest.from_cbor_dict(d["Manifest"]),
             listings=Trie.from_cbor_array(d["Listings"]),
+            tags=Trie.from_cbor_array(d["Tags"]),
         )
 
     @classmethod

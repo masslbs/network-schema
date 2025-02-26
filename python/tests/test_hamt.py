@@ -5,7 +5,7 @@
 import cbor2
 import random
 
-from massmarket_hash_event.hamt import Trie, hash_key, hash_key_with_seed
+from massmarket_hash_event.hamt import Trie
 
 
 def test_basic_hamt():
@@ -126,41 +126,6 @@ def test_trie_hash():
     hash6 = trie6.hash()
     hash7 = trie7.hash()
     assert hash6 == hash7
-
-
-def test_hash_collisions(monkeypatch):
-    # Override hash functions to force collisions
-    def mock_hash_key_with_seed(key: bytes, seed: int) -> int:
-        if key.startswith(b"collide"):
-            return 42
-        return hash_key_with_seed(key, seed)
-
-    def mock_hash_key(key: bytes) -> int:
-        if key.startswith(b"collide"):
-            return 42
-        return hash_key(key)
-
-    monkeypatch.setattr(
-        "massmarket_hash_event.hamt.hash_key_with_seed", mock_hash_key_with_seed
-    )
-    monkeypatch.setattr("massmarket_hash_event.hamt.hash_key", mock_hash_key)
-
-    # Insert keys that will collide
-    keys = [b"collide1", b"collide2", b"collide3"]
-    values = ["value1", "value2", "value3"]
-
-    trie = Trie.new()
-    for key, value in zip(keys, values):
-        trie.insert(key, value)
-
-    # Verify all values are retrievable
-    for key, expected_value in zip(keys, values):
-        val, ok = trie.get(key)
-        assert ok
-        assert val == expected_value
-
-    # Ensure that the trie size reflects the correct number of entries
-    assert trie.size == len(keys)
 
 
 def test_trie_size_tracking():

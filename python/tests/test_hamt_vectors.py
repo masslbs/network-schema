@@ -9,6 +9,7 @@ import cbor2
 from pprint import pprint
 
 from massmarket_hash_event.hamt import Trie
+from massmarket_hash_event.cbor import Shop
 
 
 def test_hamt_standalone_vectors():
@@ -46,15 +47,20 @@ def test_hamt_shop_vectors():
 
             shop_dict = cbor2.loads(cbor_data)
 
-            listings = shop_dict.get("Listings", None)
-            if listings is None:
-                print(f"  No listings found in file {file}/snapshot {snap['Name']}")
-                pprint(shop_dict)
-                continue
+            # check the top-level hamts for sanity
+            hamt_keys = ["Accounts", "Orders", "Listings", "Tags", "Inventory"]
+            for key in hamt_keys:
+                if key not in shop_dict:
+                    print(f"  {key} not found in file {file}/snapshot {snap['Name']}")
+                    continue
 
-            trie = Trie.from_cbor_array(listings)
-            # print(f"    Hash: {trie.hash().hex()}")
+                hamt_data = shop_dict.get(key, None)
+                trie = Trie.from_cbor_array(hamt_data)
+                print(f"    {key}: {trie.hash().hex()}")
+                # assert trie.hash().hex() == snap["After"][key]["Hash"]
 
-            # assert trie.hash().hex() == snap["After"]["Hash"]
+            # load the full shop and compare the hashes
+            shop = Shop.from_cbor_dict(shop_dict)
+            assert shop.hash().hex() == snap["After"]["Hash"]
 
     # assert False
