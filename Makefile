@@ -16,7 +16,7 @@ vectors/hamt_test.json:
 	cd python && $(PYTHON) ./generate_hamt_test_vectors.py
 
 vectors/ShopOkay.cbor:
-	cd go/cbor && TEST_DATA_OUT=../../vectors go test
+	cd go/patch && TEST_DATA_OUT=../../vectors go test
 
 lint:
 	$(PYTHON) ./check.py
