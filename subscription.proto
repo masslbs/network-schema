@@ -59,9 +59,9 @@ message SubscriptionPushRequest {
   bytes subscription_id = 1;
   repeated SequencedPatch patches = 2;
   message SequencedPatch {
-    uint64 shop_seq_no = 1;      // sequence number of the event in the shop log
+    uint64 shop_seq_no = 1; // sequence number of the event in the shop log
     uint32 patch_leaf_index = 2; // index of the patch in the patch set
-    bytes patch_data = 3;        // cbor patch data
+    bytes patch_data = 3; // cbor patch data
     bytes mmr_proof = 4; // cbor data [index, tree_size, [proof1, proof2, ...]]
   }
   // Map of shop_seq_no to patch set header and signature.
@@ -76,4 +76,6 @@ message SubscriptionPushRequest {
 }
 
 // Used by a client to stop sending more events for an subscription
-message SubscriptionCancelRequest { bytes subscription_id = 1; }
+message SubscriptionCancelRequest {
+  bytes subscription_id = 1;
+}
