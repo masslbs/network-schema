@@ -342,32 +342,6 @@ func decode[T any](data []byte) (T, error) {
 	return t, err
 }
 
-func dump(val any) []byte {
-	var buf bytes.Buffer
-	enc := masscbor.DefaultEncoder(&buf)
-
-	err := enc.Encode(val)
-	check(err)
-
-	fmt.Printf("CBOR of: %+v\n", val)
-	data := buf.Bytes()
-	fmt.Println(hex.EncodeToString(data))
-	return data
-}
-
-func diag(val any) {
-	var buf bytes.Buffer
-	enc := masscbor.DefaultEncoder(&buf)
-
-	err := enc.Encode(val)
-	check(err)
-
-	diagStr, err := cbor.Diagnose(buf.Bytes())
-	check(err)
-
-	fmt.Println(diagStr)
-}
-
 func pretty(data []byte) string {
 	if os.Getenv("PRETTY") == "" {
 		return hex.EncodeToString(data)
