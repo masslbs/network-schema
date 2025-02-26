@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 IETF / draft-bryce-cose-merkle-mountain-range-proofs-02
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 from massmarket_hash_event.mmr.algorithms import included_root, inclusion_proof_path
 from massmarket_hash_event.mmr.algorithms import index_height
 from massmarket_hash_event.mmr.algorithms import peaks

@@ -78,5 +78,3 @@ class Shop:
 
 def hash_object(obj: dict) -> bytes:
     return hashlib.sha256(cbor_encode(obj)).digest()
-
-

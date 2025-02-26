@@ -105,10 +105,13 @@ def generate_test_vectors() -> List[Dict[str, Any]]:
             ops.append({"type": "delete", "key": key})
     test_vectors.append(generate_test_vector(ops))
 
-
     # Test vector 5: Large set of insertions to produce some branching and depth
     ops = [
-        {"type": "insert", "key": random_bytes(4).hex(), "value": f"value{random.randint(1, 1000)}"}
+        {
+            "type": "insert",
+            "key": random_bytes(4).hex(),
+            "value": f"value{random.randint(1, 1000)}",
+        }
         for _ in range(1000)
     ]
     test_vectors.append(generate_test_vector(ops))
@@ -132,6 +135,7 @@ def generate_test_vectors() -> List[Dict[str, Any]]:
     test_vectors.append(generate_test_vector(ops))
 
     return test_vectors
+
 
 if __name__ == "__main__":
     vectors = generate_test_vectors()

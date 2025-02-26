@@ -116,11 +116,9 @@
           with ps; [
             protobuf
             web3
-            safe-pysha3
 
             matplotlib # go/hamt_bench_plot.py
             cbor2
-            xxhash
 
             # packaging massmarket_hash_event
             pytest
