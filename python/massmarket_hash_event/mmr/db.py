@@ -1,4 +1,4 @@
-from sha3 import keccak_256
+from hashlib import sha256
 
 from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 from massmarket_hash_event.mmr.algorithms import leaf_count
@@ -16,7 +16,7 @@ def hash_num64(v: int) -> bytes:
     Returns:
         bytes: the SHA-256 hash of the big endian representation of v
     """
-    return keccak_256(v.to_bytes(8, byteorder="big", signed=False)).digest()
+    return sha256(v.to_bytes(8, byteorder="big", signed=False)).digest()
 
 
 class FlatDB:

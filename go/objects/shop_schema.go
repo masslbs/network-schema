@@ -6,6 +6,7 @@ package objects
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding"
 	"encoding/binary"
 	"encoding/hex"
@@ -17,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/sha3"
 
 	masscbor "github.com/masslbs/network-schema/go/cbor"
 	hamt "github.com/masslbs/network-schema/go/hamt"
@@ -358,29 +358,52 @@ func HAMTValidation(sl validator.StructLevel) {
 }
 
 func (s *Shop) Hash() (Hash, error) {
-	h := sha3.NewLegacyKeccak256()
-	tagsHash, err := s.Tags.Hash()
-	if err != nil {
-		return Hash{}, err
+	var err error
+	var hashedShop struct {
+		SchemaVersion uint64
+		Manifest      Manifest
+		Tags          []byte
+		Orders        []byte
+		Accounts      []byte
+		Listings      []byte
+		Inventory     []byte
 	}
-	h.Write(tagsHash)
 
-	ordersHash, err := s.Orders.Hash()
-	if err != nil {
-		return Hash{}, err
-	}
-	h.Write(ordersHash)
+	// copy the shop data into the hashedShop struct
+	hashedShop.SchemaVersion = s.SchemaVersion
+	hashedShop.Manifest = s.Manifest
 
-	accountsHash, err := s.Accounts.Hash()
+	// hash all the hamts
+	hashedShop.Tags, err = s.Tags.Hash()
 	if err != nil {
 		return Hash{}, err
 	}
-	h.Write(accountsHash)
-
-	err = masscbor.DefaultEncoder(h).Encode(s.Manifest)
+	hashedShop.Orders, err = s.Orders.Hash()
 	if err != nil {
 		return Hash{}, err
 	}
+	hashedShop.Accounts, err = s.Accounts.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	hashedShop.Listings, err = s.Listings.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	hashedShop.Inventory, err = s.Inventory.Hash()
+	if err != nil {
+		return Hash{}, err
+	}
+	// finally, hash the whole thing
+	h := sha256.New()
+	// var buf bytes.Buffer
+	// w := io.MultiWriter(h, &buf)
+	err = masscbor.DefaultEncoder(h).Encode(hashedShop)
+	if err != nil {
+		return Hash{}, err
+	}
+	// fmt.Println("\n\ndebug:\n")
+	// fmt.Println(hex.EncodeToString(buf.Bytes()))
 	return Hash(h.Sum(nil)), nil
 }
 

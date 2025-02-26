@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import cbor2
-from sha3 import keccak_256
+from hashlib import sha256
 import pytest
 
 # TODO: move to dedicated package instead of vendoring the code
@@ -30,7 +30,7 @@ def test_merkle_proofs():
 
         # Convert patches to bytes for hashing
         patches_bytes = [cbor2.dumps(patch) for patch in test_case["Patches"]]
-        hashed_patches = [keccak_256(patch).digest() for patch in patches_bytes]
+        hashed_patches = [sha256(patch).digest() for patch in patches_bytes]
 
         # Create merkle tree
         tree = FlatDB()
@@ -59,20 +59,20 @@ def test_merkle_proofs():
 def test_verify_proof_errors():
     # Create a simple tree with one element
     tree = FlatDB()
-    element = keccak_256(b"test").digest()
+    element = sha256(b"test").digest()
     leaf_index = add_leaf_hash(tree, element) - 1
     root = tree.get(leaf_index)
     path = []
 
     # Test with wrong root hash
-    wrong_root = keccak_256(b"wrong").digest()
+    wrong_root = sha256(b"wrong").digest()
     with pytest.raises(RootMismatchError) as exc_info:
         verify_proof(leaf_index, element, path, wrong_root)
     assert exc_info.value.calculated_root == root
     assert exc_info.value.expected_root == wrong_root
 
     # Test with wrong element
-    wrong_element = keccak_256(b"wrong element").digest()
+    wrong_element = sha256(b"wrong element").digest()
     with pytest.raises(RootMismatchError):
         verify_proof(leaf_index, wrong_element, path, root)
     assert exc_info.value.calculated_root == root

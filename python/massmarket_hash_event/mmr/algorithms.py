@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sha3 import keccak_256
+from hashlib import sha256
 
 
 def add_leaf_hash(db, f: bytes) -> int:
@@ -233,7 +233,7 @@ def hash_pospair64(pos: int, a: bytes, b: bytes) -> bytes:
     Returns:
         The value for the node identified by pos
     """
-    h = keccak_256()
+    h = sha256()
     h.update(pos.to_bytes(8, byteorder="big", signed=False))
     h.update(a)
     h.update(b)

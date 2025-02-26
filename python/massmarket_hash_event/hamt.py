@@ -8,16 +8,17 @@ from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional, Any, Callable
 import cbor2
 
-BITS_PER_STEP = 5
-MAX_DEPTH = (64 + BITS_PER_STEP - 1) // BITS_PER_STEP
+BITS_PER_STEP = 6
+MAX_DEPTH = 256 // BITS_PER_STEP
 
 V = TypeVar("V")
+
 
 @dataclass
 class HashState:
     original_key: bytes
     hash_buf: bytes  # Store the full 32-byte (256-bit) SHA-256 hash
-    consumed: int    # How many bits we've consumed so far
+    consumed: int  # How many bits we've consumed so far
 
     @classmethod
     def new(cls, key: bytes) -> "HashState":
@@ -25,12 +26,8 @@ class HashState:
         h = hashlib.sha256()
         h.update(key)
         hash_buf = h.digest()  # Get the full 32-byte hash
-        
-        return cls(
-            original_key=key,
-            hash_buf=hash_buf,
-            consumed=0
-        )
+
+        return cls(original_key=key, hash_buf=hash_buf, consumed=0)
 
     def next(self) -> int:
         bit_offset = self.consumed
@@ -44,9 +41,10 @@ class HashState:
             next16 |= self.hash_buf[byte_offset + 1]
 
         shift = 16 - BITS_PER_STEP - bit_in_byte
-        chunk = (next16 >> shift) & 0x1F
+        chunk = (next16 >> shift) & ((1 << BITS_PER_STEP) - 1)
         self.consumed += BITS_PER_STEP
         return chunk
+
 
 @dataclass
 class Entry(Generic[V]):
@@ -90,7 +88,7 @@ class Node(Generic[V]):
             return self.insert_fallback(key, value)
 
         idx = hs.next()
-        if idx >= 32:
+        if idx >= 64:
             raise ValueError(f"idx out of range: {idx}")
 
         pos = count_ones(self.bitmap, idx)
@@ -113,14 +111,14 @@ class Node(Generic[V]):
             # Skip to the current consumption point
             for _ in range(hs.consumed // BITS_PER_STEP):
                 old_hs.next()
-                
+
             branch.insert(entry.key, entry.value, old_hs)
 
             new_hs = HashState.new(key)
             # Skip to the current consumption point
             for _ in range(hs.consumed // BITS_PER_STEP):
                 new_hs.next()
-                
+
             branch.insert(key, value, new_hs)
 
             self.entries[pos] = Entry(key=None, value=None, node=branch)

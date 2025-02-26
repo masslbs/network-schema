@@ -1708,7 +1708,7 @@ func TestGenerateVectorsTagOkay(t *testing.T) {
 			var entry vectorEntryOkay
 			entry.Name = t.Name()
 			entry.Before = before
-			encoded := mustEncode(t, tag)
+			encoded := mustEncode(t, shop)
 			entry.After = vectorSnapshot{
 				Value:   shop,
 				Encoded: encoded,

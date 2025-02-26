@@ -105,8 +105,33 @@ def generate_test_vectors() -> List[Dict[str, Any]]:
             ops.append({"type": "delete", "key": key})
     test_vectors.append(generate_test_vector(ops))
 
-    return test_vectors
 
+    # Test vector 5: Large set of insertions to produce some branching and depth
+    ops = [
+        {"type": "insert", "key": random_bytes(4).hex(), "value": f"value{random.randint(1, 1000)}"}
+        for _ in range(1000)
+    ]
+    test_vectors.append(generate_test_vector(ops))
+
+    # Test vector 6: Mixed operations with large set of data
+    ops = []
+    keys = [random_bytes(4).hex() for _ in range(1000)]
+    for _ in range(1000):
+        if random.random() < 0.7:  # 70% chance of insert
+            key = random.choice(keys)
+            ops.append(
+                {
+                    "type": "insert",
+                    "key": key,
+                    "value": f"value{random.randint(1, 1000)}",
+                }
+            )
+        else:  # 30% chance of delete
+            key = random.choice(keys)
+            ops.append({"type": "delete", "key": key})
+    test_vectors.append(generate_test_vector(ops))
+
+    return test_vectors
 
 if __name__ == "__main__":
     vectors = generate_test_vectors()
@@ -115,7 +140,7 @@ if __name__ == "__main__":
     test_data_out = os.getenv("TEST_DATA_OUT")
     if test_data_out is None:
         test_data_out = "../vectors"
-        
+
     os.makedirs(test_data_out, exist_ok=True)
     fname = os.path.join(test_data_out, "hamt_test.json")
     with open(fname, "w") as f:

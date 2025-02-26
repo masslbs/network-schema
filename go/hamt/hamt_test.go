@@ -626,9 +626,8 @@ func TestHAMTVectors(t *testing.T) {
 	for i, vector := range vectors {
 		trie := NewTrie[string]()
 
-		for j, op := range vector.Operations {
-			t.Run(fmt.Sprintf("vector-%d/operation-%d", i, j), func(t *testing.T) {
-
+		t.Run(fmt.Sprintf("vector-%d", i), func(t *testing.T) {
+			for j, op := range vector.Operations {
 				r := require.New(t)
 				key, err := hex.DecodeString(op.Key)
 				r.NoError(err, "invalid key hex")
@@ -651,8 +650,8 @@ func TestHAMTVectors(t *testing.T) {
 
 				actualHash := hex.EncodeToString(hash)
 				r.Equal(vector.Hashes[j], actualHash, "hash mismatch")
-			})
-		}
+			}
+		})
 	}
 }
 

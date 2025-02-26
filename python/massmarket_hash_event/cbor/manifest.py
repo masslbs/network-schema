@@ -46,8 +46,6 @@ class Manifest:
     shipping_regions: Optional[Dict[str, ShippingRegion]] = None
 
     def __post_init__(self):
-        if not self.payees:
-            raise ValueError("Payees map cannot be empty")
         if not self.accepted_currencies:
             raise ValueError("AcceptedCurrencies must not be empty")
         if self.shipping_regions is not None and not self.shipping_regions:
@@ -86,7 +84,7 @@ class Manifest:
 
     def to_cbor_dict(self) -> dict:
         d = {
-            "ShopID": self.shop_id.to_cbor_dict(),
+            "ShopID": int(self.shop_id),
             "Payees": {k: v.to_cbor_dict() for k, v in self.payees.items()},
             "AcceptedCurrencies": [
                 item.to_cbor_dict() if hasattr(item, "to_cbor_dict") else item

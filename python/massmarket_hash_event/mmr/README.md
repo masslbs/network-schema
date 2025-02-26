@@ -7,4 +7,3 @@ Mostly for convenience since in it's upstream form the python code wasn't immedi
 ## Primary changes
 
 * fixed imports
-* changed hash function to sha3/keccak

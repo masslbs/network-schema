@@ -36,6 +36,7 @@ def test_hamt_standalone_vectors():
 
 def test_hamt_shop_vectors():
     files = [f for f in os.listdir("../vectors") if f.endswith("Okay.json")]
+    assert len(files) > 0
     for file in files:
         with open(os.path.join("../vectors", file)) as f:
             vectors = json.load(f)
@@ -43,24 +44,14 @@ def test_hamt_shop_vectors():
         # print(f"Testing {file}")
         for snap in vectors["Snapshots"]:
             # print(f"  Snapshot: {snap['Name']}")
+            print(f"  Snapshot: {snap['Name']}")
             cbor_data = base64.b64decode(snap["After"]["Encoded"])
 
             shop_dict = cbor2.loads(cbor_data)
 
-            # check the top-level hamts for sanity
-            hamt_keys = ["Accounts", "Orders", "Listings", "Tags", "Inventory"]
-            for key in hamt_keys:
-                if key not in shop_dict:
-                    print(f"  {key} not found in file {file}/snapshot {snap['Name']}")
-                    continue
-
-                hamt_data = shop_dict.get(key, None)
-                trie = Trie.from_cbor_array(hamt_data)
-                print(f"    {key}: {trie.hash().hex()}")
-                # assert trie.hash().hex() == snap["After"][key]["Hash"]
-
             # load the full shop and compare the hashes
             shop = Shop.from_cbor_dict(shop_dict)
-            assert shop.hash().hex() == snap["After"]["Hash"]
+            expected_hash = base64.b64decode(snap["After"]["Hash"])
+            assert shop.hash().hex() == expected_hash.hex()
 
     # assert False

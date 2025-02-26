@@ -16,7 +16,7 @@ __all__ = [
 
 from typing import List
 
-from sha3 import keccak_256
+from hashlib import sha256
 from web3 import Web3
 
 w3 = Web3()
@@ -40,7 +40,7 @@ def get_root_hash_of_patches(patches: List[Patch]):
         encoded_patch = cbor_encode(patch_data)
         # print(f"DEBUG patch {i}: {encoded_patch.hex()}")
         patches_bytes.append(encoded_patch)
-    hashed_patches = [keccak_256(patch).digest() for patch in patches_bytes]
+    hashed_patches = [sha256(patch).digest() for patch in patches_bytes]
 
     # Add zeros until we have a power of 2 length
     next_power_2 = 1
@@ -48,7 +48,7 @@ def get_root_hash_of_patches(patches: List[Patch]):
         next_power_2 *= 2
 
     # Pad with zeros to reach power of 2 length
-    zero_hash = keccak_256(b"").digest()
+    zero_hash = sha256(b"").digest()
     while len(hashed_patches) < next_power_2:
         hashed_patches.append(zero_hash)
     # print(f"Hashed Patches (filled): {len(hashed_patches)}")
