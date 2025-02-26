@@ -29,7 +29,7 @@ LIC := MIT
 CPY := "Mass Labs"
 
 reuse:
-	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights Makefile CHANGELOG.md README.md *.proto flake.nix .gitignore .github/workflows/test.yml *.py python/*.py python/tests/*.py python/massmarket_hash_event/*.pyi python/massmarket_hash_event/*.py python/massmarket_hash_event/cbor/*.py python/pyproject.toml python/Makefile go.mod go.sum go/cbor/*.go go/pb/*.go
+	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights Makefile CHANGELOG.md README.md *.proto flake.nix .gitignore .github/workflows/test.yml *.py python/*.py python/tests/*.py python/massmarket_hash_event/*.pyi python/massmarket_hash_event/*.py python/massmarket_hash_event/cbor/*.py python/pyproject.toml python/Makefile go.mod go.sum go/cbor/*.go go/pb/*.go go/objects/*.go go/patch/*.go go/hamt/*.go go/mmr/*.go go/internal/testhelper/*.go
 	reuse annotate --license  $(LIC) --copyright $(CPY) --merge-copyrights --force-dot-license VERSION *.txt  flake.lock
 
 clean:

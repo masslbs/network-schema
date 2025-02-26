@@ -15,6 +15,8 @@ import (
 	"io"
 	"math/bits"
 	"slices"
+
+	masscbor "github.com/masslbs/network-schema/go/cbor"
 )
 
 const (
@@ -121,13 +123,13 @@ func NewTrie[V any]() *Trie[V] {
 // MarshalCBOR marshals the HAMT into a CBOR encoded byte slice using the
 // canonical encoding options defined in the schema package.
 func (t *Trie[V]) MarshalCBOR() ([]byte, error) {
-	return Marshal(t.root)
+	return masscbor.Marshal(t.root)
 }
 
 // UnmarshalCBOR unmarshals a CBOR encoded byte slice into a HAMT and
 // recalculates the size by counting all leaf entries.
 func (t *Trie[V]) UnmarshalCBOR(data []byte) error {
-	if err := Unmarshal(data, &t.root); err != nil {
+	if err := masscbor.Unmarshal(data, &t.root); err != nil {
 		return err
 	}
 
@@ -498,7 +500,7 @@ func (n *Node[V]) Hash() ([]byte, error) {
 
 // encodeValue serializes a value to a writer using the default CBOR encoder.
 func (n *Node[V]) encodeValue(v V, w io.Writer) error {
-	enc := DefaultEncoder(w)
+	enc := masscbor.DefaultEncoder(w)
 	return enc.Encode(v)
 }
 

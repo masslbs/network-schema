@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package schema
+package objects
 
 import (
 	"bytes"
@@ -17,8 +17,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/go-playground/validator/v10"
-	"github.com/ipfs/go-cid"
 	"golang.org/x/crypto/sha3"
+
+	masscbor "github.com/masslbs/network-schema/go/cbor"
+	hamt "github.com/masslbs/network-schema/go/hamt"
 )
 
 type ErrBytesTooShort struct {
@@ -87,6 +89,28 @@ func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+func AddrFromHex(chain uint64, hexAddr string) (ChainAddress, error) {
+	addr := ChainAddress{ChainID: chain}
+	hexAddr = strings.TrimPrefix(hexAddr, "0x")
+	decoded, err := hex.DecodeString(hexAddr)
+	if err != nil {
+		return ChainAddress{}, err
+	}
+	n := copy(addr.Address[:], decoded)
+	if n != EthereumAddressSize {
+		return ChainAddress{}, fmt.Errorf("copy failed: %d != %d", n, EthereumAddressSize)
+	}
+	return addr, nil
+}
+
+func MustAddrFromHex(chain uint64, hexAddr string) ChainAddress {
+	addr, err := AddrFromHex(chain, hexAddr)
+	if err != nil {
+		panic(err)
+	}
+	return addr
+}
+
 // make sure these types implement encoding.BinaryUnmarshaler
 var (
 	_ encoding.BinaryUnmarshaler = (*Signature)(nil)
@@ -108,18 +132,6 @@ type ChainAddress struct {
 func (ca *ChainAddress) String() string {
 	addr := common.NewMixedcaseAddress(common.Address(ca.Address))
 	return fmt.Sprintf("%s (%d)", addr.String(), ca.ChainID)
-}
-
-func addrFromHex(chain uint64, hexAddr string) ChainAddress {
-	addr := ChainAddress{ChainID: chain}
-	hexAddr = strings.TrimPrefix(hexAddr, "0x")
-	decoded, err := hex.DecodeString(hexAddr)
-	check(err)
-	n := copy(addr.Address[:], decoded)
-	if n != EthereumAddressSize {
-		panic(fmt.Sprintf("copy failed: %d != %d", n, EthereumAddressSize))
-	}
-	return addr
 }
 
 // Payee represents a payment recipient
@@ -156,20 +168,20 @@ type Shop struct {
 func NewShop() Shop {
 	s := Shop{}
 	s.SchemaVersion = 42
-	s.Accounts.Trie = NewTrie[Account]()
-	s.Listings.Trie = NewTrie[Listing]()
-	s.Orders.Trie = NewTrie[Order]()
-	s.Tags.Trie = NewTrie[Tag]()
-	s.Inventory.Trie = NewTrie[uint64]()
+	s.Accounts.Trie = hamt.NewTrie[Account]()
+	s.Listings.Trie = hamt.NewTrie[Listing]()
+	s.Orders.Trie = hamt.NewTrie[Order]()
+	s.Tags.Trie = hamt.NewTrie[Tag]()
+	s.Inventory.Trie = hamt.NewTrie[uint64]()
 	return s
 }
 
 type Accounts struct {
-	*Trie[Account]
+	*hamt.Trie[Account]
 }
 
 type Listings struct {
-	*Trie[Listing]
+	*hamt.Trie[Listing]
 }
 
 func (l *Listings) Get(id ObjectId) (Listing, bool) {
@@ -201,7 +213,7 @@ func idToBytes(id ObjectId) []byte {
 }
 
 type Tags struct {
-	*Trie[Tag]
+	*hamt.Trie[Tag]
 }
 
 func (t *Tags) Get(name string) (Tag, bool) {
@@ -226,7 +238,7 @@ func (t *Tags) Delete(name string) error {
 }
 
 type Orders struct {
-	*Trie[Order]
+	*hamt.Trie[Order]
 }
 
 func (l *Orders) Get(id ObjectId) (Order, bool) {
@@ -246,7 +258,7 @@ func (l *Orders) Delete(id ObjectId) error {
 }
 
 type Inventory struct {
-	*Trie[uint64]
+	*hamt.Trie[uint64]
 }
 
 func (l *Inventory) Get(id ObjectId, variations []string) (uint64, bool) {
@@ -365,8 +377,10 @@ func (s *Shop) Hash() (Hash, error) {
 	}
 	h.Write(accountsHash)
 
-	err = DefaultEncoder(h).Encode(s.Manifest)
-	check(err)
+	err = masscbor.DefaultEncoder(h).Encode(s.Manifest)
+	if err != nil {
+		return Hash{}, err
+	}
 	return Hash(h.Sum(nil)), nil
 }
 
@@ -421,7 +435,7 @@ type priceModifierHack struct {
 
 func (pm *PriceModifier) UnmarshalCBOR(data []byte) error {
 	var pm2 priceModifierHack
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&pm2)
 	if err != nil {
 		return err
@@ -464,7 +478,7 @@ type listingStockStatusHack struct {
 
 func (ls *ListingStockStatus) UnmarshalCBOR(data []byte) error {
 	var ls2 listingStockStatusHack
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&ls2)
 	if err != nil {
 		return err
@@ -515,7 +529,7 @@ const (
 )
 
 func (s *ListingViewState) UnmarshalCBOR(data []byte) error {
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
@@ -611,7 +625,7 @@ const (
 )
 
 func (s *OrderState) UnmarshalCBOR(data []byte) error {
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
@@ -639,8 +653,8 @@ type AddressDetails struct {
 type PaymentDetails struct {
 	PaymentID     Hash
 	Total         Uint256
-	ListingHashes []cid.Cid `validate:"required,gt=0"`
-	TTL           uint64    `validate:"required,gt=0"` // The time to live in block
+	ListingHashes [][]byte `validate:"required,gt=0"`
+	TTL           uint64   `validate:"required,gt=0"` // The time to live in block
 	ShopSignature Signature
 }
 
@@ -654,7 +668,7 @@ func (op *OrderPaid) UnmarshalCBOR(data []byte) error {
 		TxHash    *Hash `cbor:",omitempty"`
 		BlockHash *Hash `cbor:",omitempty"`
 	}
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&tmp)
 	if err != nil {
 		return err

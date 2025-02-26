@@ -9,7 +9,7 @@ This is a modified version of JSON Patch (rfc6902). We first constraint the oper
 - decrement - Decrements a number by a specified value. Only valid if the value of the path is a number.,
 */
 
-package schema
+package patch
 
 import (
 	"fmt"
@@ -20,6 +20,9 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/go-playground/validator/v10"
+
+	masscbor "github.com/masslbs/network-schema/go/cbor"
+	"github.com/masslbs/network-schema/go/objects"
 )
 
 // To validate a patchset, construct the merkle tree of the patches and validate the root hash.
@@ -28,7 +31,7 @@ type SignedPatchSet struct {
 	Header PatchSetHeader `validate:"required"` // TODO: dive doesn't work?
 
 	// The signature of the header, containing the merkle root of the patches
-	Signature Signature `validate:"required,gt=0,dive"`
+	Signature objects.Signature `validate:"required,gt=0,dive"`
 
 	Patches []Patch `validate:"required,gt=0,dive"`
 }
@@ -40,14 +43,14 @@ type PatchSetHeader struct {
 
 	// Every signed event must be tied to a shop id. This allow the
 	// event to processed outside the context of the currenct connection.
-	ShopID Uint256 `validate:"required"`
+	ShopID objects.Uint256 `validate:"required"`
 
 	// The time when this event was created.
 	// The relay should reject any events from the future
 	Timestamp time.Time `validate:"required"`
 
 	// The merkle root of the patches
-	RootHash Hash `validate:"required"`
+	RootHash objects.Hash `validate:"required"`
 }
 
 type Patch struct {
@@ -57,7 +60,7 @@ type Patch struct {
 }
 
 func (p Patch) Serialize() ([]byte, error) {
-	return Marshal(p)
+	return masscbor.Marshal(p)
 }
 
 // TODO: type change to enum/number instead of string?
@@ -85,8 +88,8 @@ type PatchPath struct {
 	// inventory: ObjectId with optional variations as fields
 	//
 	// exclusion: manifest, which has no id
-	ObjectID    *ObjectId
-	AccountAddr *EthereumAddress
+	ObjectID    *objects.ObjectId
+	AccountAddr *objects.EthereumAddress
 	TagName     *string
 
 	Fields []string // extra fields
@@ -159,10 +162,10 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if !ok {
 			return fmt.Errorf("patch.path: invalid ethereum address: %v", path[0])
 		}
-		if len(data) != EthereumAddressSize {
-			return fmt.Errorf("patch.path: invalid ethereum address size: %d != %d", len(data), EthereumAddressSize)
+		if len(data) != objects.EthereumAddressSize {
+			return fmt.Errorf("patch.path: invalid ethereum address size: %d != %d", len(data), objects.EthereumAddressSize)
 		}
-		var addr EthereumAddress
+		var addr objects.EthereumAddress
 		copy(addr[:], data)
 		p.AccountAddr = &addr
 	case ObjectTypeOrder, ObjectTypeListing:
@@ -173,7 +176,7 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if !ok {
 			return fmt.Errorf("patch.path: invalid object id: %v", path[0])
 		}
-		objId := ObjectId(id)
+		objId := objects.ObjectId(id)
 		p.ObjectID = &objId
 	case ObjectTypeTag:
 		if len(path) < 1 {
@@ -308,10 +311,10 @@ func (e ObjectNotFoundError) Error() string {
 // Centralize patch operations in the Patcher type
 type Patcher struct {
 	validator *validator.Validate
-	shop      *Shop // Add reference to shop for lookups
+	shop      *objects.Shop // Add reference to shop for lookups
 }
 
-func NewPatcher(v *validator.Validate, shop *Shop) *Patcher {
+func NewPatcher(v *validator.Validate, shop *objects.Shop) *Patcher {
 	return &Patcher{validator: v, shop: shop}
 }
 
@@ -349,8 +352,8 @@ func (p *Patcher) patchTag(patch Patch) error {
 			if exists {
 				return fmt.Errorf("tag %s already exists", tagName)
 			}
-			var newTag Tag
-			if err := Unmarshal(patch.Value, &newTag); err != nil {
+			var newTag objects.Tag
+			if err := masscbor.Unmarshal(patch.Value, &newTag); err != nil {
 				return fmt.Errorf("failed to unmarshal tag: %w", err)
 			}
 			if err := p.validator.Struct(newTag); err != nil {
@@ -409,8 +412,8 @@ func (p *Patcher) patchTag(patch Patch) error {
 		}
 
 		if len(patch.Path.Fields) == 0 {
-			var newTag Tag
-			if err := Unmarshal(patch.Value, &newTag); err != nil {
+			var newTag objects.Tag
+			if err := masscbor.Unmarshal(patch.Value, &newTag); err != nil {
 				return fmt.Errorf("failed to unmarshal tag: %w", err)
 			}
 			if err := p.validator.Struct(newTag); err != nil {
@@ -429,7 +432,7 @@ func (p *Patcher) patchTag(patch Patch) error {
 		switch patch.Path.Fields[0] {
 		case "name":
 			var newName string
-			if err := Unmarshal(patch.Value, &newName); err != nil {
+			if err := masscbor.Unmarshal(patch.Value, &newName); err != nil {
 				return fmt.Errorf("failed to unmarshal tag name: %w", err)
 			}
 			tag.Name = newName
@@ -446,8 +449,8 @@ func (p *Patcher) patchTag(patch Patch) error {
 			if idx < 0 || idx >= len(tag.ListingIds) {
 				return ObjectNotFoundError{ObjectType: ObjectTypeTag, Path: patch.Path}
 			}
-			var listingId ObjectId
-			if err := Unmarshal(patch.Value, &listingId); err != nil {
+			var listingId objects.ObjectId
+			if err := masscbor.Unmarshal(patch.Value, &listingId); err != nil {
 				return fmt.Errorf("failed to unmarshal listing ID: %w", err)
 			}
 			if _, exists := p.shop.Listings.Get(listingId); !exists {
@@ -464,13 +467,13 @@ func (p *Patcher) patchTag(patch Patch) error {
 }
 
 // Helper for adding listings to tags with referential checks
-func (p *Patcher) addListingToTag(tag *Tag, patch Patch) error {
+func (p *Patcher) addListingToTag(tag *objects.Tag, patch Patch) error {
 	if len(patch.Path.Fields) != 2 {
 		return fmt.Errorf("invalid listingIds path")
 	}
 
-	var listingId ObjectId
-	if err := Unmarshal(patch.Value, &listingId); err != nil {
+	var listingId objects.ObjectId
+	if err := masscbor.Unmarshal(patch.Value, &listingId); err != nil {
 		return fmt.Errorf("failed to unmarshal listing ID: %w", err)
 	}
 
@@ -524,8 +527,8 @@ func (p *Patcher) patchManifest(patch Patch) error {
 func (p *Patcher) replaceManifestField(patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
 		// Replace entire manifest
-		var newManifest Manifest
-		if err := Unmarshal(patch.Value, &newManifest); err != nil {
+		var newManifest objects.Manifest
+		if err := masscbor.Unmarshal(patch.Value, &newManifest); err != nil {
 			return fmt.Errorf("failed to unmarshal manifest: %w", err)
 		}
 		if err := p.validator.Struct(newManifest); err != nil {
@@ -537,15 +540,15 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 
 	switch patch.Path.Fields[0] {
 	case "shopId":
-		var value Uint256
-		if err := Unmarshal(patch.Value, &value); err != nil {
+		var value objects.Uint256
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
 			return fmt.Errorf("failed to unmarshal shopId: %w", err)
 		}
 		p.shop.Manifest.ShopID = value
 
 	case "pricingCurrency":
-		var c ChainAddress
-		if err := Unmarshal(patch.Value, &c); err != nil {
+		var c objects.ChainAddress
+		if err := masscbor.Unmarshal(patch.Value, &c); err != nil {
 			return fmt.Errorf("failed to unmarshal pricingCurrency: %w", err)
 		}
 		p.shop.Manifest.PricingCurrency = c
@@ -553,15 +556,15 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 	case "payees":
 		// Replace entire payees map or a single payee
 		if len(patch.Path.Fields) == 1 {
-			var payees Payees
-			if err := Unmarshal(patch.Value, &payees); err != nil {
+			var payees objects.Payees
+			if err := masscbor.Unmarshal(patch.Value, &payees); err != nil {
 				return fmt.Errorf("failed to unmarshal payees: %w", err)
 			}
 			p.shop.Manifest.Payees = payees
 		} else if len(patch.Path.Fields) == 2 {
 			payeeName := patch.Path.Fields[1]
-			var payee Payee
-			if err := Unmarshal(patch.Value, &payee); err != nil {
+			var payee objects.Payee
+			if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
 				return fmt.Errorf("failed to unmarshal payee: %w", err)
 			}
 			if _, exists := p.shop.Manifest.Payees[payeeName]; !exists {
@@ -575,15 +578,15 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 	case "shippingRegions":
 		// Replace entire shippingRegions or just one region
 		if len(patch.Path.Fields) == 1 {
-			var regions ShippingRegions
-			if err := Unmarshal(patch.Value, &regions); err != nil {
+			var regions objects.ShippingRegions
+			if err := masscbor.Unmarshal(patch.Value, &regions); err != nil {
 				return fmt.Errorf("failed to unmarshal shippingRegions: %w", err)
 			}
 			p.shop.Manifest.ShippingRegions = regions
 		} else if len(patch.Path.Fields) == 2 {
 			regionName := patch.Path.Fields[1]
-			var region ShippingRegion
-			if err := Unmarshal(patch.Value, &region); err != nil {
+			var region objects.ShippingRegion
+			if err := masscbor.Unmarshal(patch.Value, &region); err != nil {
 				return fmt.Errorf("failed to unmarshal shippingRegion: %w", err)
 			}
 			if _, exists := p.shop.Manifest.ShippingRegions[regionName]; !exists {
@@ -597,8 +600,8 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 	case "acceptedCurrencies":
 		// Replace entire acceptedCurrencies or a single index
 		if len(patch.Path.Fields) == 1 {
-			var currencies ChainAddresses
-			if err := Unmarshal(patch.Value, &currencies); err != nil {
+			var currencies objects.ChainAddresses
+			if err := masscbor.Unmarshal(patch.Value, &currencies); err != nil {
 				return fmt.Errorf("failed to unmarshal acceptedCurrencies: %w", err)
 			}
 			p.shop.Manifest.AcceptedCurrencies = currencies
@@ -610,8 +613,8 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 			if i < 0 || i >= len(p.shop.Manifest.AcceptedCurrencies) {
 				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
 			}
-			var currency ChainAddress
-			if err := Unmarshal(patch.Value, &currency); err != nil {
+			var currency objects.ChainAddress
+			if err := masscbor.Unmarshal(patch.Value, &currency); err != nil {
 				return fmt.Errorf("failed to unmarshal accepted currency: %w", err)
 			}
 			p.shop.Manifest.AcceptedCurrencies[i] = currency
@@ -640,8 +643,8 @@ func (p *Patcher) addManifestField(patch Patch) error {
 		if _, exists := p.shop.Manifest.Payees[payeeName]; exists {
 			return fmt.Errorf("payee %s already exists", payeeName)
 		}
-		var payee Payee
-		if err := Unmarshal(patch.Value, &payee); err != nil {
+		var payee objects.Payee
+		if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
 			return fmt.Errorf("failed to unmarshal payee: %w", err)
 		}
 		p.shop.Manifest.Payees[payeeName] = payee
@@ -653,8 +656,8 @@ func (p *Patcher) addManifestField(patch Patch) error {
 		if _, exists := p.shop.Manifest.ShippingRegions[regionName]; exists {
 			return fmt.Errorf("shipping region %s already exists", regionName)
 		}
-		var region ShippingRegion
-		if err := Unmarshal(patch.Value, &region); err != nil {
+		var region objects.ShippingRegion
+		if err := masscbor.Unmarshal(patch.Value, &region); err != nil {
 			return fmt.Errorf("failed to unmarshal shipping region: %w", err)
 		}
 		p.shop.Manifest.ShippingRegions[regionName] = region
@@ -665,8 +668,8 @@ func (p *Patcher) addManifestField(patch Patch) error {
 		}
 		index := patch.Path.Fields[1]
 
-		var newCurrency ChainAddress
-		if err := Unmarshal(patch.Value, &newCurrency); err != nil {
+		var newCurrency objects.ChainAddress
+		if err := masscbor.Unmarshal(patch.Value, &newCurrency); err != nil {
 			return fmt.Errorf("failed to unmarshal new currency: %w", err)
 		}
 		// If index == "-", append to the end
@@ -683,7 +686,7 @@ func (p *Patcher) addManifestField(patch Patch) error {
 			}
 			// Insert at position i
 			ac := p.shop.Manifest.AcceptedCurrencies
-			ac = append(ac[:i], append([]ChainAddress{newCurrency}, ac[i:]...)...)
+			ac = append(ac[:i], append([]objects.ChainAddress{newCurrency}, ac[i:]...)...)
 			p.shop.Manifest.AcceptedCurrencies = ac
 		}
 	default:
@@ -760,8 +763,8 @@ func (p *Patcher) patchAccount(patch Patch) error {
 			if exists {
 				return fmt.Errorf("account already exists")
 			}
-			var newAcc Account
-			if err := Unmarshal(patch.Value, &newAcc); err != nil {
+			var newAcc objects.Account
+			if err := masscbor.Unmarshal(patch.Value, &newAcc); err != nil {
 				return fmt.Errorf("failed to unmarshal account: %w", err)
 			}
 			if err := p.validator.Struct(newAcc); err != nil {
@@ -800,8 +803,8 @@ func (p *Patcher) patchAccount(patch Patch) error {
 			return ObjectNotFoundError{ObjectType: ObjectTypeAccount, Path: patch.Path}
 		}
 		if len(patch.Path.Fields) == 0 {
-			var newAcc Account
-			if err := Unmarshal(patch.Value, &newAcc); err != nil {
+			var newAcc objects.Account
+			if err := masscbor.Unmarshal(patch.Value, &newAcc); err != nil {
 				return fmt.Errorf("failed to unmarshal account: %w", err)
 			}
 			if err := p.validator.Struct(newAcc); err != nil {
@@ -830,8 +833,8 @@ func (p *Patcher) patchListing(patch Patch) error {
 			if exists {
 				return fmt.Errorf("listing %d already exists", objId)
 			}
-			var newListing Listing
-			if err := Unmarshal(patch.Value, &newListing); err != nil {
+			var newListing objects.Listing
+			if err := masscbor.Unmarshal(patch.Value, &newListing); err != nil {
 				return fmt.Errorf("failed to unmarshal listing: %w", err)
 			}
 			if err := p.validator.Struct(newListing); err != nil {
@@ -854,8 +857,8 @@ func (p *Patcher) patchListing(patch Patch) error {
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
 		if len(patch.Path.Fields) == 0 {
-			var newListing Listing
-			if err := Unmarshal(patch.Value, &newListing); err != nil {
+			var newListing objects.Listing
+			if err := masscbor.Unmarshal(patch.Value, &newListing); err != nil {
 				return fmt.Errorf("failed to unmarshal listing: %w", err)
 			}
 			if err := p.validator.Struct(newListing); err != nil {
@@ -875,7 +878,7 @@ func (p *Patcher) patchListing(patch Patch) error {
 		if len(patch.Path.Fields) == 0 {
 			referenced := false
 			tagNames := []string{}
-			p.shop.Tags.All(func(key []byte, tag Tag) bool {
+			p.shop.Tags.All(func(key []byte, tag objects.Tag) bool {
 				if slices.Contains(tag.ListingIds, objId) {
 					referenced = true
 					tagNames = append(tagNames, string(key))
@@ -896,7 +899,7 @@ func (p *Patcher) patchListing(patch Patch) error {
 	return fmt.Errorf("unsupported operation: %s", patch.Op)
 }
 
-func (p *Patcher) addListingField(listing *Listing, patch Patch) error {
+func (p *Patcher) addListingField(listing *objects.Listing, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "metadata":
 		return p.addListingMetadata(listing, patch)
@@ -909,7 +912,7 @@ func (p *Patcher) addListingField(listing *Listing, patch Patch) error {
 	}
 }
 
-func (p *Patcher) removeListingField(listing *Listing, patch Patch) error {
+func (p *Patcher) removeListingField(listing *objects.Listing, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "metadata":
 		return p.removeListingMetadata(listing, patch)
@@ -922,7 +925,7 @@ func (p *Patcher) removeListingField(listing *Listing, patch Patch) error {
 	}
 }
 
-func (p *Patcher) replaceListingField(listing *Listing, patch Patch) error {
+func (p *Patcher) replaceListingField(listing *objects.Listing, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "metadata":
 		return p.replaceListingMetadata(listing, patch)
@@ -932,13 +935,13 @@ func (p *Patcher) replaceListingField(listing *Listing, patch Patch) error {
 		return p.replaceListingOptions(listing, patch)
 	case "price":
 		var newPrice big.Int
-		if err := Unmarshal(patch.Value, &newPrice); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &newPrice); err != nil {
 			return fmt.Errorf("failed to unmarshal price: %w", err)
 		}
 		listing.Price = newPrice
 	case "viewState":
-		var v ListingViewState
-		if err := Unmarshal(patch.Value, &v); err != nil {
+		var v objects.ListingViewState
+		if err := masscbor.Unmarshal(patch.Value, &v); err != nil {
 			return fmt.Errorf("failed to unmarshal viewState: %w", err)
 		}
 		listing.ViewState = v
@@ -948,7 +951,7 @@ func (p *Patcher) replaceListingField(listing *Listing, patch Patch) error {
 	return nil
 }
 
-func (p *Patcher) addListingMetadata(listing *Listing, patch Patch) error {
+func (p *Patcher) addListingMetadata(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid metadata path")
 	}
@@ -960,7 +963,7 @@ func (p *Patcher) addListingMetadata(listing *Listing, patch Patch) error {
 		index := patch.Path.Fields[2]
 
 		var newImage string
-		if err := Unmarshal(patch.Value, &newImage); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &newImage); err != nil {
 			return fmt.Errorf("failed to unmarshal image: %w", err)
 		}
 
@@ -984,7 +987,7 @@ func (p *Patcher) addListingMetadata(listing *Listing, patch Patch) error {
 	return nil
 }
 
-func (p *Patcher) removeListingMetadata(listing *Listing, patch Patch) error {
+func (p *Patcher) removeListingMetadata(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid metadata path")
 	}
@@ -1008,10 +1011,10 @@ func (p *Patcher) removeListingMetadata(listing *Listing, patch Patch) error {
 	return nil
 }
 
-func (p *Patcher) replaceListingMetadata(listing *Listing, patch Patch) error {
+func (p *Patcher) replaceListingMetadata(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) == 1 {
-		var newMd ListingMetadata
-		if err := Unmarshal(patch.Value, &newMd); err != nil {
+		var newMd objects.ListingMetadata
+		if err := masscbor.Unmarshal(patch.Value, &newMd); err != nil {
 			return fmt.Errorf("failed to unmarshal metadata: %w", err)
 		}
 		listing.Metadata = newMd
@@ -1020,20 +1023,20 @@ func (p *Patcher) replaceListingMetadata(listing *Listing, patch Patch) error {
 	switch patch.Path.Fields[1] {
 	case "title":
 		var val string
-		if err := Unmarshal(patch.Value, &val); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
 			return fmt.Errorf("failed to unmarshal title: %w", err)
 		}
 		listing.Metadata.Title = val
 	case "description":
 		var val string
-		if err := Unmarshal(patch.Value, &val); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
 			return fmt.Errorf("failed to unmarshal description: %w", err)
 		}
 		listing.Metadata.Description = val
 	case "images":
 		if len(patch.Path.Fields) == 2 {
 			var images []string
-			if err := Unmarshal(patch.Value, &images); err != nil {
+			if err := masscbor.Unmarshal(patch.Value, &images); err != nil {
 				return fmt.Errorf("failed to unmarshal images: %w", err)
 			}
 			listing.Metadata.Images = images
@@ -1048,7 +1051,7 @@ func (p *Patcher) replaceListingMetadata(listing *Listing, patch Patch) error {
 				return fmt.Errorf("index out of bounds: %d", i)
 			}
 			var val string
-			if err := Unmarshal(patch.Value, &val); err != nil {
+			if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
 				return fmt.Errorf("failed to unmarshal image: %w", err)
 			}
 			listing.Metadata.Images[i] = val
@@ -1061,14 +1064,14 @@ func (p *Patcher) replaceListingMetadata(listing *Listing, patch Patch) error {
 	return nil
 }
 
-func (p *Patcher) addListingStockStatus(listing *Listing, patch Patch) error {
+func (p *Patcher) addListingStockStatus(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid stockStatuses path")
 	}
 	index := patch.Path.Fields[1]
 
-	var newSS ListingStockStatus
-	if err := Unmarshal(patch.Value, &newSS); err != nil {
+	var newSS objects.ListingStockStatus
+	if err := masscbor.Unmarshal(patch.Value, &newSS); err != nil {
 		return fmt.Errorf("failed to unmarshal stock status: %w", err)
 	}
 
@@ -1083,13 +1086,13 @@ func (p *Patcher) addListingStockStatus(listing *Listing, patch Patch) error {
 			return fmt.Errorf("index out of bounds: %d", i)
 		}
 		slice := listing.StockStatuses
-		slice = append(slice[:i], append([]ListingStockStatus{newSS}, slice[i:]...)...)
+		slice = append(slice[:i], append([]objects.ListingStockStatus{newSS}, slice[i:]...)...)
 		listing.StockStatuses = slice
 	}
 	return nil
 }
 
-func (p *Patcher) removeListingStockStatus(listing *Listing, patch Patch) error {
+func (p *Patcher) removeListingStockStatus(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid stockStatuses path")
 	}
@@ -1105,10 +1108,10 @@ func (p *Patcher) removeListingStockStatus(listing *Listing, patch Patch) error 
 	return nil
 }
 
-func (p *Patcher) replaceListingStockStatuses(listing *Listing, patch Patch) error {
+func (p *Patcher) replaceListingStockStatuses(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) == 1 {
-		var statuses []ListingStockStatus
-		if err := Unmarshal(patch.Value, &statuses); err != nil {
+		var statuses []objects.ListingStockStatus
+		if err := masscbor.Unmarshal(patch.Value, &statuses); err != nil {
 			return fmt.Errorf("failed to unmarshal stock statuses: %w", err)
 		}
 		listing.StockStatuses = statuses
@@ -1122,8 +1125,8 @@ func (p *Patcher) replaceListingStockStatuses(listing *Listing, patch Patch) err
 		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 	}
 	if len(patch.Path.Fields) == 2 {
-		var ss ListingStockStatus
-		if err := Unmarshal(patch.Value, &ss); err != nil {
+		var ss objects.ListingStockStatus
+		if err := masscbor.Unmarshal(patch.Value, &ss); err != nil {
 			return fmt.Errorf("failed to unmarshal stock status: %w", err)
 		}
 		listing.StockStatuses[i] = ss
@@ -1132,14 +1135,14 @@ func (p *Patcher) replaceListingStockStatuses(listing *Listing, patch Patch) err
 	switch patch.Path.Fields[2] {
 	case "inStock":
 		var val bool
-		if err := Unmarshal(patch.Value, &val); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
 			return fmt.Errorf("failed to unmarshal inStock: %w", err)
 		}
 		listing.StockStatuses[i].InStock = &val
 		listing.StockStatuses[i].ExpectedInStockBy = nil
 	case "expectedInStockBy":
 		var t time.Time
-		if err := Unmarshal(patch.Value, &t); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &t); err != nil {
 			return fmt.Errorf("failed to unmarshal expectedInStockBy: %w", err)
 		}
 		listing.StockStatuses[i].ExpectedInStockBy = &t
@@ -1151,7 +1154,7 @@ func (p *Patcher) replaceListingStockStatuses(listing *Listing, patch Patch) err
 	return nil
 }
 
-func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
+func (p *Patcher) addListingOption(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid options path")
 	}
@@ -1160,8 +1163,8 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 		if _, exists := listing.Options[optionName]; exists {
 			return fmt.Errorf("option '%s' already exists", optionName)
 		}
-		var opt ListingOption
-		if err := Unmarshal(patch.Value, &opt); err != nil {
+		var opt objects.ListingOption
+		if err := masscbor.Unmarshal(patch.Value, &opt); err != nil {
 			return fmt.Errorf("failed to unmarshal option: %w", err)
 		}
 		// Check if any variation name in the new option is already used in existing options
@@ -1173,7 +1176,7 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 			}
 		}
 		if listing.Options == nil {
-			listing.Options = make(map[string]ListingOption)
+			listing.Options = make(map[string]objects.ListingOption)
 		}
 		listing.Options[optionName] = opt
 		return nil
@@ -1184,7 +1187,7 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
 		if opt.Variations == nil {
-			opt.Variations = make(map[string]ListingVariation)
+			opt.Variations = make(map[string]objects.ListingVariation)
 		}
 		// Check if variation ID exists under any option
 		for otherOptName, existingOpt := range listing.Options {
@@ -1192,8 +1195,8 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 				return fmt.Errorf("variation name '%q' already exists under option '%q'", varName, otherOptName)
 			}
 		}
-		var v ListingVariation
-		if err := Unmarshal(patch.Value, &v); err != nil {
+		var v objects.ListingVariation
+		if err := masscbor.Unmarshal(patch.Value, &v); err != nil {
 			return fmt.Errorf("failed to unmarshal variation: %w", err)
 		}
 		opt.Variations[varName] = v
@@ -1203,7 +1206,7 @@ func (p *Patcher) addListingOption(listing *Listing, patch Patch) error {
 	return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 }
 
-func (p *Patcher) removeListingOption(listing *Listing, patch Patch) error {
+func (p *Patcher) removeListingOption(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) < 2 {
 		return fmt.Errorf("invalid options path")
 	}
@@ -1228,10 +1231,10 @@ func (p *Patcher) removeListingOption(listing *Listing, patch Patch) error {
 	return fmt.Errorf("invalid variation path")
 }
 
-func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
+func (p *Patcher) replaceListingOptions(listing *objects.Listing, patch Patch) error {
 	if len(patch.Path.Fields) == 1 {
-		var newOptions ListingOptions
-		if err := Unmarshal(patch.Value, &newOptions); err != nil {
+		var newOptions objects.ListingOptions
+		if err := masscbor.Unmarshal(patch.Value, &newOptions); err != nil {
 			return fmt.Errorf("failed to unmarshal options: %w", err)
 		}
 		listing.Options = newOptions
@@ -1239,8 +1242,8 @@ func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
 	}
 	optionName := patch.Path.Fields[1]
 	if len(patch.Path.Fields) == 2 {
-		var newOpt ListingOption
-		if err := Unmarshal(patch.Value, &newOpt); err != nil {
+		var newOpt objects.ListingOption
+		if err := masscbor.Unmarshal(patch.Value, &newOpt); err != nil {
 			return fmt.Errorf("failed to unmarshal listing option: %w", err)
 		}
 		listing.Options[optionName] = newOpt
@@ -1248,7 +1251,7 @@ func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
 	}
 	if len(patch.Path.Fields) == 3 && patch.Path.Fields[2] == "title" {
 		var val string
-		if err := Unmarshal(patch.Value, &val); err != nil {
+		if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
 			return fmt.Errorf("failed to unmarshal option title: %w", err)
 		}
 		opt := listing.Options[optionName]
@@ -1262,8 +1265,8 @@ func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
 		if !ok {
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
-		var newVar ListingVariation
-		if err := Unmarshal(patch.Value, &newVar); err != nil {
+		var newVar objects.ListingVariation
+		if err := masscbor.Unmarshal(patch.Value, &newVar); err != nil {
 			return fmt.Errorf("failed to unmarshal listing variation: %w", err)
 		}
 		if _, has := opt.Variations[varID]; !has {
@@ -1285,8 +1288,8 @@ func (p *Patcher) replaceListingOptions(listing *Listing, patch Patch) error {
 		if !ok {
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
-		var newInfo ListingMetadata
-		if err := Unmarshal(patch.Value, &newInfo); err != nil {
+		var newInfo objects.ListingMetadata
+		if err := masscbor.Unmarshal(patch.Value, &newInfo); err != nil {
 			return fmt.Errorf("failed to unmarshal listing variation info: %w", err)
 		}
 		v.VariationInfo = newInfo
@@ -1310,8 +1313,8 @@ func (p *Patcher) patchOrder(patch Patch) error {
 			if exists {
 				return fmt.Errorf("order %d already exists", objId)
 			}
-			var newOrder Order
-			if err := Unmarshal(patch.Value, &newOrder); err != nil {
+			var newOrder objects.Order
+			if err := masscbor.Unmarshal(patch.Value, &newOrder); err != nil {
 				return fmt.Errorf("failed to unmarshal order: %w", err)
 			}
 			if err := p.validateOrderReferences(&newOrder); err != nil {
@@ -1333,8 +1336,8 @@ func (p *Patcher) patchOrder(patch Patch) error {
 			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 		}
 		if len(patch.Path.Fields) == 0 {
-			var newOrder Order
-			if err := Unmarshal(patch.Value, &newOrder); err != nil {
+			var newOrder objects.Order
+			if err := masscbor.Unmarshal(patch.Value, &newOrder); err != nil {
 				return fmt.Errorf("failed to unmarshal order: %w", err)
 			}
 			if err := p.validateOrderReferences(&newOrder); err != nil {
@@ -1366,7 +1369,7 @@ func (p *Patcher) patchOrder(patch Patch) error {
 	return fmt.Errorf("unsupported operation: %s", patch.Op)
 }
 
-func (p *Patcher) validateOrderReferences(order *Order) error {
+func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	for _, item := range order.Items {
 		listing, exists := p.shop.Listings.Get(item.ListingID)
 		if !exists {
@@ -1420,15 +1423,15 @@ func (p *Patcher) validateOrderReferences(order *Order) error {
 	return nil
 }
 
-func (p *Patcher) addOrderField(order *Order, patch Patch) error {
+func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
 		return fmt.Errorf("field path required for add operation")
 	}
 
 	switch patch.Path.Fields[0] {
 	case "items":
-		var item OrderedItem
-		if err := Unmarshal(patch.Value, &item); err != nil {
+		var item objects.OrderedItem
+		if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
 			return fmt.Errorf("failed to unmarshal order item: %w", err)
 		}
 		listing, exists := p.shop.Listings.Get(item.ListingID)
@@ -1452,8 +1455,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.ShippingAddress != nil {
 			return fmt.Errorf("shipping address already set")
 		}
-		var shippingAddress AddressDetails
-		if err := Unmarshal(patch.Value, &shippingAddress); err != nil {
+		var shippingAddress objects.AddressDetails
+		if err := masscbor.Unmarshal(patch.Value, &shippingAddress); err != nil {
 			return fmt.Errorf("failed to unmarshal shipping address: %w", err)
 		}
 		order.ShippingAddress = &shippingAddress
@@ -1461,8 +1464,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.InvoiceAddress != nil {
 			return fmt.Errorf("invoice address already set")
 		}
-		var invoiceAddress AddressDetails
-		if err := Unmarshal(patch.Value, &invoiceAddress); err != nil {
+		var invoiceAddress objects.AddressDetails
+		if err := masscbor.Unmarshal(patch.Value, &invoiceAddress); err != nil {
 			return fmt.Errorf("failed to unmarshal invoice address: %w", err)
 		}
 		order.InvoiceAddress = &invoiceAddress
@@ -1470,8 +1473,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.PaymentDetails != nil {
 			return fmt.Errorf("payment details already set")
 		}
-		var paymentDetails PaymentDetails
-		if err := Unmarshal(patch.Value, &paymentDetails); err != nil {
+		var paymentDetails objects.PaymentDetails
+		if err := masscbor.Unmarshal(patch.Value, &paymentDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal payment details: %w", err)
 		}
 		order.PaymentDetails = &paymentDetails
@@ -1479,8 +1482,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.ChosenPayee != nil {
 			return fmt.Errorf("chosen payee already set")
 		}
-		var payee Payee
-		if err := Unmarshal(patch.Value, &payee); err != nil {
+		var payee objects.Payee
+		if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
 			return fmt.Errorf("failed to unmarshal payee: %w", err)
 		}
 		order.ChosenPayee = &payee
@@ -1488,8 +1491,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.ChosenCurrency != nil {
 			return fmt.Errorf("chosen currency already set")
 		}
-		var currency ChainAddress
-		if err := Unmarshal(patch.Value, &currency); err != nil {
+		var currency objects.ChainAddress
+		if err := masscbor.Unmarshal(patch.Value, &currency); err != nil {
 			return fmt.Errorf("failed to unmarshal currency: %w", err)
 		}
 		order.ChosenCurrency = &currency
@@ -1497,8 +1500,8 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 		if order.TxDetails != nil {
 			return fmt.Errorf("tx details already set")
 		}
-		var txDetails OrderPaid
-		if err := Unmarshal(patch.Value, &txDetails); err != nil {
+		var txDetails objects.OrderPaid
+		if err := masscbor.Unmarshal(patch.Value, &txDetails); err != nil {
 			return fmt.Errorf("failed to unmarshal tx details: %w", err)
 		}
 		order.TxDetails = &txDetails
@@ -1511,20 +1514,20 @@ func (p *Patcher) addOrderField(order *Order, patch Patch) error {
 	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
 }
 
-func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
+func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 	nFields := len(patch.Path.Fields)
 
 	switch patch.Path.Fields[0] {
 	case "state":
-		var state OrderState
-		if err := Unmarshal(patch.Value, &state); err != nil {
+		var state objects.OrderState
+		if err := masscbor.Unmarshal(patch.Value, &state); err != nil {
 			return fmt.Errorf("failed to unmarshal order state: %w", err)
 		}
 		order.State = state
 
 	case "chosenPayee":
-		var payee Payee
-		if err := Unmarshal(patch.Value, &payee); err != nil {
+		var payee objects.Payee
+		if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
 			return fmt.Errorf("failed to unmarshal payee: %w", err)
 		}
 		found := false
@@ -1540,8 +1543,8 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 		order.ChosenPayee = &payee
 
 	case "chosenCurrency":
-		var currency ChainAddress
-		if err := Unmarshal(patch.Value, &currency); err != nil {
+		var currency objects.ChainAddress
+		if err := masscbor.Unmarshal(patch.Value, &currency); err != nil {
 			return fmt.Errorf("failed to unmarshal currency: %w", err)
 		}
 		found := false
@@ -1557,15 +1560,15 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 		order.ChosenCurrency = &currency
 
 	case "paymentDetails":
-		var details PaymentDetails
-		if err := Unmarshal(patch.Value, &details); err != nil {
+		var details objects.PaymentDetails
+		if err := masscbor.Unmarshal(patch.Value, &details); err != nil {
 			return fmt.Errorf("failed to unmarshal payment details: %w", err)
 		}
 		order.PaymentDetails = &details
 
 	case "txDetails":
-		var details OrderPaid
-		if err := Unmarshal(patch.Value, &details); err != nil {
+		var details objects.OrderPaid
+		if err := masscbor.Unmarshal(patch.Value, &details); err != nil {
 			return fmt.Errorf("failed to unmarshal tx details: %w", err)
 		}
 		order.TxDetails = &details
@@ -1575,8 +1578,8 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 		switch {
 		case nFields == 1:
 			// Replace entire items array
-			var items []OrderedItem
-			if err := Unmarshal(patch.Value, &items); err != nil {
+			var items []objects.OrderedItem
+			if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
 				return fmt.Errorf("failed to unmarshal items: %w", err)
 			}
 			order.Items = items
@@ -1593,15 +1596,15 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 
 			if nFields == 2 {
 				// Replace entire item at index
-				var item OrderedItem
-				if err := Unmarshal(patch.Value, &item); err != nil {
+				var item objects.OrderedItem
+				if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
 					return fmt.Errorf("failed to unmarshal item: %w", err)
 				}
 				order.Items[index] = item
 			} else if patch.Path.Fields[2] == "quantity" {
 				// Replace just the quantity
 				var quantity uint32
-				if err := Unmarshal(patch.Value, &quantity); err != nil {
+				if err := masscbor.Unmarshal(patch.Value, &quantity); err != nil {
 					return fmt.Errorf("failed to unmarshal quantity: %w", err)
 				}
 				order.Items[index].Quantity = quantity
@@ -1619,8 +1622,8 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 
 		switch {
 		case nFields == 1:
-			var newAddress AddressDetails
-			if err := Unmarshal(patch.Value, &newAddress); err != nil {
+			var newAddress objects.AddressDetails
+			if err := masscbor.Unmarshal(patch.Value, &newAddress); err != nil {
 				return fmt.Errorf("failed to unmarshal invoice address: %w", err)
 			}
 			order.InvoiceAddress = &newAddress
@@ -1628,7 +1631,7 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 			switch patch.Path.Fields[1] {
 			case "name":
 				var newName string
-				if err := Unmarshal(patch.Value, &newName); err != nil {
+				if err := masscbor.Unmarshal(patch.Value, &newName); err != nil {
 					return fmt.Errorf("failed to unmarshal invoice address name: %w", err)
 				}
 				order.InvoiceAddress.Name = newName
@@ -1649,7 +1652,7 @@ func (p *Patcher) replaceOrderField(order *Order, patch Patch) error {
 	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
 }
 
-func (p *Patcher) removeOrderField(order *Order, patch Patch) error {
+func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "items":
 		if len(patch.Path.Fields) != 2 {
@@ -1687,14 +1690,14 @@ func (p *Patcher) removeOrderField(order *Order, patch Patch) error {
 	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
 }
 
-func (p *Patcher) modifyOrderQuantity(order *Order, patch Patch) error {
-	index, err := order.checkPathAndIndex(patch.Path.Fields)
+func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
+	index, err := checkPathAndIndex(order, patch.Path.Fields)
 	if err != nil {
 		return err
 	}
 
 	var value uint32
-	if err := Unmarshal(patch.Value, &value); err != nil {
+	if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
 		return fmt.Errorf("failed to unmarshal value: %w", err)
 	}
 
@@ -1713,7 +1716,7 @@ func (p *Patcher) modifyOrderQuantity(order *Order, patch Patch) error {
 	return p.shop.Orders.Insert(*patch.Path.ObjectID, *order)
 }
 
-func (existing *Order) checkPathAndIndex(fields []string) (int, error) {
+func checkPathAndIndex(existing *objects.Order, fields []string) (int, error) {
 	if len(fields) != 3 || fields[0] != "items" || fields[2] != "quantity" {
 		return 0, fmt.Errorf("incr/decr only works on path: [items, x, quantity]")
 	}
@@ -1727,7 +1730,7 @@ func (existing *Order) checkPathAndIndex(fields []string) (int, error) {
 	return index, nil
 }
 
-func (p *Patcher) patchInventory(inventory *Inventory, patch Patch) error {
+func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) error {
 
 	// validate patch edits an existing listing
 	if patch.Path.ObjectID == nil {

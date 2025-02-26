@@ -2,21 +2,28 @@
 //
 // SPDX-License-Identifier: MIT
 
-package schema
+package objects
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
+	"os"
+	"os/exec"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
+
+	masscbor "github.com/masslbs/network-schema/go/cbor"
+	"github.com/masslbs/network-schema/go/internal/testhelper"
 )
+
+var validate = DefaultValidator()
 
 func TestECDAPublicKeySize(t *testing.T) {
 	r := require.New(t)
@@ -43,7 +50,7 @@ func TestSignatureIncomplete(t *testing.T) {
 	var msg struct {
 		Sig Signature
 	}
-	dec := DefaultDecoder(bytes.NewReader(shortData))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(shortData))
 	err = dec.Decode(&msg)
 	r.Error(err)
 	r.EqualValues([65]byte{}, msg.Sig)
@@ -65,14 +72,14 @@ func TestMissingFields(t *testing.T) {
 	fl.ViewState = ListingViewStateDeleted
 
 	var buf bytes.Buffer
-	enc := DefaultEncoder(&buf)
+	enc := masscbor.DefaultEncoder(&buf)
 	err := enc.Encode(fl)
 	r.NoError(err)
 	testData := buf.Bytes()
 	t.Log("FakeListing:\n" + pretty(testData))
 
 	var lis Listing
-	dec := DefaultDecoder(bytes.NewReader(testData))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(testData))
 	err = dec.Decode(&lis)
 	r.NoError(err)
 	r.Error(validate.Struct(lis))
@@ -96,7 +103,7 @@ func TestMissingFields(t *testing.T) {
 	t.Log("missingDescData:\n" + pretty(missingDescData))
 
 	var lis2 Listing
-	dec = DefaultDecoder(bytes.NewReader(missingDescData))
+	dec = masscbor.DefaultDecoder(bytes.NewReader(missingDescData))
 	err = dec.Decode(&lis2)
 	r.NoError(err)
 	r.Error(validate.Struct(lis2))
@@ -113,11 +120,11 @@ func TestCreateAllTypes(t *testing.T) {
 		PostalCode:   "test",
 		Country:      "test",
 		EmailAddress: "test@foo.bar",
-		PhoneNumber:  strptr("+21911223344"),
+		PhoneNumber:  testhelper.Strptr("+21911223344"),
 	}
 	expectedInStockBy := time.Unix(9999999999, 0).UTC()
 
-	vanillaEth := addrFromHex(1, "0x0000000000000000000000000000000000000000")
+	vanillaEth := MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
 		typ any
 	}{
@@ -126,7 +133,7 @@ func TestCreateAllTypes(t *testing.T) {
 			Payees: map[string]Payee{
 				"ethereum": {
 					CallAsContract: true,
-					Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+					Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
 				},
 			},
 			AcceptedCurrencies: []ChainAddress{vanillaEth},
@@ -199,11 +206,11 @@ func TestCreateAllTypes(t *testing.T) {
 			StockStatuses: []ListingStockStatus{
 				{
 					VariationIDs: []string{"r"},
-					InStock:      boolptr(true),
+					InStock:      testhelper.Boolptr(true),
 				},
 				{
 					VariationIDs: []string{"m"},
-					InStock:      boolptr(false),
+					InStock:      testhelper.Boolptr(false),
 				},
 				{
 					VariationIDs:      []string{"b"},
@@ -235,7 +242,7 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStateCommited,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
@@ -250,16 +257,16 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStateUnpaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
 				PaymentID: Hash{},
-				ListingHashes: []cid.Cid{
-					testHash(0),
-					testHash(1),
+				ListingHashes: [][]byte{
+					testhelper.TestHash(0),
+					testhelper.TestHash(1),
 				},
 			},
 		}},
@@ -273,16 +280,16 @@ func TestCreateAllTypes(t *testing.T) {
 			State: OrderStatePaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
-				Address:        addrFromHex(1, "0x1234567890123456789012345678901234567890"),
+				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
 			PaymentDetails: &PaymentDetails{
 				TTL:       1000,
 				PaymentID: Hash{},
-				ListingHashes: []cid.Cid{
-					testHash(0),
-					testHash(1),
+				ListingHashes: [][]byte{
+					testhelper.TestHash(0),
+					testhelper.TestHash(1),
 				},
 			},
 			TxDetails: &OrderPaid{
@@ -297,7 +304,7 @@ func TestCreateAllTypes(t *testing.T) {
 			r := require.New(t)
 			r.NoError(validate.Struct(c.typ))
 			buf.Reset()
-			enc := DefaultEncoder(&buf)
+			enc := masscbor.DefaultEncoder(&buf)
 			err := enc.Encode(c.typ)
 			r.NoError(err)
 
@@ -326,9 +333,55 @@ func TestCreateAllTypes(t *testing.T) {
 	}
 }
 
+// helpers
+
 func decode[T any](data []byte) (T, error) {
 	var t T
-	dec := DefaultDecoder(bytes.NewReader(data))
+	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	err := dec.Decode(&t)
 	return t, err
+}
+
+func dump(val any) []byte {
+	var buf bytes.Buffer
+	enc := masscbor.DefaultEncoder(&buf)
+
+	err := enc.Encode(val)
+	check(err)
+
+	fmt.Printf("CBOR of: %+v\n", val)
+	data := buf.Bytes()
+	fmt.Println(hex.EncodeToString(data))
+	return data
+}
+
+func diag(val any) {
+	var buf bytes.Buffer
+	enc := masscbor.DefaultEncoder(&buf)
+
+	err := enc.Encode(val)
+	check(err)
+
+	diagStr, err := cbor.Diagnose(buf.Bytes())
+	check(err)
+
+	fmt.Println(diagStr)
+}
+
+func pretty(data []byte) string {
+	if os.Getenv("PRETTY") == "" {
+		return hex.EncodeToString(data)
+	}
+	shell := exec.Command("cbor2pretty.rb")
+	shell.Stdin = bytes.NewReader(data)
+
+	out, err := shell.CombinedOutput()
+	check(err)
+	return string(out)
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

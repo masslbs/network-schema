@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
+	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/stretchr/testify/require"
 )
 
@@ -582,17 +583,6 @@ func BenchmarkHAMTOperations(b *testing.B) {
 	}
 }
 
-// Helper function to create a copy of a trie through serialization
-func copyTrie[V any](t *Trie[V]) (*Trie[V], error) {
-	data, err := t.MarshalCBOR()
-	if err != nil {
-		return nil, err
-	}
-	newTrie := NewTrie[V]()
-	err = newTrie.UnmarshalCBOR(data)
-	return newTrie, err
-}
-
 // test-only helper function to collect depths of all nodes in the trie
 func (n *Node[V]) collectDepths(currentDepth int, depths *[]int) {
 	if n == nil {
@@ -664,4 +654,25 @@ func TestHAMTVectors(t *testing.T) {
 			})
 		}
 	}
+}
+
+// helpers
+
+// Helper function to create a copy of a trie through serialization
+func copyTrie[V any](t *Trie[V]) (*Trie[V], error) {
+	data, err := t.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+	newTrie := NewTrie[V]()
+	err = newTrie.UnmarshalCBOR(data)
+	return newTrie, err
+}
+
+func mustEncode(t *testing.T, v any) cbor.RawMessage {
+	data, err := masscbor.Marshal(v)
+	if err != nil {
+		t.Fatalf("unable to encode value: %v", err)
+	}
+	return data
 }
