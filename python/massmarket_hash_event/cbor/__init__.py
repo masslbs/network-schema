@@ -9,9 +9,10 @@ import cbor2
 import hashlib
 from pprint import pprint
 from massmarket_hash_event.hamt import Trie
+from massmarket_hash_event.cbor.base_types import Tag, Account
 from massmarket_hash_event.cbor.manifest import Manifest
 from massmarket_hash_event.cbor.listing import Listing
-from massmarket_hash_event.cbor.base_types import Tag, Account
+from massmarket_hash_event.cbor.order import Order
 
 
 def mass_types(encoder, obj):
@@ -45,9 +46,9 @@ class Shop:
     manifest: Manifest
     accounts: Trie[Account]
     listings: Trie[Listing]
-    inventory: Trie
+    inventory: Trie[int]
     tags: Trie[Tag]
-    orders: Trie
+    orders: Trie[Order]
 
     def serialize(self) -> dict:
         return {

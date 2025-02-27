@@ -479,7 +479,10 @@ func (n *Node[V]) Hash() ([]byte, error) {
 
 	// Hash entries in order of presence in the node
 	for _, e := range n.Entries {
+		// TODO: hash the bitmap instead of the key
+		// binary.Write(h, binary.BigEndian, n.Bitmap)
 		if e.Node == nil {
+			// TODO: take this out
 			h.Write(e.Key)
 			err := n.encodeValue(e.Value, h)
 			if err != nil {

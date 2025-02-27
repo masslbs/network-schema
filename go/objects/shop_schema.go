@@ -425,9 +425,9 @@ type Manifest struct {
 	// maps payee names to payee objects
 	Payees Payees `validate:"nonEmptyMapKeys"`
 	// TODO: should we add a name field to the acceptedCurrencies object?
-	AcceptedCurrencies ChainAddresses `validate:"required,gt=0"`
+	AcceptedCurrencies ChainAddresses
 	// the currency listings are priced in
-	PricingCurrency ChainAddress    `validate:"required"`
+	PricingCurrency ChainAddress
 	ShippingRegions ShippingRegions `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
@@ -603,8 +603,6 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.PaymentDetails == nil {
 			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
-		fallthrough
-	case OrderStateCommited:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
 		}
@@ -614,6 +612,11 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.InvoiceAddress == nil && order.ShippingAddress == nil {
 			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
+		}
+		fallthrough
+	case OrderStateCommited:
+		if len(order.Items) == 0 {
+			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
 	case OrderStateCanceled:
 		if order.CanceledAt == nil {

@@ -104,28 +104,27 @@ func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	}
 
 	if order.ChosenPayee != nil {
-		found := false
+		found := 0
 		for _, payee := range p.shop.Manifest.Payees {
 			if payee == *order.ChosenPayee {
-				found = true
-				break
+				found++
 			}
 		}
-		if !found {
+		if found == 0 {
 			return ObjectNotFoundError{
 				ObjectType: ObjectTypeOrder,
 				Path:       PatchPath{Fields: []string{"chosenPayee", order.ChosenPayee.Address.String()}}}
 		}
+		if found > 1 {
+			return fmt.Errorf("multiple payees found for %s", order.ChosenPayee)
+		}
 	}
 
 	if order.ChosenCurrency != nil {
-		found := false
-		for _, currency := range p.shop.Manifest.AcceptedCurrencies {
-			if currency == *order.ChosenCurrency {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(
+			p.shop.Manifest.AcceptedCurrencies,
+			*order.ChosenCurrency,
+		)
 		if !found {
 			return ObjectNotFoundError{
 				ObjectType: ObjectTypeManifest,
@@ -220,6 +219,9 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &txDetails
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+	}
+	if err := p.validateOrderReferences(order); err != nil {
+		return err
 	}
 	if err := p.validator.Struct(order); err != nil {
 		return err
@@ -355,10 +357,26 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 		}
 
+	case "shippingAddress":
+		if order.ShippingAddress == nil {
+			return fmt.Errorf("shipping address not set")
+		}
+		switch {
+		case nFields == 1:
+			var newAddress objects.AddressDetails
+			if err := masscbor.Unmarshal(patch.Value, &newAddress); err != nil {
+				return fmt.Errorf("failed to unmarshal shipping address: %w", err)
+			}
+			order.ShippingAddress = &newAddress
+		default:
+			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
+		}
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
-
+	if err := p.validateOrderReferences(order); err != nil {
+		return err
+	}
 	if err := p.validator.Struct(order); err != nil {
 		return err
 	}

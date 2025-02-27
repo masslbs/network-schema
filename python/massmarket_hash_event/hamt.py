@@ -240,7 +240,10 @@ class Node(Generic[V]):
 
         h = hashlib.sha256()
         for e in self.entries:
+            # TODO: hash the bitmap instead of the key
+            # binary.Write(h, binary.BigEndian, n.Bitmap)
             if e.node is None:
+                # TODO: take this out
                 h.update(e.key)
                 h.update(cbor2.dumps(e.value))
             else:
