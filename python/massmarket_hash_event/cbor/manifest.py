@@ -11,30 +11,8 @@ from massmarket_hash_event.cbor.base_types import (
     Uint256,
     ChainAddress,
     ShippingRegion,
+    Payee,
 )
-
-
-@dataclass
-class Payee:
-    address: ChainAddress
-    call_as_contract: bool
-
-    @classmethod
-    def from_cbor_dict(cls, d: dict) -> "Payee":
-        return cls(
-            address=ChainAddress.from_cbor_dict(d["Address"]),
-            call_as_contract=d["CallAsContract"],
-        )
-
-    def to_cbor_dict(self) -> dict:
-        return {
-            "Address": (
-                self.address.to_cbor_dict()
-                if hasattr(self.address, "to_cbor_dict")
-                else self.address
-            ),
-            "CallAsContract": self.call_as_contract,
-        }
 
 
 @dataclass

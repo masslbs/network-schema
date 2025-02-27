@@ -19,24 +19,23 @@ def test_basic_hamt():
     assert trie1.size == 2
 
     # Verify insertions
-    val, ok = trie1.get(b"name")
-    assert ok
+    val = trie1.get(b"name")
+    assert val is not None
     assert val == "Alice"
 
-    val, ok = trie1.get(b"age")
-    assert ok
+    val = trie1.get(b"age")
+    assert val is not None
     assert val == "Bob"
 
     # Original trie should be unchanged
-    val, ok = trie.get(b"age")
-    assert not ok
+    val = trie.get(b"age")
     assert val is None
 
     # Should also work with literal types, like int
     trie2 = Trie.new()
     trie2.insert(b"age", 1)
-    val_int, ok = trie2.get(b"age")
-    assert ok
+    val_int = trie2.get(b"age")
+    assert val_int is not None
     assert val_int == 1
 
 
@@ -58,13 +57,13 @@ def test_complex_operations():
     assert trie2.size == 4
 
     # Verify original is unchanged
-    val, ok = trie.get(b"b")
-    assert ok
+    val = trie.get(b"b")
+    assert val is not None
     assert val == values[1]
 
     # Verify new value in new trie
-    val, ok = trie2.get(b"b")
-    assert ok
+    val = trie2.get(b"b")
+    assert val is not None
     assert val == new_values[1]
 
     # Test deleting values
@@ -73,16 +72,16 @@ def test_complex_operations():
     assert trie3.size == 3
 
     # Verify deletion
-    val, ok = trie3.get(b"a")
-    assert not ok
+    val = trie3.get(b"a")
+    assert val is None
 
     # Other values should remain
-    val, ok = trie3.get(b"b")
-    assert ok
+    val = trie3.get(b"b")
+    assert val is not None
     assert val == new_values[1]
 
-    val, ok = trie3.get(b"c")
-    assert ok
+    val = trie3.get(b"c")
+    assert val is not None
     assert val == values[2]
 
 
@@ -223,8 +222,8 @@ def test_large_scale_operations():
 
     # Verify that all elements can be retrieved
     for key, expected_value in zip(keys, values):
-        val, ok = trie.get(key)
-        assert ok
+        val = trie.get(key)
+        assert val is not None
         assert val == expected_value
 
     # Delete every other element
@@ -233,12 +232,11 @@ def test_large_scale_operations():
 
     # Verify that the correct elements have been deleted
     for i, (key, expected_value) in enumerate(zip(keys, values)):
-        val, ok = trie.get(key)
+        val = trie.get(key)
         if i % 2 == 0:
-            assert not ok
             assert val is None
         else:
-            assert ok
+            assert val is not None
             assert val == expected_value
 
     assert trie.size == num_elements // 2
@@ -273,14 +271,14 @@ def test_key_type_support():
 
     # Test integer keys
     trie.insert(42, "int-value")
-    val, ok = trie.get(42)
-    assert ok
+    val = trie.get(42)
+    assert val is not None
     assert val == "int-value"
 
     # Test string keys
     trie.insert("hello", "str-value")
-    val, ok = trie.get("hello")
-    assert ok
+    val = trie.get("hello")
+    assert val is not None
     assert val == "str-value"
 
     # Verify size
@@ -288,7 +286,6 @@ def test_key_type_support():
 
     # Test deletion
     trie.delete(42)
-    val, ok = trie.get(42)
-    assert not ok
+    val = trie.get(42)
     assert val is None
     assert trie.size == 1

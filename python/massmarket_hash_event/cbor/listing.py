@@ -135,8 +135,6 @@ class Listing:
     stock_statuses: Optional[List[ListingStockStatus]] = None
 
     def __post_init__(self):
-        if self.id <= 0:
-            raise ValueError("ID must be greater than 0")
         if self.options is not None and not self.options:
             raise ValueError("Options map cannot be empty if present")
 

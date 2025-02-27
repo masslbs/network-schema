@@ -114,9 +114,9 @@ func (p PatchPath) MarshalCBOR() ([]byte, error) {
 			return nil, fmt.Errorf("account patch needs an id")
 		}
 		path[1] = *p.AccountAddr
-	case ObjectTypeListing, ObjectTypeOrder:
+	case ObjectTypeListing, ObjectTypeOrder, ObjectTypeInventory:
 		if p.ObjectID == nil {
-			return nil, fmt.Errorf("listing/order patch needs an id")
+			return nil, fmt.Errorf("listing/order/inventory patch needs an id")
 		}
 		path[1] = *p.ObjectID
 	case ObjectTypeTag:
@@ -183,6 +183,16 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 			return fmt.Errorf("patch.path: invalid tag name: %v", path[0])
 		}
 		p.TagName = &tagName
+	case ObjectTypeInventory:
+		if len(path) < 1 {
+			return fmt.Errorf("patch.path: invalid inventory id: %w", err)
+		}
+		id, ok := path[0].(uint64)
+		if !ok {
+			return fmt.Errorf("patch.path: invalid inventory id: %v", path[0])
+		}
+		objId := objects.ObjectId(id)
+		p.ObjectID = &objId
 	default:
 		return fmt.Errorf("patch.path: invalid id type: %s", path[0])
 	}
@@ -213,15 +223,15 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 		if p.TagName != nil {
 			return fmt.Errorf("account patch should not have a tag name")
 		}
-	case ObjectTypeListing, ObjectTypeOrder:
+	case ObjectTypeListing, ObjectTypeOrder, ObjectTypeInventory:
 		if p.ObjectID == nil {
-			return fmt.Errorf("listing/order patch needs an id")
+			return fmt.Errorf("listing/order/inventory patch needs an id")
 		}
 		if p.AccountAddr != nil {
-			return fmt.Errorf("listing/order patch should not have an account id")
+			return fmt.Errorf("listing/order/inventory patch should not have an account id")
 		}
 		if p.TagName != nil {
-			return fmt.Errorf("listing/order patch should not have a tag name")
+			return fmt.Errorf("listing/order/inventory patch should not have a tag name")
 		}
 	case ObjectTypeTag:
 		if p.TagName == nil {
@@ -279,5 +289,11 @@ func (obj *ObjectType) UnmarshalCBOR(data []byte) error {
 }
 
 func (obj ObjectType) IsValid() bool {
-	return obj == ObjectTypeSchemaVersion || obj == ObjectTypeManifest || obj == ObjectTypeAccount || obj == ObjectTypeListing || obj == ObjectTypeOrder || obj == ObjectTypeTag
+	return obj == ObjectTypeSchemaVersion ||
+		obj == ObjectTypeManifest ||
+		obj == ObjectTypeAccount ||
+		obj == ObjectTypeListing ||
+		obj == ObjectTypeOrder ||
+		obj == ObjectTypeTag ||
+		obj == ObjectTypeInventory
 }

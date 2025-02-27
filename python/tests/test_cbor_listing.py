@@ -169,18 +169,6 @@ def test_full_listing_roundtrip():
 
 
 def test_listing_validation():
-    # Test invalid ID
-    with pytest.raises(ValueError, match="ID must be greater than 0"):
-        Listing(
-            id=0,
-            price=Uint256(1000),
-            metadata=ListingMetadata(
-                title="Test",
-                description="Test",
-            ),
-            view_state=ListingViewState.PUBLISHED,
-        )
-
     # Test empty options map
     with pytest.raises(ValueError, match="Options map cannot be empty if present"):
         Listing(
@@ -228,8 +216,8 @@ def test_listing_from_vectors_file():
         for listing_id, expected in expected_listings.items():
             if isinstance(listing_id, str):
                 listing_id = int(listing_id).to_bytes(8, "big")
-            (got, has) = shop.listings.get(listing_id)
-            assert has, f"Listing {listing_id} not found"
+            got = shop.listings.get(listing_id)
+            assert got is not None, f"Listing {listing_id} not found"
             listing_obj = Listing.from_cbor_dict(got)
             verify_listing(listing_obj, expected)
 

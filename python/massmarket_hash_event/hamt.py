@@ -130,30 +130,30 @@ class Node(Generic[V]):
             self._hash = None
         return inserted
 
-    def find(self, key: bytes) -> tuple[Optional[V], bool]:
+    def find(self, key: bytes) -> V | None:
         hs = HashState.new(key)
         current_node = self
 
         while True:
             if current_node is None:
-                return None, False
+                return None
 
             if hs.consumed >= MAX_DEPTH * BITS_PER_STEP:
                 return current_node.find_fallback(key)
 
             idx = hs.next()
             if current_node.bitmap & (1 << idx) == 0:
-                return None, False
+                return None
 
             pos = count_ones(current_node.bitmap, idx)
             if pos >= len(current_node.entries):
-                return None, False
+                return None
 
             entry = current_node.entries[pos]
             if entry.node is None:
                 if entry.key == key:
-                    return entry.value, True
-                return None, False
+                    return entry.value
+                return None
 
             current_node = entry.node
 
@@ -331,15 +331,15 @@ class Trie(Generic[V]):
         if inserted:
             self.size += 1
 
-    def get(self, key: KeyType) -> tuple[Optional[V], bool]:
+    def get(self, key: KeyType) -> V | None:
         if self.root is None:
-            return None, False
+            return None
         key = encode_key(key)
         return self.root.find(key)
 
     def has(self, key: KeyType) -> bool:
         key = encode_key(key)
-        return self.get(key)[1]
+        return self.get(key) is not None
 
     def delete(self, key: KeyType) -> None:
         if self.root is None:

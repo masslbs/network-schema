@@ -46,6 +46,14 @@ func NewPatcher(v *validator.Validate, shop *objects.Shop) *Patcher {
 
 // Main entry point for applying patches
 func (p *Patcher) ApplyPatch(patch Patch) error {
+	if !(patch.Path.Type == ObjectTypeSchemaVersion ||
+		patch.Path.Type == ObjectTypeManifest) {
+		// only accept writes if we have a valid manifest
+		if err := p.validator.Struct(p.shop.Manifest); err != nil {
+			return fmt.Errorf("invalid manifest: %w", err)
+		}
+	}
+
 	switch patch.Path.Type {
 	case ObjectTypeManifest:
 		return p.patchManifest(patch)

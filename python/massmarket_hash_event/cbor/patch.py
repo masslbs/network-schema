@@ -76,7 +76,7 @@ class PatchPath:
                 raise ValueError("account patch needs an id")
             if any([self.object_id, self.tag_name]):
                 raise ValueError("account patch should not have object_id or tag_name")
-        elif self.type in [ObjectType.LISTING, ObjectType.ORDER]:
+        elif self.type in [ObjectType.LISTING, ObjectType.ORDER, ObjectType.INVENTORY]:
             if self.object_id is None:
                 raise ValueError(f"{self.type} patch needs an id")
             if any([self.account_addr, self.tag_name]):
@@ -97,7 +97,7 @@ class PatchPath:
             pass  # no id needed
         elif self.type == ObjectType.ACCOUNT:
             path.append(bytes(self.account_addr))
-        elif self.type in [ObjectType.LISTING, ObjectType.ORDER]:
+        elif self.type in [ObjectType.LISTING, ObjectType.ORDER, ObjectType.INVENTORY]:
             path.append(self.object_id)
         elif self.type == ObjectType.TAG:
             path.append(self.tag_name)
@@ -128,7 +128,7 @@ class PatchPath:
                 ):
                     raise ValueError("Invalid ethereum address")
                 account_addr = EthereumAddress(data[1])
-            elif obj_type in [ObjectType.LISTING, ObjectType.ORDER]:
+            elif obj_type in [ObjectType.LISTING, ObjectType.ORDER, ObjectType.INVENTORY]:
                 if not isinstance(data[1], int):
                     raise ValueError("Invalid object id")
                 object_id = data[1]

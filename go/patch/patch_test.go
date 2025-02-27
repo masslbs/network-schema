@@ -29,6 +29,7 @@ func TestPatchObjectIDs(t *testing.T) {
 		{Path: PatchPath{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1)}},
 		{Path: PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAddr}},
 		{Path: PatchPath{Type: ObjectTypeTag, TagName: testhelper.Strptr("test-tag")}},
+		{Path: PatchPath{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(1)}},
 	}
 	for idx, tc := range goodTestCases {
 		t.Run(fmt.Sprintf("good-%d", idx), func(t *testing.T) {

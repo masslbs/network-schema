@@ -11,8 +11,19 @@ import (
 	"github.com/masslbs/network-schema/go/objects"
 )
 
-func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) error {
+type OutOfStockError struct {
+	listingId  objects.ObjectId
+	variations []string
+}
 
+func (e OutOfStockError) Error() string {
+	if len(e.variations) > 0 {
+		return fmt.Sprintf("inventory %d with variations %v out of stock", e.listingId, e.variations)
+	}
+	return fmt.Sprintf("inventory %d out of stock", e.listingId)
+}
+
+func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) error {
 	// validate patch edits an existing listing
 	if patch.Path.ObjectID == nil {
 		return fmt.Errorf("inventory patch needs an id")
@@ -20,8 +31,9 @@ func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) erro
 	objId := *patch.Path.ObjectID
 	lis, ok := p.shop.Listings.Get(objId)
 	if !ok {
-		return fmt.Errorf("listing %d not found", objId)
+		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 	}
+
 	// if it is a variation, check that they exist
 	if n := len(patch.Path.Fields); n > 0 {
 		var found = uint(n)
@@ -39,9 +51,6 @@ func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) erro
 		}
 	}
 
-	if patch.Path.ObjectID == nil {
-		return fmt.Errorf("inventory patch needs an ID")
-	}
 	var (
 		err    error
 		newVal uint64
@@ -62,12 +71,12 @@ func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) erro
 		err = inventory.Insert(objId, patch.Path.Fields, newVal)
 	case RemoveOp:
 		if !ok {
-			return fmt.Errorf("inventory %d not found", objId)
+			return ObjectNotFoundError{ObjectType: ObjectTypeInventory, Path: patch.Path}
 		}
 		err = inventory.Delete(objId, patch.Path.Fields)
 	case ReplaceOp:
 		if !ok {
-			return fmt.Errorf("inventory %d not found", objId)
+			return ObjectNotFoundError{ObjectType: ObjectTypeInventory, Path: patch.Path}
 		}
 		err = inventory.Insert(objId, patch.Path.Fields, newVal)
 	case IncrementOp:
@@ -75,7 +84,7 @@ func (p *Patcher) patchInventory(inventory *objects.Inventory, patch Patch) erro
 		err = inventory.Insert(objId, patch.Path.Fields, current)
 	case DecrementOp:
 		if current < newVal {
-			return fmt.Errorf("inventory %d cannot decrement below 0", objId)
+			return OutOfStockError{listingId: objId, variations: patch.Path.Fields}
 		}
 		current -= newVal
 		err = inventory.Insert(objId, patch.Path.Fields, current)

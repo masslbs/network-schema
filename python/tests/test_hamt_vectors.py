@@ -53,5 +53,3 @@ def test_hamt_shop_vectors():
             shop = Shop.from_cbor_dict(shop_dict)
             expected_hash = base64.b64decode(snap["After"]["Hash"])
             assert shop.hash().hex() == expected_hash.hex()
-
-    # assert False

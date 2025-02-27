@@ -14,6 +14,19 @@ from massmarket_hash_event.cbor.listing import Listing
 from massmarket_hash_event.cbor.base_types import Tag, Account
 
 
+def mass_types(encoder, obj):
+    mapped = obj
+    if isinstance(obj, Listing):
+        mapped = obj.to_cbor_dict()
+    elif isinstance(obj, Tag):
+        mapped = obj.to_cbor_dict()
+    elif isinstance(obj, Account):
+        mapped = obj.to_cbor_dict()
+    elif isinstance(obj, Manifest):
+        mapped = obj.to_cbor_dict()
+    return encoder.encode(mapped)
+
+
 # construct default encoder
 def cbor_encode(obj):
     with BytesIO() as fp:
@@ -21,6 +34,7 @@ def cbor_encode(obj):
             fp,
             canonical=True,
             date_as_datetime=True,
+            default=mass_types,
         ).encode(obj)
         return fp.getvalue()
 
