@@ -44,7 +44,6 @@ func RootHash(patches []Patch) (objects.Hash, massmmr.VerifierTree, error) {
 			return objects.Hash{}, nil, fmt.Errorf("failed to add empty leaf to tree: %w", err)
 		}
 	}
-
 	root, err := tree.Root()
 	if err != nil {
 		return objects.Hash{}, nil, fmt.Errorf("failed to get root: %w", err)

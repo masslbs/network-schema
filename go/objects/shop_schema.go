@@ -89,6 +89,24 @@ func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// make sure these types implement encoding.BinaryUnmarshaler
+var (
+	_ encoding.BinaryUnmarshaler = (*Signature)(nil)
+	_ encoding.BinaryUnmarshaler = (*PublicKey)(nil)
+	_ encoding.BinaryUnmarshaler = (*Hash)(nil)
+	_ encoding.BinaryUnmarshaler = (*EthereumAddress)(nil)
+)
+
+// Uint256 represents a 256-bit unsigned integer
+type Uint256 = big.Int
+
+// An ethereum address with a chain ID attached
+type ChainAddress struct {
+	ChainID uint64 `validate:"required,gt=0"`
+	// when repsenting an ERC20 the zero address is used native currency
+	Address EthereumAddress
+}
+
 func AddrFromHex(chain uint64, hexAddr string) (ChainAddress, error) {
 	addr := ChainAddress{ChainID: chain}
 	hexAddr = strings.TrimPrefix(hexAddr, "0x")
@@ -111,22 +129,8 @@ func MustAddrFromHex(chain uint64, hexAddr string) ChainAddress {
 	return addr
 }
 
-// make sure these types implement encoding.BinaryUnmarshaler
-var (
-	_ encoding.BinaryUnmarshaler = (*Signature)(nil)
-	_ encoding.BinaryUnmarshaler = (*PublicKey)(nil)
-	_ encoding.BinaryUnmarshaler = (*Hash)(nil)
-	_ encoding.BinaryUnmarshaler = (*EthereumAddress)(nil)
-)
-
-// Uint256 represents a 256-bit unsigned integer
-type Uint256 = big.Int
-
-// An ethereum address with a chain ID attached
-type ChainAddress struct {
-	ChainID uint64 `validate:"required,gt=0"`
-	// when repsenting an ERC20 the zero address is used native currency
-	Address EthereumAddress
+func (ca ChainAddress) Equal(other ChainAddress) bool {
+	return ca.ChainID == other.ChainID && ca.Address == other.Address
 }
 
 func (ca *ChainAddress) String() string {
@@ -439,7 +443,7 @@ type ChainAddresses []ChainAddress
 
 type ShippingRegion struct {
 	Country        string
-	Postcode       string
+	PostalCode     string
 	City           string
 	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
@@ -670,7 +674,7 @@ type AddressDetails struct {
 	Address1     string  `validate:"required,notblank"`
 	Address2     string  `cbor:",omitempty"`
 	City         string  `validate:"required,notblank"`
-	PostalCode   string  `cbor:",omitempty"` // Malta does use postal codes
+	PostalCode   string  `cbor:",omitempty" validate:"required,notblank"`
 	Country      string  `validate:"required,notblank"`
 	EmailAddress string  `validate:"required,email"`
 	PhoneNumber  *string `cbor:",omitempty" validate:"omitempty,e164"`

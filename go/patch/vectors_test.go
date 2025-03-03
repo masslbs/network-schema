@@ -1818,6 +1818,11 @@ func TestGenerateVectorsTagError(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
+var otherCurrency = objects.ChainAddress{
+	ChainID: 1338,
+	Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+}
+
 func newTestOrder() (objects.Shop, objects.Order) {
 	s := newTestManifest()
 
@@ -1829,10 +1834,7 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	}
 
 	s.Manifest.AcceptedCurrencies = append(s.Manifest.AcceptedCurrencies,
-		objects.ChainAddress{
-			ChainID: 1338,
-			Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
-		},
+		otherCurrency,
 	)
 
 	testListing1 := objects.Listing{
@@ -1843,6 +1845,14 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	}
 	err := s.Listings.Insert(testListing1.ID, testListing1)
 	check(err)
+	testListing2 := objects.Listing{
+		ID:        5556,
+		Price:     *big.NewInt(2000),
+		Metadata:  objects.ListingMetadata{Title: "Test Listing 5556", Description: "A test listing"},
+		ViewState: objects.ListingViewStatePublished,
+	}
+	err = s.Listings.Insert(testListing2.ID, testListing2)
+	check(err)
 
 	o := objects.Order{
 		ID:    666,
@@ -1852,17 +1862,29 @@ func newTestOrder() (objects.Shop, objects.Order) {
 				ListingID: 5555,
 				Quantity:  23,
 			},
+			{
+				ListingID: 5556,
+				Quantity:  1,
+			},
 		},
 		InvoiceAddress: &objects.AddressDetails{
 			Name:         "John Doe",
 			Address1:     "123 Main St",
 			City:         "Anytown",
+			PostalCode:   "12345",
 			Country:      "US",
 			EmailAddress: "john.doe@example.com",
 		},
 	}
 	err = s.Orders.Insert(o.ID, o)
 	check(err)
+
+	o2 := o
+	o2.ID = 667
+	o2.State = objects.OrderStateCommited
+	err = s.Orders.Insert(o2.ID, o2)
+	check(err)
+
 	return s, o
 }
 
@@ -1919,11 +1941,11 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				Quantity:  23,
 			},
 			expected: func(a *assert.Assertions, o objects.Order) {
-				if !a.Len(o.Items, 2, "expected 2 items %+v", o.Items) {
+				if !a.Len(o.Items, 3, "expected 3 items %+v", o.Items) {
 					return
 				}
-				a.Equal(uint32(23), o.Items[1].Quantity)
-				a.Equal(objects.ObjectId(5555), o.Items[1].ListingID)
+				a.Equal(uint32(23), o.Items[2].Quantity)
+				a.Equal(objects.ObjectId(5555), o.Items[2].ListingID)
 			},
 		},
 		{
@@ -1949,7 +1971,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			op:   RemoveOp,
 			path: PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"items", "0"}},
 			expected: func(a *assert.Assertions, o objects.Order) {
-				a.Len(o.Items, 0)
+				a.Len(o.Items, 1)
 			},
 		},
 		{
@@ -1976,6 +1998,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				}
 				a.Equal("123 Main St", o.InvoiceAddress.Address1)
 				a.Equal("Anytown", o.InvoiceAddress.City)
+				a.Equal("12345", o.InvoiceAddress.PostalCode)
 				a.Equal("John Doe", o.InvoiceAddress.Name)
 			},
 		},
@@ -1987,6 +2010,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				Name:         "Jane Doe",
 				Address1:     "321 Other St",
 				City:         "Othertown",
+				PostalCode:   "67890",
 				Country:      "US",
 				EmailAddress: "jane.doe@example.com",
 			},
@@ -1996,6 +2020,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				}
 				a.Equal("321 Other St", o.ShippingAddress.Address1)
 				a.Equal("Othertown", o.ShippingAddress.City)
+				a.Equal("67890", o.ShippingAddress.PostalCode)
 			},
 		},
 		{
@@ -2011,33 +2036,21 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			op:   AddOp,
 			path: PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"chosenPayee"}},
 			value: objects.Payee{
-				Address: objects.ChainAddress{
-					ChainID: 1337,
-					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
-				},
+				Address: otherCurrency,
 			},
 			expected: func(a *assert.Assertions, o objects.Order) {
 				a.NotNil(o.ChosenPayee)
-				a.Equal(objects.ChainAddress{
-					ChainID: 1337,
-					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
-				}, o.ChosenPayee.Address)
+				a.Equal(otherCurrency, o.ChosenPayee.Address)
 			},
 		},
 		{
-			name: "choose currency",
-			op:   AddOp,
-			path: PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"chosenCurrency"}},
-			value: objects.ChainAddress{
-				ChainID: 1337,
-				Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
-			},
+			name:  "choose currency",
+			op:    AddOp,
+			path:  PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"chosenCurrency"}},
+			value: otherCurrency,
 			expected: func(a *assert.Assertions, o objects.Order) {
 				a.NotNil(o.ChosenCurrency)
-				a.EqualValues(&objects.ChainAddress{
-					ChainID: 1337,
-					Address: [20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90},
-				}, o.ChosenCurrency)
+				a.EqualValues(otherCurrency, *o.ChosenCurrency)
 			},
 		},
 		{
@@ -2220,6 +2233,40 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"invoiceAddress", "invalid"}},
 			value:    "test",
 			errMatch: "fields=[invoiceAddress invalid] not found",
+		},
+		{
+			name:     "add item after commit",
+			op:       AddOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []string{"items"}},
+			value:    objects.OrderedItem{ListingID: 5555, Quantity: 1},
+			errMatch: errCannotModdifyCommitedOrder.Error(),
+		},
+		{
+			name:     "replace item after commit",
+			op:       ReplaceOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []string{"items", "0"}},
+			value:    objects.OrderedItem{ListingID: 5555, Quantity: 2},
+			errMatch: errCannotModdifyCommitedOrder.Error(),
+		},
+		{
+			name:     "increment quantity after commit",
+			op:       IncrementOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []string{"items", "0", "quantity"}},
+			value:    1,
+			errMatch: errCannotModdifyCommitedOrder.Error(),
+		},
+		{
+			name:     "decrement quantity after commit",
+			op:       DecrementOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []string{"items", "0", "quantity"}},
+			value:    1,
+			errMatch: errCannotModdifyCommitedOrder.Error(),
+		},
+		{
+			name:     "remove item after commit",
+			op:       RemoveOp,
+			path:     PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []string{"items", "0"}},
+			errMatch: errCannotModdifyCommitedOrder.Error(),
 		},
 	}
 
