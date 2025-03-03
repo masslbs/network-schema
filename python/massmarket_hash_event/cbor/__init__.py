@@ -17,13 +17,7 @@ from massmarket_hash_event.cbor.order import Order
 
 def mass_types(encoder, obj):
     mapped = obj
-    if isinstance(obj, Listing):
-        mapped = obj.to_cbor_dict()
-    elif isinstance(obj, Tag):
-        mapped = obj.to_cbor_dict()
-    elif isinstance(obj, Account):
-        mapped = obj.to_cbor_dict()
-    elif isinstance(obj, Manifest):
+    if hasattr(obj, "to_cbor_dict"):
         mapped = obj.to_cbor_dict()
     return encoder.encode(mapped)
 
