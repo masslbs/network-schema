@@ -67,3 +67,49 @@ func (pub PublicKey) MarshalJSON() ([]byte, error) {
 func (h Hash) MarshalJSON() ([]byte, error) {
 	return json.Marshal(base64.StdEncoding.EncodeToString(h[:]))
 }
+
+func (s Shop) MarshalJSON() ([]byte, error) {
+	type jsonShop struct {
+		SchemaVersion uint64             `json:"SchemaVersion"`
+		Manifest      Manifest           `json:"Manifest"`
+		Tags          map[string]Tag     `json:"Tags"`
+		Orders        map[string]Order   `json:"Orders"`
+		Accounts      map[string]Account `json:"Accounts"`
+		Listings      map[string]Listing `json:"Listings"`
+		Inventory     map[string]uint64  `json:"Inventory"`
+	}
+	var js jsonShop
+	js.SchemaVersion = s.SchemaVersion
+	js.Manifest = s.Manifest
+	js.Tags = make(map[string]Tag)
+	js.Orders = make(map[string]Order)
+	js.Accounts = make(map[string]Account)
+	js.Listings = make(map[string]Listing)
+	js.Inventory = make(map[string]uint64)
+	s.Tags.All(func(name []byte, tag Tag) bool {
+		js.Tags[hex.EncodeToString(name)] = tag
+		return true
+	})
+
+	s.Orders.All(func(id []byte, order Order) bool {
+		js.Orders[hex.EncodeToString(id)] = order
+		return true
+	})
+
+	s.Accounts.All(func(addr []byte, acc Account) bool {
+		js.Accounts[hex.EncodeToString(addr)] = acc
+		return true
+	})
+
+	s.Listings.All(func(id []byte, lis Listing) bool {
+		js.Listings[hex.EncodeToString(id)] = lis
+		return true
+	})
+
+	s.Inventory.All(func(id []byte, inv uint64) bool {
+		js.Inventory[hex.EncodeToString(id)] = inv
+		return true
+	})
+
+	return json.Marshal(js)
+}

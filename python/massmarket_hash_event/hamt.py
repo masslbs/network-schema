@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import hashlib
-import hmac
+
 from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional, Any, Callable
-import cbor2
+
+from massmarket_hash_event.cbor_encoder import cbor_encode
 
 BITS_PER_STEP = 6
 MAX_DEPTH = 256 // BITS_PER_STEP
@@ -245,7 +246,7 @@ class Node(Generic[V]):
             if e.node is None:
                 # TODO: take this out
                 h.update(e.key)
-                h.update(cbor2.dumps(e.value))
+                h.update(cbor_encode(e.value))
             else:
                 h.update(e.node.hash())
 

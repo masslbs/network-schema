@@ -18,8 +18,8 @@ from massmarket_hash_event.cbor.base_types import (
 @dataclass
 class Manifest:
     shop_id: Uint256
-    payees: Dict[str, Payee]
-    accepted_currencies: List[ChainAddress]
+    payees: Dict[str, Payee] = {}
+    accepted_currencies: List[ChainAddress] = []
     pricing_currency: ChainAddress
     shipping_regions: Optional[Dict[str, ShippingRegion]] = None
 
@@ -31,11 +31,11 @@ class Manifest:
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "Manifest":
-        payees = {k: Payee.from_cbor_dict(v) for k, v in d["Payees"].items()}
+        payees = {k: Payee.from_cbor_dict(v) for k, v in d["Payees"].items()} if "Payees" in d else None
         accepted_currencies = [
             (
                 ChainAddress.from_cbor_dict(item)
-                if isinstance(item, dict) and hasattr(ChainAddress, "from_cbor_dict")
+                if isinstance(item, dict)
                 else item
             )
             for item in d["AcceptedCurrencies"]
@@ -43,7 +43,6 @@ class Manifest:
         pricing_currency = (
             ChainAddress.from_cbor_dict(d["PricingCurrency"])
             if isinstance(d["PricingCurrency"], dict)
-            and hasattr(ChainAddress, "from_cbor_dict")
             else d["PricingCurrency"]
         )
         shipping_regions = None

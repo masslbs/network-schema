@@ -8,30 +8,13 @@ from io import BytesIO
 import cbor2
 import hashlib
 from pprint import pprint
+
 from massmarket_hash_event.hamt import Trie
 from massmarket_hash_event.cbor.base_types import Tag, Account
 from massmarket_hash_event.cbor.manifest import Manifest
 from massmarket_hash_event.cbor.listing import Listing
 from massmarket_hash_event.cbor.order import Order
-
-
-def mass_types(encoder, obj):
-    mapped = obj
-    if hasattr(obj, "to_cbor_dict"):
-        mapped = obj.to_cbor_dict()
-    return encoder.encode(mapped)
-
-
-# construct default encoder
-def cbor_encode(obj):
-    with BytesIO() as fp:
-        cbor2.CBOREncoder(
-            fp,
-            canonical=True,
-            date_as_datetime=True,
-            default=mass_types,
-        ).encode(obj)
-        return fp.getvalue()
+from massmarket_hash_event.cbor_encoder import cbor_encode
 
 
 @dataclass

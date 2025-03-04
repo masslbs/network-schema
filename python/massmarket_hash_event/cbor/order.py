@@ -247,7 +247,8 @@ class Order:
         d = {
             "ID": self.id,
             "Items": [item.to_cbor_dict() for item in self.items],
-            "State": self.state.value,
+            # TODO: why isnt this tested..?
+            "State": self.state.value if isinstance(self.state, OrderState) else self.state,
         }
 
         if self.invoice_address is not None:

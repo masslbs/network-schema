@@ -6,6 +6,7 @@ package patch
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 
 	masscbor "github.com/masslbs/network-schema/go/cbor"
@@ -29,6 +30,8 @@ func (p *Patcher) patchManifest(patch Patch) error {
 	}
 }
 
+var bigZero = big.NewInt(0)
+
 func (p *Patcher) replaceManifestField(patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
 		// Replace entire manifest
@@ -38,6 +41,9 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 		}
 		if err := p.validator.Struct(newManifest); err != nil {
 			return err
+		}
+		if p.shop.Manifest.ShopID.Cmp(bigZero) != 0 && p.shop.Manifest.ShopID.Cmp(&newManifest.ShopID) != 0 {
+			return fmt.Errorf("shopId mismatch")
 		}
 		p.shop.Manifest = newManifest
 		return nil

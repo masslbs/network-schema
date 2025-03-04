@@ -19,6 +19,7 @@ from massmarket_hash_event.cbor.manifest import (
     Payee,
     ShippingRegion,
 )
+from massmarket_hash_event.cbor import Shop
 
 
 def test_cbor_manifest_cbor_keys():
@@ -123,71 +124,106 @@ def test_cbor_price_modifier_validation():
 
 
 def test_cbor_manifest_from_vectors_file():
-    # Use the provided vector file (for example ManifestOkay.json) to drive assertions.
     file_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "vectors", "ManifestOkay.json"
     )
     with open(file_path, "r") as f:
         vectors = json.load(f)
 
-    def verify_manifest_snapshot(snapshot):
-        encoded_b64 = snapshot["Before"]["Encoded"]
-        cbor_data = base64.b64decode(encoded_b64)
+    for a_or_b in ["After", "Before"]:
+        print(f"Testing {a_or_b}")
 
-        # Decode using our helper.
-        shop_obj = cbor2.loads(cbor_data)
-        manifest_cbor = cbor2.dumps(shop_obj["Manifest"])
-        manifest_obj = Manifest.from_cbor(manifest_cbor)
+        for snap in vectors["Snapshots"]:
+            print(f"Testing {snap['Name']}")
+            encoded_b64 = snap[a_or_b]["Encoded"]
+            cbor_data = base64.b64decode(encoded_b64)
 
-        # Compare key properties. Note that the JSON "Value" in the vector file holds the manifest
-        # under the "Manifest" key – which uses CamelCase keys.
-        expected = snapshot["Before"]["Value"]["Manifest"]
-        # Convert the expected dictionary to a ChainAddress object for comparison
+            # Decode using our helper
+            shop = Shop.from_cbor(cbor_data)
+            expected = snap[a_or_b]["Value"]["Manifest"]
+
+            # Verify manifest properties
+            verify_manifest(shop.manifest, expected)
+
+            want_hash = base64.b64decode(snap[a_or_b]["Hash"])
+            got_hash = shop.hash()
+            assert want_hash == got_hash
+
+
+def verify_manifest(manifest_obj: Manifest, expected: dict):
+    # Check shop ID
+    # TODO: Uint256/big.Int printed as {} in json
+    # assert manifest_obj.shop_id == expected["ShopID"]
+
+    # Check pricing currency
+    if "PricingCurrency" in expected and expected["PricingCurrency"] is not None:
         expected_pricing_currency = ChainAddress(
             chain_id=expected["PricingCurrency"]["ChainID"],
             address=expected["PricingCurrency"]["Address"],
         )
         assert manifest_obj.pricing_currency == expected_pricing_currency
+    else:
+        assert manifest_obj.pricing_currency is None
 
-        # Check payees
-        expected_payee = expected["Payees"]["default"]
-        expected_payee_addr = ChainAddress(
-            chain_id=expected_payee["Address"]["ChainID"],
-            address=expected_payee["Address"]["Address"],
-        )
-        assert manifest_obj.payees["default"].address == expected_payee_addr
-        assert (
-            manifest_obj.payees["default"].call_as_contract
-            == expected_payee["CallAsContract"]
-        )
+    # Check payees
+    if "Payees" in expected and expected["Payees"] is not None:
+        assert len(manifest_obj.payees) == len(expected["Payees"])
+        for key, expected_payee in expected["Payees"].items():
+            assert key in manifest_obj.payees
+            expected_payee_addr = ChainAddress(
+                chain_id=expected_payee["Address"]["ChainID"],
+                address=expected_payee["Address"]["Address"],
+            )
+            assert manifest_obj.payees[key].address == expected_payee_addr
+            assert (
+                manifest_obj.payees[key].call_as_contract
+                == expected_payee["CallAsContract"]
+            )
+    else:
+        assert manifest_obj.payees is None or len(manifest_obj.payees) == 0
 
-        # Check accepted currencies
+    # Check accepted currencies
+    if "AcceptedCurrencies" in expected and expected["AcceptedCurrencies"] is not None:
         assert len(manifest_obj.accepted_currencies) == len(
             expected["AcceptedCurrencies"]
         )
-        for actual, expected_curr in zip(
-            manifest_obj.accepted_currencies, expected["AcceptedCurrencies"]
-        ):
+        for i, expected_curr in enumerate(expected["AcceptedCurrencies"]):
             expected_chain_addr = ChainAddress(
                 chain_id=expected_curr["ChainID"], address=expected_curr["Address"]
             )
-            assert actual == expected_chain_addr
-
-        # Check shop ID
-        assert manifest_obj.shop_id == Uint256(expected["ShopID"])
-
-        # Check shipping regions
-        assert len(manifest_obj.shipping_regions) == len(expected["ShippingRegions"])
-        expected_region = expected["ShippingRegions"]["default"]
-        actual_region = manifest_obj.shipping_regions["default"]
-        assert actual_region.country == expected_region["Country"]
-        assert actual_region.postal_code == expected_region["PostalCode"]
-        assert actual_region.city == expected_region["City"]
+            assert manifest_obj.accepted_currencies[i] == expected_chain_addr
+    else:
         assert (
-            actual_region.price_modifiers == expected_region["PriceModifiers"]
-        )  # Both should be None
+            manifest_obj.accepted_currencies is None
+            or len(manifest_obj.accepted_currencies) == 0
+        )
 
-    # Verify each snapshot in the vector file
-    for snapshot in vectors["Snapshots"]:
-        print(f"Verifying snapshot {snapshot['Name']}")
-        verify_manifest_snapshot(snapshot)
+    # Check shipping regions
+    if "ShippingRegions" in expected and len(expected["ShippingRegions"]) > 0:
+        assert len(manifest_obj.shipping_regions) == len(expected["ShippingRegions"])
+        for key, expected_region in expected["ShippingRegions"].items():
+            assert key in manifest_obj.shipping_regions
+            actual_region = manifest_obj.shipping_regions[key]
+            assert actual_region.country == expected_region["Country"]
+            assert actual_region.postal_code == expected_region["PostalCode"]
+            assert actual_region.city == expected_region["City"]
+
+            # Check price modifiers if present
+            if (
+                "PriceModifiers" in expected_region
+                and expected_region["PriceModifiers"]
+            ):
+                assert len(actual_region.price_modifiers) == len(
+                    expected_region["PriceModifiers"]
+                )
+                # Additional verification of price modifiers could be added here
+            else:
+                assert (
+                    actual_region.price_modifiers is None
+                    or len(actual_region.price_modifiers) == 0
+                )
+    else:
+        assert (
+            manifest_obj.shipping_regions is None
+            or len(manifest_obj.shipping_regions) == 0
+        )

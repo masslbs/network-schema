@@ -26,7 +26,7 @@ from eth_account.messages import encode_defunct
 from massmarket_hash_event.mmr.db import FlatDB
 from massmarket_hash_event.mmr.algorithms import add_leaf_hash
 
-from massmarket_hash_event.cbor import cbor_encode
+from massmarket_hash_event.cbor_encoder import cbor_encode
 from massmarket_hash_event.cbor.patch import Patch
 from massmarket_hash_event.cbor.patch import SignedPatchSet
 

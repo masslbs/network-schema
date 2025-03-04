@@ -281,36 +281,44 @@ def test_order_from_vectors_file():
 
     for snap in vectors["Snapshots"]:
         print(f"Testing {snap['Name']}")
-        encoded_b64 = snap["After"]["Encoded"]
+        encoded_b64 = snap["Before"]["Encoded"]
         cbor_data = base64.b64decode(encoded_b64)
 
         # Decode using our helper
         shop = Shop.from_cbor(cbor_data)
 
-        # Check if the shop has orders
-        if not hasattr(shop, "orders") or not shop.orders:
-            continue
+        assert shop.orders.size == len(snap["Before"]["Value"]["Orders"])
 
         def check_order(order_id, order_dict):
-            if isinstance(order_id, str):
-                order_id = int(order_id).to_bytes(8, "big")
+            print(f"Checking order {order_id}")
+            from pprint import pprint
+
+            pprint(order_dict)
             order_obj = Order.from_cbor_dict(order_dict)
 
-            # Verify the order against the expected value
-            if "Orders" in snap["After"]["Value"]:
-                expected_orders = snap["After"]["Value"]["Orders"]
-                if str(int.from_bytes(order_id, "big")) in expected_orders:
-                    expected = expected_orders[str(int.from_bytes(order_id, "big"))]
-                    verify_order(order_obj, expected)
+            expected_orders = snap["Before"]["Value"]["Orders"]
+            json_order_id = order_id.hex()
+            assert json_order_id in expected_orders
+            expected = expected_orders[json_order_id]
+            verify_order(order_obj, expected)
+
+            # roundtrip
+            cbor_data = cbor_encode(order_obj)
+            order_obj_roundtrip = Order.from_cbor(cbor_data)
+            assert order_obj_roundtrip.id == order_obj.id
+            assert order_obj_roundtrip == order_obj
 
         shop.orders.all(check_order)
+        want_hash = base64.b64decode(snap["Before"]["Hash"])
+        got_hash = shop.hash()
+        assert want_hash == got_hash
 
 
 def verify_order(order_obj: Order, expected: dict):
     assert order_obj.id == expected["ID"]
 
     # Check items
-    if "Items" in expected:
+    if "Items" in expected and expected["Items"] is not None:
         if len(expected["Items"]) == 0:
             assert order_obj.items == []
         else:
@@ -320,7 +328,10 @@ def verify_order(order_obj: Order, expected: dict):
                 assert order_obj.items[i].quantity == expected_item["Quantity"]
 
                 # Check variation_ids if present
-                if "VariationIDs" in expected_item:
+                if (
+                    "VariationIDs" in expected_item
+                    and expected_item["VariationIDs"] is not None
+                ):
                     assert (
                         order_obj.items[i].variation_ids
                         == expected_item["VariationIDs"]
@@ -329,11 +340,11 @@ def verify_order(order_obj: Order, expected: dict):
                     assert order_obj.items[i].variation_ids is None
 
     # Check state
-    if "State" in expected:
+    if "State" in expected and expected["State"] is not None:
         assert order_obj.state == OrderState(expected["State"])
 
     # Check invoice address
-    if "InvoiceAddress" in expected:
+    if "InvoiceAddress" in expected and expected["InvoiceAddress"] is not None:
         assert order_obj.invoice_address is not None
         assert order_obj.invoice_address.name == expected["InvoiceAddress"]["Name"]
         assert (
@@ -351,6 +362,7 @@ def verify_order(order_obj: Order, expected: dict):
         # Check optional fields
         if (
             "Address2" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["Address2"] is not None
             and expected["InvoiceAddress"]["Address2"]
         ):
             assert (
@@ -362,6 +374,7 @@ def verify_order(order_obj: Order, expected: dict):
 
         if (
             "PostalCode" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["PostalCode"] is not None
             and expected["InvoiceAddress"]["PostalCode"]
         ):
             assert (
@@ -373,6 +386,7 @@ def verify_order(order_obj: Order, expected: dict):
 
         if (
             "PhoneNumber" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["PhoneNumber"] is not None
             and expected["InvoiceAddress"]["PhoneNumber"]
         ):
             assert (
@@ -385,7 +399,7 @@ def verify_order(order_obj: Order, expected: dict):
         assert order_obj.invoice_address is None
 
     # Check shipping address (similar to invoice address)
-    if "ShippingAddress" in expected:
+    if "ShippingAddress" in expected and expected["ShippingAddress"] is not None:
         assert order_obj.shipping_address is not None
         assert order_obj.shipping_address.name == expected["ShippingAddress"]["Name"]
         assert (
@@ -404,6 +418,7 @@ def verify_order(order_obj: Order, expected: dict):
         # Check optional fields (same as invoice address)
         if (
             "Address2" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["Address2"] is not None
             and expected["ShippingAddress"]["Address2"]
         ):
             assert (
@@ -415,6 +430,7 @@ def verify_order(order_obj: Order, expected: dict):
 
         if (
             "PostalCode" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["PostalCode"] is not None
             and expected["ShippingAddress"]["PostalCode"]
         ):
             assert (
@@ -426,6 +442,7 @@ def verify_order(order_obj: Order, expected: dict):
 
         if (
             "PhoneNumber" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["PhoneNumber"] is not None
             and expected["ShippingAddress"]["PhoneNumber"]
         ):
             assert (
@@ -438,14 +455,17 @@ def verify_order(order_obj: Order, expected: dict):
         assert order_obj.shipping_address is None
 
     # Check chosen payee
-    if "ChosenPayee" in expected:
+    if "ChosenPayee" in expected and expected["ChosenPayee"] is not None:
         assert order_obj.chosen_payee is not None
         assert (
             order_obj.chosen_payee.address.chain_id
             == expected["ChosenPayee"]["Address"]["ChainID"]
         )
         # Note: Address is binary in our model but hex string in JSON
-        if "CallAsContract" in expected["ChosenPayee"]:
+        if (
+            "CallAsContract" in expected["ChosenPayee"]
+            and expected["ChosenPayee"]["CallAsContract"] is not None
+        ):
             assert (
                 order_obj.chosen_payee.call_as_contract
                 == expected["ChosenPayee"]["CallAsContract"]
@@ -454,7 +474,7 @@ def verify_order(order_obj: Order, expected: dict):
         assert order_obj.chosen_payee is None
 
     # Check chosen currency
-    if "ChosenCurrency" in expected:
+    if "ChosenCurrency" in expected and expected["ChosenCurrency"] is not None:
         assert order_obj.chosen_currency is not None
         assert (
             order_obj.chosen_currency.chain_id == expected["ChosenCurrency"]["ChainID"]
@@ -464,7 +484,7 @@ def verify_order(order_obj: Order, expected: dict):
         assert order_obj.chosen_currency is None
 
     # Check payment details
-    if "PaymentDetails" in expected:
+    if "PaymentDetails" in expected and expected["PaymentDetails"] is not None:
         assert order_obj.payment_details is not None
         assert order_obj.payment_details.ttl == expected["PaymentDetails"]["TTL"]
         # Note: PaymentID, Total, ListingHashes, and ShopSignature would need special handling
@@ -473,14 +493,18 @@ def verify_order(order_obj: Order, expected: dict):
         assert order_obj.payment_details is None
 
     # Check tx details
-    if "TxDetails" in expected:
+    if "TxDetails" in expected and expected["TxDetails"] is not None:
         assert order_obj.tx_details is not None
         # Note: BlockHash and TxHash are binary in our model but represented differently in JSON
     else:
         assert order_obj.tx_details is None
 
     # Check canceled_at
-    if "CanceledAt" in expected and expected["CanceledAt"]:
+    if (
+        "CanceledAt" in expected
+        and expected["CanceledAt"] is not None
+        and expected["CanceledAt"]
+    ):
         assert order_obj.canceled_at is not None
     else:
         assert order_obj.canceled_at is None

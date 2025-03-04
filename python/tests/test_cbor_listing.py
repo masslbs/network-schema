@@ -205,21 +205,32 @@ def test_listing_from_vectors_file():
     with open(file_path, "r") as f:
         vectors = json.load(f)
 
-    for snap in vectors["Snapshots"]:
-        print(f"Testing {snap['Name']}")
-        encoded_b64 = snap["After"]["Encoded"]
-        expected_listings = snap["After"]["Value"]["Listings"]
-        cbor_data = base64.b64decode(encoded_b64)
+    for a_or_b in ["After", "Before"]:
+        print(f"Testing {a_or_b}")
 
-        # Decode using our helper
-        shop = Shop.from_cbor(cbor_data)
-        for listing_id, expected in expected_listings.items():
-            if isinstance(listing_id, str):
-                listing_id = int(listing_id).to_bytes(8, "big")
-            got = shop.listings.get(listing_id)
-            assert got is not None, f"Listing {listing_id} not found"
-            listing_obj = Listing.from_cbor_dict(got)
-            verify_listing(listing_obj, expected)
+        for snap in vectors["Snapshots"]:
+            print(f"Testing {snap['Name']}")
+            encoded_b64 = snap[a_or_b]["Encoded"]
+            expected_listings = snap[a_or_b]["Value"]["Listings"]
+            cbor_data = base64.b64decode(encoded_b64)
+
+            # Decode using our helper
+            shop = Shop.from_cbor(cbor_data)
+
+            assert shop.listings.size == len(expected_listings)
+
+            for listing_id, expected in expected_listings.items():
+                if isinstance(listing_id, str):
+                    # Convert hex string to bytes
+                    listing_id = bytes.fromhex(listing_id)
+                got = shop.listings.get(listing_id)
+                assert got is not None, f"Listing {listing_id} not found"
+                listing_obj = Listing.from_cbor_dict(got)
+                verify_listing(listing_obj, expected)
+
+            want_hash = base64.b64decode(snap[a_or_b]["Hash"])
+            got_hash = shop.hash()
+            assert want_hash == got_hash
 
 
 # from pprint import pprint
