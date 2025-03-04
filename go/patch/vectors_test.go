@@ -1881,7 +1881,7 @@ func newTestOrder() (objects.Shop, objects.Order) {
 
 	o2 := o
 	o2.ID = 667
-	o2.State = objects.OrderStateCommited
+	o2.State = objects.OrderStateCommitted
 	err = s.Orders.Insert(o2.ID, o2)
 	check(err)
 

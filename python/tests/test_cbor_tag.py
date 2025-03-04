@@ -19,4 +19,3 @@ def test_cbor_tag_roundtrip():
 
     assert tag2.name == "shoes"
     assert tag2.listings == [1, 2, 3]
-

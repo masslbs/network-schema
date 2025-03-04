@@ -128,7 +128,11 @@ class PatchPath:
                 ):
                     raise ValueError("Invalid ethereum address")
                 account_addr = EthereumAddress(data[1])
-            elif obj_type in [ObjectType.LISTING, ObjectType.ORDER, ObjectType.INVENTORY]:
+            elif obj_type in [
+                ObjectType.LISTING,
+                ObjectType.ORDER,
+                ObjectType.INVENTORY,
+            ]:
                 if not isinstance(data[1], int):
                     raise ValueError("Invalid object id")
                 object_id = data[1]

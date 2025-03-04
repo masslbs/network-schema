@@ -45,7 +45,7 @@ def test_cbor_manifest_cbor_keys():
         shipping_regions={
             "default": ShippingRegion(
                 country="DE",
-                postcode="",
+                postal_code="",
                 city="",
                 price_modifiers={
                     "some_modifier": PriceModifier(
@@ -97,7 +97,7 @@ def test_cbor_manifest_roundtrip():
         shipping_regions={
             "default": ShippingRegion(
                 country="DE",
-                postcode="",
+                postal_code="",
                 city="",
                 price_modifiers={
                     "mod": PriceModifier(
@@ -181,7 +181,7 @@ def test_cbor_manifest_from_vectors_file():
         expected_region = expected["ShippingRegions"]["default"]
         actual_region = manifest_obj.shipping_regions["default"]
         assert actual_region.country == expected_region["Country"]
-        assert actual_region.postcode == expected_region["Postcode"]
+        assert actual_region.postal_code == expected_region["PostalCode"]
         assert actual_region.city == expected_region["City"]
         assert (
             actual_region.price_modifiers == expected_region["PriceModifiers"]

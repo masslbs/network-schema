@@ -239,7 +239,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateCommited,
+			State: OrderStateCommitted,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),

@@ -156,7 +156,7 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 	case "items":
-		if order.State >= objects.OrderStateCommited {
+		if order.State >= objects.OrderStateCommitted {
 			return errCannotModdifyCommitedOrder
 		}
 		var item objects.OrderedItem
@@ -319,7 +319,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &details
 
 	case "items":
-		if order.State >= objects.OrderStateCommited {
+		if order.State >= objects.OrderStateCommitted {
 			return errCannotModdifyCommitedOrder
 		}
 		switch {
@@ -418,7 +418,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "items":
-		if order.State >= objects.OrderStateCommited {
+		if order.State >= objects.OrderStateCommitted {
 			return errCannotModdifyCommitedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
@@ -457,7 +457,7 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 }
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
-	if order.State >= objects.OrderStateCommited {
+	if order.State >= objects.OrderStateCommitted {
 		return errCannotModdifyCommitedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)

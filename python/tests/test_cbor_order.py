@@ -123,15 +123,12 @@ def test_full_order_roundtrip():
     payee = Payee(
         address=ChainAddress(
             chain_id=1337,
-            address=b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14"
+            address=b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14",
         ),
-        call_as_contract=False
+        call_as_contract=False,
     )
 
-    currency = ChainAddress(
-        chain_id=1337,
-        address=b"\x00" * 20
-    )
+    currency = ChainAddress(chain_id=1337, address=b"\x00" * 20)
 
     payment_details = PaymentDetails(
         payment_id=b"\x01" * 32,
@@ -173,19 +170,27 @@ def test_full_order_roundtrip():
 
 def test_order_validation():
     # Test missing chosen_payee for COMMITTED state
-    with pytest.raises(ValueError, match="ChosenPayee is required when state is COMMITTED"):
+    with pytest.raises(
+        ValueError, match="ChosenPayee is required when state is COMMITTED"
+    ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
             state=OrderState.COMMITTED,
             chosen_currency=ChainAddress(chain_id=1337, address=b"\x00" * 20),
             invoice_address=AddressDetails(
-                name="John", address1="123", city="City", country="US", email_address="john@example.com"
+                name="John",
+                address1="123",
+                city="City",
+                country="US",
+                email_address="john@example.com",
             ),
         )
 
     # Test missing invoice_address or shipping_address for COMMITTED state
-    with pytest.raises(ValueError, match="Either InvoiceAddress or ShippingAddress is required"):
+    with pytest.raises(
+        ValueError, match="Either InvoiceAddress or ShippingAddress is required"
+    ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
@@ -198,7 +203,9 @@ def test_order_validation():
         )
 
     # Test missing canceled_at for CANCELED state
-    with pytest.raises(ValueError, match="CanceledAt is required when state is CANCELED"):
+    with pytest.raises(
+        ValueError, match="CanceledAt is required when state is CANCELED"
+    ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
@@ -206,7 +213,9 @@ def test_order_validation():
         )
 
     # Test missing payment_details for UNPAID state
-    with pytest.raises(ValueError, match="PaymentDetails is required when state is UNPAID"):
+    with pytest.raises(
+        ValueError, match="PaymentDetails is required when state is UNPAID"
+    ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
@@ -217,7 +226,11 @@ def test_order_validation():
             ),
             chosen_currency=ChainAddress(chain_id=1337, address=b"\x00" * 20),
             invoice_address=AddressDetails(
-                name="John", address1="123", city="City", country="US", email_address="john@example.com"
+                name="John",
+                address1="123",
+                city="City",
+                country="US",
+                email_address="john@example.com",
             ),
         )
 
@@ -233,7 +246,11 @@ def test_order_validation():
             ),
             chosen_currency=ChainAddress(chain_id=1337, address=b"\x00" * 20),
             invoice_address=AddressDetails(
-                name="John", address1="123", city="City", country="US", email_address="john@example.com"
+                name="John",
+                address1="123",
+                city="City",
+                country="US",
+                email_address="john@example.com",
             ),
             payment_details=PaymentDetails(
                 payment_id=b"\x01" * 32,
@@ -269,28 +286,29 @@ def test_order_from_vectors_file():
 
         # Decode using our helper
         shop = Shop.from_cbor(cbor_data)
-        
+
         # Check if the shop has orders
-        if not hasattr(shop, 'orders') or not shop.orders:
+        if not hasattr(shop, "orders") or not shop.orders:
             continue
-        
+
         def check_order(order_id, order_dict):
             if isinstance(order_id, str):
                 order_id = int(order_id).to_bytes(8, "big")
             order_obj = Order.from_cbor_dict(order_dict)
 
             # Verify the order against the expected value
-            if 'Orders' in snap['After']['Value']:
-                expected_orders = snap['After']['Value']['Orders']
+            if "Orders" in snap["After"]["Value"]:
+                expected_orders = snap["After"]["Value"]["Orders"]
                 if str(int.from_bytes(order_id, "big")) in expected_orders:
                     expected = expected_orders[str(int.from_bytes(order_id, "big"))]
                     verify_order(order_obj, expected)
-        
+
         shop.orders.all(check_order)
+
 
 def verify_order(order_obj: Order, expected: dict):
     assert order_obj.id == expected["ID"]
-    
+
     # Check items
     if "Items" in expected:
         if len(expected["Items"]) == 0:
@@ -300,89 +318,151 @@ def verify_order(order_obj: Order, expected: dict):
             for i, expected_item in enumerate(expected["Items"]):
                 assert order_obj.items[i].listing_id == expected_item["ListingID"]
                 assert order_obj.items[i].quantity == expected_item["Quantity"]
-                
+
                 # Check variation_ids if present
                 if "VariationIDs" in expected_item:
-                    assert order_obj.items[i].variation_ids == expected_item["VariationIDs"]
+                    assert (
+                        order_obj.items[i].variation_ids
+                        == expected_item["VariationIDs"]
+                    )
                 else:
                     assert order_obj.items[i].variation_ids is None
-    
+
     # Check state
     if "State" in expected:
         assert order_obj.state == OrderState(expected["State"])
-    
+
     # Check invoice address
     if "InvoiceAddress" in expected:
         assert order_obj.invoice_address is not None
         assert order_obj.invoice_address.name == expected["InvoiceAddress"]["Name"]
-        assert order_obj.invoice_address.address1 == expected["InvoiceAddress"]["Address1"]
+        assert (
+            order_obj.invoice_address.address1 == expected["InvoiceAddress"]["Address1"]
+        )
         assert order_obj.invoice_address.city == expected["InvoiceAddress"]["City"]
-        assert order_obj.invoice_address.country == expected["InvoiceAddress"]["Country"]
-        assert order_obj.invoice_address.email_address == expected["InvoiceAddress"]["EmailAddress"]
-        
+        assert (
+            order_obj.invoice_address.country == expected["InvoiceAddress"]["Country"]
+        )
+        assert (
+            order_obj.invoice_address.email_address
+            == expected["InvoiceAddress"]["EmailAddress"]
+        )
+
         # Check optional fields
-        if "Address2" in expected["InvoiceAddress"] and expected["InvoiceAddress"]["Address2"]:
-            assert order_obj.invoice_address.address2 == expected["InvoiceAddress"]["Address2"]
+        if (
+            "Address2" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["Address2"]
+        ):
+            assert (
+                order_obj.invoice_address.address2
+                == expected["InvoiceAddress"]["Address2"]
+            )
         else:
             assert order_obj.invoice_address.address2 is None
-            
-        if "PostalCode" in expected["InvoiceAddress"] and expected["InvoiceAddress"]["PostalCode"]:
-            assert order_obj.invoice_address.postal_code == expected["InvoiceAddress"]["PostalCode"]
+
+        if (
+            "PostalCode" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["PostalCode"]
+        ):
+            assert (
+                order_obj.invoice_address.postal_code
+                == expected["InvoiceAddress"]["PostalCode"]
+            )
         else:
             assert order_obj.invoice_address.postal_code is None
-            
-        if "PhoneNumber" in expected["InvoiceAddress"] and expected["InvoiceAddress"]["PhoneNumber"]:
-            assert order_obj.invoice_address.phone_number == expected["InvoiceAddress"]["PhoneNumber"]
+
+        if (
+            "PhoneNumber" in expected["InvoiceAddress"]
+            and expected["InvoiceAddress"]["PhoneNumber"]
+        ):
+            assert (
+                order_obj.invoice_address.phone_number
+                == expected["InvoiceAddress"]["PhoneNumber"]
+            )
         else:
             assert order_obj.invoice_address.phone_number is None
     else:
         assert order_obj.invoice_address is None
-    
+
     # Check shipping address (similar to invoice address)
     if "ShippingAddress" in expected:
         assert order_obj.shipping_address is not None
         assert order_obj.shipping_address.name == expected["ShippingAddress"]["Name"]
-        assert order_obj.shipping_address.address1 == expected["ShippingAddress"]["Address1"]
+        assert (
+            order_obj.shipping_address.address1
+            == expected["ShippingAddress"]["Address1"]
+        )
         assert order_obj.shipping_address.city == expected["ShippingAddress"]["City"]
-        assert order_obj.shipping_address.country == expected["ShippingAddress"]["Country"]
-        assert order_obj.shipping_address.email_address == expected["ShippingAddress"]["EmailAddress"]
-        
+        assert (
+            order_obj.shipping_address.country == expected["ShippingAddress"]["Country"]
+        )
+        assert (
+            order_obj.shipping_address.email_address
+            == expected["ShippingAddress"]["EmailAddress"]
+        )
+
         # Check optional fields (same as invoice address)
-        if "Address2" in expected["ShippingAddress"] and expected["ShippingAddress"]["Address2"]:
-            assert order_obj.shipping_address.address2 == expected["ShippingAddress"]["Address2"]
+        if (
+            "Address2" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["Address2"]
+        ):
+            assert (
+                order_obj.shipping_address.address2
+                == expected["ShippingAddress"]["Address2"]
+            )
         else:
             assert order_obj.shipping_address.address2 is None
-            
-        if "PostalCode" in expected["ShippingAddress"] and expected["ShippingAddress"]["PostalCode"]:
-            assert order_obj.shipping_address.postal_code == expected["ShippingAddress"]["PostalCode"]
+
+        if (
+            "PostalCode" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["PostalCode"]
+        ):
+            assert (
+                order_obj.shipping_address.postal_code
+                == expected["ShippingAddress"]["PostalCode"]
+            )
         else:
             assert order_obj.shipping_address.postal_code is None
-            
-        if "PhoneNumber" in expected["ShippingAddress"] and expected["ShippingAddress"]["PhoneNumber"]:
-            assert order_obj.shipping_address.phone_number == expected["ShippingAddress"]["PhoneNumber"]
+
+        if (
+            "PhoneNumber" in expected["ShippingAddress"]
+            and expected["ShippingAddress"]["PhoneNumber"]
+        ):
+            assert (
+                order_obj.shipping_address.phone_number
+                == expected["ShippingAddress"]["PhoneNumber"]
+            )
         else:
             assert order_obj.shipping_address.phone_number is None
     else:
         assert order_obj.shipping_address is None
-    
+
     # Check chosen payee
     if "ChosenPayee" in expected:
         assert order_obj.chosen_payee is not None
-        assert order_obj.chosen_payee.address.chain_id == expected["ChosenPayee"]["Address"]["ChainID"]
+        assert (
+            order_obj.chosen_payee.address.chain_id
+            == expected["ChosenPayee"]["Address"]["ChainID"]
+        )
         # Note: Address is binary in our model but hex string in JSON
         if "CallAsContract" in expected["ChosenPayee"]:
-            assert order_obj.chosen_payee.call_as_contract == expected["ChosenPayee"]["CallAsContract"]
+            assert (
+                order_obj.chosen_payee.call_as_contract
+                == expected["ChosenPayee"]["CallAsContract"]
+            )
     else:
         assert order_obj.chosen_payee is None
-    
+
     # Check chosen currency
     if "ChosenCurrency" in expected:
         assert order_obj.chosen_currency is not None
-        assert order_obj.chosen_currency.chain_id == expected["ChosenCurrency"]["ChainID"]
+        assert (
+            order_obj.chosen_currency.chain_id == expected["ChosenCurrency"]["ChainID"]
+        )
         # Note: Address is binary in our model but hex string in JSON
     else:
         assert order_obj.chosen_currency is None
-    
+
     # Check payment details
     if "PaymentDetails" in expected:
         assert order_obj.payment_details is not None
@@ -391,16 +471,16 @@ def verify_order(order_obj: Order, expected: dict):
         # as they are binary in our model but represented differently in JSON
     else:
         assert order_obj.payment_details is None
-    
+
     # Check tx details
     if "TxDetails" in expected:
         assert order_obj.tx_details is not None
         # Note: BlockHash and TxHash are binary in our model but represented differently in JSON
     else:
         assert order_obj.tx_details is None
-    
+
     # Check canceled_at
     if "CanceledAt" in expected and expected["CanceledAt"]:
         assert order_obj.canceled_at is not None
     else:
-        assert order_obj.canceled_at is None 
+        assert order_obj.canceled_at is None

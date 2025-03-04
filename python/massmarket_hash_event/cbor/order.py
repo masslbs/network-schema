@@ -9,16 +9,14 @@ from enum import IntEnum
 
 import cbor2
 
-from massmarket_hash_event.cbor.base_types import (
-    Uint256, ChainAddress, Payee
-)
+from massmarket_hash_event.cbor.base_types import Uint256, ChainAddress, Payee
 
 
 class OrderState(IntEnum):
     UNSPECIFIED = 0
     OPEN = 1
     CANCELED = 2
-    COMMITTED = 3  # Note: the Go code uses "COMMITED" (single 't') but I've corrected it here
+    COMMITTED = 3
     UNPAID = 4
     PAID = 5
 
@@ -93,6 +91,7 @@ class AddressDetails:
             d["PhoneNumber"] = self.phone_number
         return d
 
+
 @dataclass
 class PaymentDetails:
     payment_id: bytes  # Hash
@@ -109,7 +108,9 @@ class PaymentDetails:
         if len(self.payment_id) != 32:  # HashSize in Go code
             raise ValueError(f"PaymentID must be 32 bytes, got {len(self.payment_id)}")
         if len(self.shop_signature) != 65:  # SignatureSize in Go code
-            raise ValueError(f"ShopSignature must be 65 bytes, got {len(self.shop_signature)}")
+            raise ValueError(
+                f"ShopSignature must be 65 bytes, got {len(self.shop_signature)}"
+            )
 
     @classmethod
     def from_cbor_dict(cls, d: Dict[str, Any]) -> "PaymentDetails":
@@ -176,18 +177,26 @@ class Order:
         if self.state == OrderState.PAID:
             if self.tx_details is None:
                 raise ValueError("TxDetails is required when state is PAID")
-            
+
         if self.state in (OrderState.PAID, OrderState.UNPAID):
             if self.payment_details is None:
-                raise ValueError("PaymentDetails is required when state is UNPAID or PAID")
+                raise ValueError(
+                    "PaymentDetails is required when state is UNPAID or PAID"
+                )
 
         if self.state in (OrderState.PAID, OrderState.UNPAID, OrderState.COMMITTED):
             if self.chosen_payee is None:
-                raise ValueError("ChosenPayee is required when state is COMMITTED, UNPAID, or PAID")
+                raise ValueError(
+                    "ChosenPayee is required when state is COMMITTED, UNPAID, or PAID"
+                )
             if self.chosen_currency is None:
-                raise ValueError("ChosenCurrency is required when state is COMMITTED, UNPAID, or PAID")
+                raise ValueError(
+                    "ChosenCurrency is required when state is COMMITTED, UNPAID, or PAID"
+                )
             if self.invoice_address is None and self.shipping_address is None:
-                raise ValueError("Either InvoiceAddress or ShippingAddress is required for COMMITTED, UNPAID, or PAID states")
+                raise ValueError(
+                    "Either InvoiceAddress or ShippingAddress is required for COMMITTED, UNPAID, or PAID states"
+                )
 
         if self.state == OrderState.CANCELED:
             if self.canceled_at is None:
@@ -196,31 +205,31 @@ class Order:
     @classmethod
     def from_cbor_dict(cls, d: Dict[str, Any]) -> "Order":
         items = [OrderedItem.from_cbor_dict(item) for item in d["Items"]]
-        
+
         invoice_address = d.get("InvoiceAddress")
         if invoice_address is not None:
             invoice_address = AddressDetails.from_cbor_dict(invoice_address)
-            
+
         shipping_address = d.get("ShippingAddress")
         if shipping_address is not None:
             shipping_address = AddressDetails.from_cbor_dict(shipping_address)
-            
+
         chosen_payee = d.get("ChosenPayee")
         if chosen_payee is not None:
             chosen_payee = Payee.from_cbor_dict(chosen_payee)
-            
+
         chosen_currency = d.get("ChosenCurrency")
         if chosen_currency is not None:
             chosen_currency = ChainAddress.from_cbor_dict(chosen_currency)
-            
+
         payment_details = d.get("PaymentDetails")
         if payment_details is not None:
             payment_details = PaymentDetails.from_cbor_dict(payment_details)
-            
+
         tx_details = d.get("TxDetails")
         if tx_details is not None:
             tx_details = OrderPaid.from_cbor_dict(tx_details)
-            
+
         return cls(
             id=d["ID"],
             items=items,
@@ -240,7 +249,7 @@ class Order:
             "Items": [item.to_cbor_dict() for item in self.items],
             "State": self.state.value,
         }
-        
+
         if self.invoice_address is not None:
             d["InvoiceAddress"] = self.invoice_address.to_cbor_dict()
         if self.shipping_address is not None:
@@ -255,11 +264,10 @@ class Order:
             d["PaymentDetails"] = self.payment_details.to_cbor_dict()
         if self.tx_details is not None:
             d["TxDetails"] = self.tx_details.to_cbor_dict()
-            
+
         return d
 
     @classmethod
     def from_cbor(cls, cbor_data: bytes) -> "Order":
         d = cbor2.loads(cbor_data)
         return cls.from_cbor_dict(d)
-

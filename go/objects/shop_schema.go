@@ -134,7 +134,7 @@ func (ca ChainAddress) Equal(other ChainAddress) bool {
 }
 
 func (ca *ChainAddress) String() string {
-	addr := common.NewMixedcaseAddress(common.Address(ca.Address))
+	addr := common.Address(ca.Address)
 	return fmt.Sprintf("%s (%d)", addr.String(), ca.ChainID)
 }
 
@@ -618,7 +618,7 @@ func OrderValidation(sl validator.StructLevel) {
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
 		}
 		fallthrough
-	case OrderStateCommited:
+	case OrderStateCommitted:
 		if len(order.Items) == 0 {
 			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
@@ -647,7 +647,7 @@ const (
 	OrderStateUnspecified OrderState = iota
 	OrderStateOpen
 	OrderStateCanceled
-	OrderStateCommited
+	OrderStateCommitted
 	OrderStateUnpaid
 	OrderStatePaid
 

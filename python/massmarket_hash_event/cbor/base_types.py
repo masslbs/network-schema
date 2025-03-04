@@ -213,6 +213,10 @@ class Account:
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "Account":
+        if "KeyCards" not in d:
+            d["KeyCards"] = []
+        if "Guest" not in d:
+            d["Guest"] = False
         return cls(
             keycards=[PublicKey(k) for k in d["KeyCards"]],
             guest=d["Guest"],
@@ -285,7 +289,7 @@ class PriceModifier:
 @dataclass
 class ShippingRegion:
     country: str
-    postcode: str
+    postal_code: str
     city: str
     price_modifiers: Optional[Dict[str, PriceModifier]] = None
 
@@ -300,7 +304,7 @@ class ShippingRegion:
             pm = {k: PriceModifier.from_cbor_dict(v) for k, v in pm.items()}
         return cls(
             country=d["Country"],
-            postcode=d["Postcode"],
+            postal_code=d["PostalCode"],
             city=d["City"],
             price_modifiers=pm,
         )
@@ -308,7 +312,7 @@ class ShippingRegion:
     def to_cbor_dict(self) -> dict:
         d = {
             "Country": self.country,
-            "Postcode": self.postcode,
+            "PostalCode": self.postal_code,
             "City": self.city,
         }
         if self.price_modifiers is not None:
