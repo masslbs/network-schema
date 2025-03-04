@@ -213,10 +213,9 @@ class Account:
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "Account":
-        if "KeyCards" not in d:
+        assert isinstance(d["Guest"], bool)
+        if d["KeyCards"] is None:
             d["KeyCards"] = []
-        if "Guest" not in d:
-            d["Guest"] = False
         return cls(
             keycards=[PublicKey(k) for k in d["KeyCards"]],
             guest=d["Guest"],

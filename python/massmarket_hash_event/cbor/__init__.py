@@ -38,11 +38,23 @@ def cbor_encode(obj):
 class Shop:
     schema_version: int
     manifest: Manifest
-    accounts: Trie[Account]
-    listings: Trie[Listing]
-    inventory: Trie[int]
-    tags: Trie[Tag]
-    orders: Trie[Order]
+    accounts: Trie[Account] = None
+    listings: Trie[Listing] = None
+    inventory: Trie[int] = None
+    tags: Trie[Tag] = None
+    orders: Trie[Order] = None
+
+    def __post_init__(self):
+        if self.accounts is None:
+            self.accounts = Trie.new()
+        if self.listings is None:
+            self.listings = Trie.new()
+        if self.inventory is None:
+            self.inventory = Trie.new()
+        if self.tags is None:
+            self.tags = Trie.new()
+        if self.orders is None:
+            self.orders = Trie.new()
 
     def serialize(self) -> dict:
         return {
