@@ -112,7 +112,9 @@ class EthereumAddress:
         return f"EthereumAddress('{str(self)}')"
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, EthereumAddress):
+        if isinstance(other, bytes):
+            return self._bytes == other
+        elif not isinstance(other, EthereumAddress):
             raise ValueError("Cannot compare EthereumAddress with non-EthereumAddress")
         return self._bytes == other._bytes
 
@@ -339,7 +341,6 @@ class Tag:
             listings=d["Listings"],
         )
 
-
 @dataclass
 class Payee:
     address: ChainAddress
@@ -354,10 +355,22 @@ class Payee:
 
     def to_cbor_dict(self) -> dict:
         return {
-            "Address": (
-                self.address.to_cbor_dict()
-                if hasattr(self.address, "to_cbor_dict")
-                else self.address
-            ),
+            "Address": self.address.to_cbor_dict(),
+            "CallAsContract": self.call_as_contract,
+        }
+
+
+@dataclass
+class PayeeMetadata:
+    call_as_contract: bool
+
+    @classmethod
+    def from_cbor_dict(cls, d: dict) -> "PayeeMetadata":
+        return cls(
+            call_as_contract=d["CallAsContract"],
+        )
+
+    def to_cbor_dict(self) -> dict:
+        return {
             "CallAsContract": self.call_as_contract,
         }

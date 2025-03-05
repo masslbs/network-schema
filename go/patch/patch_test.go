@@ -18,7 +18,7 @@ import (
 )
 
 func TestPatchObjectIDs(t *testing.T) {
-	testAddr := objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890").Address
+	testAddr := testMassEthAddr([20]byte{0xff})
 
 	type testCase struct {
 		Path PatchPath

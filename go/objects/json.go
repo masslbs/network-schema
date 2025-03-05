@@ -10,8 +10,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // fix formatting for test vectors
@@ -56,8 +54,18 @@ func (inv Inventory) MarshalJSON() ([]byte, error) {
 
 // use default json encoding for ethereum addresses
 func (addr EthereumAddress) MarshalJSON() ([]byte, error) {
-	common := common.Address(addr)
-	return json.Marshal(common)
+	return json.Marshal(addr.Address)
+}
+
+// use default json encoding for ethereum addresses
+func (addr ChainAddress) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		ChainID int    `json:"ChainID"`
+		Address string `json:"Address"`
+	}{
+		ChainID: int(addr.ChainID),
+		Address: addr.Address.Hex(),
+	})
 }
 
 func (pub PublicKey) MarshalJSON() ([]byte, error) {

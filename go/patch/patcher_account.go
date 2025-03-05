@@ -17,7 +17,7 @@ func (p *Patcher) patchAccount(patch Patch) error {
 		return fmt.Errorf("account patch needs an address")
 	}
 
-	acc, exists := p.shop.Accounts.Get(patch.Path.AccountAddr[:])
+	acc, exists := p.shop.Accounts.Get(patch.Path.AccountAddr.Address[:])
 
 	switch patch.Op {
 	case AddOp:
@@ -32,7 +32,7 @@ func (p *Patcher) patchAccount(patch Patch) error {
 			if err := p.validator.Struct(newAcc); err != nil {
 				return err
 			}
-			return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], newAcc)
+			return p.shop.Accounts.Insert(patch.Path.AccountAddr.Address[:], newAcc)
 		}
 		return fmt.Errorf("add operation not supported for account fields")
 
@@ -42,7 +42,7 @@ func (p *Patcher) patchAccount(patch Patch) error {
 		}
 
 		if len(patch.Path.Fields) == 0 {
-			return p.shop.Accounts.Delete(patch.Path.AccountAddr[:])
+			return p.shop.Accounts.Delete(patch.Path.AccountAddr.Address[:])
 		}
 
 		if len(patch.Path.Fields) != 2 || patch.Path.Fields[0] != "keyCards" {
@@ -58,7 +58,7 @@ func (p *Patcher) patchAccount(patch Patch) error {
 		}
 
 		acc.KeyCards = append(acc.KeyCards[:i], acc.KeyCards[i+1:]...)
-		return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], acc)
+		return p.shop.Accounts.Insert(patch.Path.AccountAddr.Address[:], acc)
 
 	case ReplaceOp:
 		if !exists {
@@ -72,7 +72,7 @@ func (p *Patcher) patchAccount(patch Patch) error {
 			if err := p.validator.Struct(newAcc); err != nil {
 				return err
 			}
-			return p.shop.Accounts.Insert(patch.Path.AccountAddr[:], newAcc)
+			return p.shop.Accounts.Insert(patch.Path.AccountAddr.Address[:], newAcc)
 		}
 		return fmt.Errorf("replace operation not supported for account fields")
 

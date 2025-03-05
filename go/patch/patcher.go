@@ -7,7 +7,6 @@ package patch
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/masslbs/network-schema/go/objects"
@@ -25,7 +24,7 @@ func (e ObjectNotFoundError) Error() string {
 	} else if e.Path.TagName != nil {
 		id = fmt.Sprintf("tag=%s", *e.Path.TagName)
 	} else if e.Path.AccountAddr != nil {
-		addr := common.Address(*e.Path.AccountAddr)
+		addr := e.Path.AccountAddr.Address
 		id = fmt.Sprintf("account=%s", addr.Hex())
 	} else {
 		id = fmt.Sprintf("type=%s", e.ObjectType)

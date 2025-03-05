@@ -29,7 +29,7 @@ def test_verify_vector_file():
 def check_vector(vector):
     assert len(vector["Snapshots"]) > 0
     assert "Signer" in vector
-    signer = vector["Signer"]["Address"]
+    signer = vector["Signer"]["Address"]["Address"]
     # convert the signer address to a hex string
     signer = Web3.to_checksum_address(signer)
 

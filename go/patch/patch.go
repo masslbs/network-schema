@@ -113,7 +113,7 @@ func (p PatchPath) MarshalCBOR() ([]byte, error) {
 		if p.AccountAddr == nil {
 			return nil, fmt.Errorf("account patch needs an id")
 		}
-		path[1] = *p.AccountAddr
+		path[1] = p.AccountAddr.Bytes()
 	case ObjectTypeListing, ObjectTypeOrder, ObjectTypeInventory:
 		if p.ObjectID == nil {
 			return nil, fmt.Errorf("listing/order/inventory patch needs an id")
@@ -162,7 +162,7 @@ func (p *PatchPath) UnmarshalCBOR(data []byte) error {
 			return fmt.Errorf("patch.path: invalid ethereum address size: %d != %d", len(data), objects.EthereumAddressSize)
 		}
 		var addr objects.EthereumAddress
-		copy(addr[:], data)
+		copy(addr.Address[:], data)
 		p.AccountAddr = &addr
 	case ObjectTypeOrder, ObjectTypeListing:
 		if len(path) < 1 {

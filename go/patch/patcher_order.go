@@ -106,32 +106,41 @@ func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	}
 
 	if order.ChosenPayee != nil {
-		found := 0
-		for _, payee := range p.shop.Manifest.Payees {
-			if payee.Address.Equal(order.ChosenPayee.Address) {
-				found++
+		found := false
+		chainID := order.ChosenPayee.Address.ChainID
+		ethAddr := order.ChosenPayee.Address.Address
+
+		// Check if the payee exists in the manifest
+		if payeesForChain, chainExists := p.shop.Manifest.Payees[chainID]; chainExists {
+			if _, addrExists := payeesForChain[ethAddr]; addrExists {
+				found = true
 			}
 		}
-		if found == 0 {
+
+		if !found {
 			payeeAddr := common.Address(order.ChosenPayee.Address.Address)
 			return ObjectNotFoundError{
 				ObjectType: ObjectTypeOrder,
 				Path:       PatchPath{Fields: []string{"chosenPayee", payeeAddr.Hex()}}}
 		}
-		if found > 1 {
-			return fmt.Errorf("multiple payees found for %s", order.ChosenPayee)
-		}
 	}
 
 	if order.ChosenCurrency != nil {
-		found := slices.Contains(
-			p.shop.Manifest.AcceptedCurrencies,
-			*order.ChosenCurrency,
-		)
+		found := false
+		chainID := order.ChosenCurrency.ChainID
+		ethAddr := order.ChosenCurrency.Address
+
+		// Check if the currency exists in accepted currencies
+		if currenciesForChain, chainExists := p.shop.Manifest.AcceptedCurrencies[chainID]; chainExists {
+			if _, addrExists := currenciesForChain[ethAddr]; addrExists {
+				found = true
+			}
+		}
+
 		if !found {
 			return ObjectNotFoundError{
 				ObjectType: ObjectTypeManifest,
-				Path:       PatchPath{Fields: []string{"acceptedCurrencies", order.ChosenCurrency.String()}}}
+				Path:       PatchPath{Fields: []string{"acceptedCurrencies", strconv.FormatUint(chainID, 10), ethAddr.Hex()}}}
 		}
 	}
 
@@ -275,15 +284,15 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
 			return fmt.Errorf("failed to unmarshal payee: %w", err)
 		}
+
+		// Check if the payee exists in the manifest
 		found := false
-		for _, p := range p.shop.Manifest.Payees {
-			if p == payee {
-				found = true
-				break
-			}
+		if chainPayees, exists := p.shop.Manifest.Payees[payee.Address.ChainID]; exists {
+			_, found = chainPayees[payee.Address.Address]
 		}
+
 		if !found {
-			return fmt.Errorf("payee not found in manifest payees (%d configured)", len(p.shop.Manifest.Payees))
+			return fmt.Errorf("payee not found in manifest payees")
 		}
 		order.ChosenPayee = &payee
 
@@ -292,15 +301,15 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		if err := masscbor.Unmarshal(patch.Value, &currency); err != nil {
 			return fmt.Errorf("failed to unmarshal currency: %w", err)
 		}
+
+		// Check if the currency exists in accepted currencies
 		found := false
-		for _, c := range p.shop.Manifest.AcceptedCurrencies {
-			if c == currency {
-				found = true
-				break
-			}
+		if chainCurrencies, exists := p.shop.Manifest.AcceptedCurrencies[currency.ChainID]; exists {
+			_, found = chainCurrencies[currency.Address]
 		}
+
 		if !found {
-			return fmt.Errorf("currency not found in accepted currencies (%d configured)", len(p.shop.Manifest.AcceptedCurrencies))
+			return fmt.Errorf("currency not found in accepted currencies")
 		}
 		order.ChosenCurrency = &currency
 

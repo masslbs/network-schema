@@ -130,13 +130,14 @@ func TestCreateAllTypes(t *testing.T) {
 	}{
 		{Manifest{
 			ShopID: *bigId,
-			Payees: map[string]Payee{
-				"ethereum": {
-					CallAsContract: true,
-					Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
+			Payees: Payees{
+				1: {
+					vanillaEth.Address: {
+						CallAsContract: true,
+					},
 				},
 			},
-			AcceptedCurrencies: []ChainAddress{vanillaEth},
+			AcceptedCurrencies: ChainAddresses{1: {vanillaEth.Address: {}}},
 			PricingCurrency:    vanillaEth,
 			ShippingRegions: map[string]ShippingRegion{
 				"default": {

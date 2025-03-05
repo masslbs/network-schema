@@ -79,13 +79,15 @@ func (val *Hash) UnmarshalBinary(data []byte) error {
 // EthereumAddress represents an Ethereum address
 const EthereumAddressSize = common.AddressLength
 
-type EthereumAddress common.Address
+type EthereumAddress struct {
+	common.Address
+}
 
 func (val *EthereumAddress) UnmarshalBinary(data []byte) error {
 	if n := uint(len(data)); n != EthereumAddressSize {
 		return ErrBytesTooShort{Want: EthereumAddressSize, Got: n}
 	}
-	copy(val[:], data)
+	copy(val.Address[:], data)
 	return nil
 }
 
@@ -104,7 +106,7 @@ type Uint256 = big.Int
 type ChainAddress struct {
 	ChainID uint64 `validate:"required,gt=0"`
 	// when repsenting an ERC20 the zero address is used native currency
-	Address EthereumAddress
+	EthereumAddress
 }
 
 func AddrFromHex(chain uint64, hexAddr string) (ChainAddress, error) {
@@ -134,7 +136,7 @@ func (ca ChainAddress) Equal(other ChainAddress) bool {
 }
 
 func (ca *ChainAddress) String() string {
-	addr := common.Address(ca.Address)
+	addr := ca.Address
 	return fmt.Sprintf("%s (%d)", addr.String(), ca.ChainID)
 }
 
@@ -427,7 +429,7 @@ type Manifest struct {
 	// shop metadata lives in the NFT
 	ShopID Uint256 `validate:"required"`
 	// maps payee names to payee objects
-	Payees Payees `validate:"nonEmptyMapKeys"`
+	Payees Payees
 	// TODO: should we add a name field to the acceptedCurrencies object?
 	AcceptedCurrencies ChainAddresses
 	// the currency listings are priced in
@@ -435,11 +437,18 @@ type Manifest struct {
 	ShippingRegions ShippingRegions `cbor:",omitempty" validate:"nonEmptyMapKeys"`
 }
 
-type Payees map[string]Payee
+type PayeeMetadata struct {
+	CallAsContract bool
+}
 
+// Maps from chain id to a map of addresses to payee metadata
+type Payees map[uint64]map[common.Address]PayeeMetadata
+
+// Maps from chain id to a map of addresses to a boolean
+type ChainAddresses map[uint64]map[common.Address]struct{}
+
+// Maps from nickname to a shipping region
 type ShippingRegions map[string]ShippingRegion
-
-type ChainAddresses []ChainAddress
 
 type ShippingRegion struct {
 	Country        string

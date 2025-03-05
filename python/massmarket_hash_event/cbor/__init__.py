@@ -76,9 +76,11 @@ class Shop:
             "Tags": self.tags.hash(),
             "Orders": self.orders.hash(),
         }
-        # pprint(cbor_encode(hashed).hex())
         return hash_object(hashed)
 
 
 def hash_object(obj: dict) -> bytes:
-    return hashlib.sha256(cbor_encode(obj)).digest()
+    # print(obj)
+    encoded = cbor_encode(obj)
+    # print(encoded.hex())
+    return hashlib.sha256(encoded).digest()

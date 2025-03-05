@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
 	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/masslbs/network-schema/go/objects"
 )
@@ -65,23 +66,43 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 		p.shop.Manifest.PricingCurrency = c
 
 	case "payees":
-		// Replace entire payees map or a single payee
+		// Replace entire payees map or a specific entry
 		if len(patch.Path.Fields) == 1 {
 			var payees objects.Payees
 			if err := masscbor.Unmarshal(patch.Value, &payees); err != nil {
 				return fmt.Errorf("failed to unmarshal payees: %w", err)
 			}
 			p.shop.Manifest.Payees = payees
-		} else if len(patch.Path.Fields) == 2 {
-			payeeName := patch.Path.Fields[1]
-			var payee objects.Payee
-			if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
-				return fmt.Errorf("failed to unmarshal payee: %w", err)
+		} else if len(patch.Path.Fields) == 3 {
+			// Format: payees/chainId/hexEthAddr
+			chainIDStr := patch.Path.Fields[1]
+			hexEthAddr := patch.Path.Fields[2]
+
+			chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid chain ID: %w", err)
 			}
-			if _, exists := p.shop.Manifest.Payees[payeeName]; !exists {
+
+			ethAddr := common.HexToAddress(hexEthAddr)
+
+			// Initialize the chain map if it doesn't exist
+			if p.shop.Manifest.Payees == nil {
+				p.shop.Manifest.Payees = make(objects.Payees)
+			}
+			if p.shop.Manifest.Payees[chainID] == nil {
+				p.shop.Manifest.Payees[chainID] = make(map[common.Address]objects.PayeeMetadata)
+			}
+
+			// Check if the payee exists
+			if _, exists := p.shop.Manifest.Payees[chainID][ethAddr]; !exists {
 				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
 			}
-			p.shop.Manifest.Payees[payeeName] = payee
+
+			var metadata objects.PayeeMetadata
+			if err := masscbor.Unmarshal(patch.Value, &metadata); err != nil {
+				return fmt.Errorf("failed to unmarshal payee metadata: %w", err)
+			}
+			p.shop.Manifest.Payees[chainID][ethAddr] = metadata
 		} else {
 			return fmt.Errorf("invalid payees path")
 		}
@@ -109,26 +130,40 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 		}
 
 	case "acceptedCurrencies":
-		// Replace entire acceptedCurrencies or a single index
+		// Replace entire acceptedCurrencies or a specific entry
 		if len(patch.Path.Fields) == 1 {
 			var currencies objects.ChainAddresses
 			if err := masscbor.Unmarshal(patch.Value, &currencies); err != nil {
 				return fmt.Errorf("failed to unmarshal acceptedCurrencies: %w", err)
 			}
 			p.shop.Manifest.AcceptedCurrencies = currencies
-		} else if len(patch.Path.Fields) == 2 {
-			i, err := strconv.Atoi(patch.Path.Fields[1])
+		} else if len(patch.Path.Fields) == 3 {
+			// Format: acceptedCurrencies/chainId/hexEthAddr
+			chainIDStr := patch.Path.Fields[1]
+			hexEthAddr := patch.Path.Fields[2]
+
+			chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
 			if err != nil {
-				return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
+				return fmt.Errorf("invalid chain ID: %w", err)
 			}
-			if i < 0 || i >= len(p.shop.Manifest.AcceptedCurrencies) {
+
+			ethAddr := common.HexToAddress(hexEthAddr)
+
+			// Initialize the chain map if it doesn't exist
+			if p.shop.Manifest.AcceptedCurrencies == nil {
+				p.shop.Manifest.AcceptedCurrencies = make(objects.ChainAddresses)
+			}
+			if p.shop.Manifest.AcceptedCurrencies[chainID] == nil {
+				p.shop.Manifest.AcceptedCurrencies[chainID] = make(map[common.Address]struct{})
+			}
+
+			// Check if the currency exists
+			if _, exists := p.shop.Manifest.AcceptedCurrencies[chainID][ethAddr]; !exists {
 				return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
 			}
-			var currency objects.ChainAddress
-			if err := masscbor.Unmarshal(patch.Value, &currency); err != nil {
-				return fmt.Errorf("failed to unmarshal accepted currency: %w", err)
-			}
-			p.shop.Manifest.AcceptedCurrencies[i] = currency
+
+			// For accepted currencies, we just need to ensure it exists (empty struct)
+			p.shop.Manifest.AcceptedCurrencies[chainID][ethAddr] = struct{}{}
 		} else {
 			return fmt.Errorf("invalid acceptedCurrencies path")
 		}
@@ -147,18 +182,39 @@ func (p *Patcher) addManifestField(patch Patch) error {
 
 	switch patch.Path.Fields[0] {
 	case "payees":
-		if len(patch.Path.Fields) != 2 {
+		if len(patch.Path.Fields) != 3 {
 			return fmt.Errorf("invalid payees path")
 		}
-		payeeName := patch.Path.Fields[1]
-		if _, exists := p.shop.Manifest.Payees[payeeName]; exists {
-			return fmt.Errorf("payee %s already exists", payeeName)
+
+		// Format: payees/chainId/hexEthAddr
+		chainIDStr := patch.Path.Fields[1]
+		hexEthAddr := patch.Path.Fields[2]
+
+		chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid chain ID: %w", err)
 		}
-		var payee objects.Payee
-		if err := masscbor.Unmarshal(patch.Value, &payee); err != nil {
-			return fmt.Errorf("failed to unmarshal payee: %w", err)
+
+		ethAddr := common.HexToAddress(hexEthAddr)
+
+		// Initialize the chain map if it doesn't exist
+		if p.shop.Manifest.Payees == nil {
+			p.shop.Manifest.Payees = make(objects.Payees)
 		}
-		p.shop.Manifest.Payees[payeeName] = payee
+		if p.shop.Manifest.Payees[chainID] == nil {
+			p.shop.Manifest.Payees[chainID] = make(map[common.Address]objects.PayeeMetadata)
+		}
+
+		if _, exists := p.shop.Manifest.Payees[chainID][ethAddr]; exists {
+			return fmt.Errorf("payee %s already exists for chain %d", hexEthAddr, chainID)
+		}
+
+		var metadata objects.PayeeMetadata
+		if err := masscbor.Unmarshal(patch.Value, &metadata); err != nil {
+			return fmt.Errorf("failed to unmarshal payee metadata: %w", err)
+		}
+		p.shop.Manifest.Payees[chainID][ethAddr] = metadata
+
 	case "shippingRegions":
 		if len(patch.Path.Fields) != 2 {
 			return fmt.Errorf("invalid shippingRegions path")
@@ -172,34 +228,38 @@ func (p *Patcher) addManifestField(patch Patch) error {
 			return fmt.Errorf("failed to unmarshal shipping region: %w", err)
 		}
 		p.shop.Manifest.ShippingRegions[regionName] = region
+
 	case "acceptedCurrencies":
-		// Handle array insert/append for acceptedCurrencies
-		if len(patch.Path.Fields) != 2 {
+		if len(patch.Path.Fields) != 3 {
 			return fmt.Errorf("invalid acceptedCurrencies path")
 		}
-		index := patch.Path.Fields[1]
 
-		var newCurrency objects.ChainAddress
-		if err := masscbor.Unmarshal(patch.Value, &newCurrency); err != nil {
-			return fmt.Errorf("failed to unmarshal new currency: %w", err)
+		// Format: acceptedCurrencies/chainId/hexEthAddr
+		chainIDStr := patch.Path.Fields[1]
+		hexEthAddr := patch.Path.Fields[2]
+
+		chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid chain ID: %w", err)
 		}
-		// If index == "-", append to the end
-		if index == "-" {
-			p.shop.Manifest.AcceptedCurrencies = append(p.shop.Manifest.AcceptedCurrencies, newCurrency)
-		} else {
-			// Otherwise, parse insertion index
-			i, err := strconv.Atoi(index)
-			if err != nil {
-				return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
-			}
-			if i < 0 || i > len(p.shop.Manifest.AcceptedCurrencies) {
-				return fmt.Errorf("index out of bounds: %d", i)
-			}
-			// Insert at position i
-			ac := p.shop.Manifest.AcceptedCurrencies
-			ac = append(ac[:i], append([]objects.ChainAddress{newCurrency}, ac[i:]...)...)
-			p.shop.Manifest.AcceptedCurrencies = ac
+
+		ethAddr := common.HexToAddress(hexEthAddr)
+
+		// Initialize the chain map if it doesn't exist
+		if p.shop.Manifest.AcceptedCurrencies == nil {
+			p.shop.Manifest.AcceptedCurrencies = make(objects.ChainAddresses)
 		}
+		if p.shop.Manifest.AcceptedCurrencies[chainID] == nil {
+			p.shop.Manifest.AcceptedCurrencies[chainID] = make(map[common.Address]struct{})
+		}
+
+		// Check if the currency already exists
+		if _, exists := p.shop.Manifest.AcceptedCurrencies[chainID][ethAddr]; exists {
+			return fmt.Errorf("currency %s already exists for chain %d", hexEthAddr, chainID)
+		}
+
+		p.shop.Manifest.AcceptedCurrencies[chainID][ethAddr] = struct{}{}
+
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
 	}
@@ -214,17 +274,35 @@ func (p *Patcher) removeManifestField(patch Patch) error {
 
 	switch patch.Path.Fields[0] {
 	case "payees":
-		if len(patch.Path.Fields) != 2 {
+		if len(patch.Path.Fields) != 3 {
 			return fmt.Errorf("invalid payees path")
 		}
-		payeeName := patch.Path.Fields[1]
-		if p.shop.Manifest.Payees == nil {
-			return fmt.Errorf("payees map not initialized")
+
+		// Format: payees/chainId/hexEthAddr
+		chainIDStr := patch.Path.Fields[1]
+		hexEthAddr := patch.Path.Fields[2]
+
+		chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid chain ID: %w", err)
 		}
-		if _, exists := p.shop.Manifest.Payees[payeeName]; !exists {
+
+		ethAddr := common.HexToAddress(hexEthAddr)
+
+		if p.shop.Manifest.Payees == nil || p.shop.Manifest.Payees[chainID] == nil {
 			return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
 		}
-		delete(p.shop.Manifest.Payees, payeeName)
+
+		if _, exists := p.shop.Manifest.Payees[chainID][ethAddr]; !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+		}
+
+		delete(p.shop.Manifest.Payees[chainID], ethAddr)
+
+		// If the chain map is now empty, remove it too
+		if len(p.shop.Manifest.Payees[chainID]) == 0 {
+			delete(p.shop.Manifest.Payees, chainID)
+		}
 
 	case "shippingRegions":
 		if len(patch.Path.Fields) != 2 {
@@ -240,19 +318,35 @@ func (p *Patcher) removeManifestField(patch Patch) error {
 		delete(p.shop.Manifest.ShippingRegions, regionName)
 
 	case "acceptedCurrencies":
-		// Handle array removal from acceptedCurrencies
-		if len(patch.Path.Fields) != 2 {
+		if len(patch.Path.Fields) != 3 {
 			return fmt.Errorf("invalid acceptedCurrencies path")
 		}
-		i, err := strconv.Atoi(patch.Path.Fields[1])
+
+		// Format: acceptedCurrencies/chainId/hexEthAddr
+		chainIDStr := patch.Path.Fields[1]
+		hexEthAddr := patch.Path.Fields[2]
+
+		chainID, err := strconv.ParseUint(chainIDStr, 10, 64)
 		if err != nil {
-			return fmt.Errorf("invalid acceptedCurrencies index: %w", err)
+			return fmt.Errorf("invalid chain ID: %w", err)
 		}
-		if i < 0 || i >= len(p.shop.Manifest.AcceptedCurrencies) {
-			return fmt.Errorf("index out of bounds: %d", i)
+
+		ethAddr := common.HexToAddress(hexEthAddr)
+
+		if p.shop.Manifest.AcceptedCurrencies == nil || p.shop.Manifest.AcceptedCurrencies[chainID] == nil {
+			return fmt.Errorf("acceptedCurrencies map not initialized for chain %d", chainID)
 		}
-		ac := p.shop.Manifest.AcceptedCurrencies
-		p.shop.Manifest.AcceptedCurrencies = append(ac[:i], ac[i+1:]...)
+
+		if _, exists := p.shop.Manifest.AcceptedCurrencies[chainID][ethAddr]; !exists {
+			return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}
+		}
+
+		delete(p.shop.Manifest.AcceptedCurrencies[chainID], ethAddr)
+
+		// If the chain map is now empty, remove it too
+		if len(p.shop.Manifest.AcceptedCurrencies[chainID]) == 0 {
+			delete(p.shop.Manifest.AcceptedCurrencies, chainID)
+		}
 
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeManifest, Path: patch.Path}

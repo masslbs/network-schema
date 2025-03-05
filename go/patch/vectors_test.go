@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -135,16 +136,17 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	shopId.SetBytes(shopIdBytes[:])
 	t.Log("shop ID: ", shopId.String())
 	var (
-		testAddr = objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890")
-		testEth  = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
-		testUsdc = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+		testAddr  = objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890")
+		testAddr2 = objects.MustAddrFromHex(1, "0x6789012345678901234567890123456789012345")
+		testAddr3 = objects.MustAddrFromHex(1, "0x9999999999999999999999999999999999999999")
+		testEth   = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
+		testUsdc  = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 
-		yetAnotherPayee = objects.Payee{
-			Address:        testAddr,
+		otherPayeeMetadata = objects.PayeeMetadata{
 			CallAsContract: true,
 		}
 
-		testAcc1Addr = objects.EthereumAddress{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90}
+		testAcc1Addr = testMassEthAddr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90})
 		testAcc1     = objects.Account{
 			KeyCards: []objects.PublicKey{
 				testPubKey(1),
@@ -196,24 +198,28 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		s.Manifest = objects.Manifest{
 			ShopID: shopId,
 			Payees: objects.Payees{
-				"default": {
-					Address:        testAddr,
-					CallAsContract: false,
-				},
-				"with-escrow": {
-					Address:        testAddr,
-					CallAsContract: true,
+				testAddr.ChainID: {
+					testAddr.Address: {
+						CallAsContract: false,
+					},
+					testAddr2.Address: {
+						CallAsContract: true,
+					},
 				},
 			},
+
 			AcceptedCurrencies: objects.ChainAddresses{
-				testEth,
-				testUsdc,
+				1: {
+					testEth.Address:  {},
+					testUsdc.Address: {},
+				},
 			},
 			PricingCurrency: testUsdc,
 			ShippingRegions: objects.ShippingRegions{
 				"other": testOther,
 			},
 		}
+
 		return s
 	}
 	_, testListing := newTestListing()
@@ -234,10 +240,10 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		{
 			Name:  "add-payee",
 			Op:    AddOp,
-			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "yet-another-payee"}},
-			Value: mustEncode(t, yetAnotherPayee),
+			Path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1", "0x9999999999999999999999999999999999999999"}},
+			Value: mustEncode(t, otherPayeeMetadata),
 			Check: func(r *require.Assertions, state objects.Shop) {
-				r.Equal(yetAnotherPayee, state.Manifest.Payees["yet-another-payee"])
+				r.Equal(otherPayeeMetadata, state.Manifest.Payees[1][testAddr3.Address])
 			},
 		},
 		{
@@ -252,14 +258,14 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		{
 			Name: "remove-payee",
 			Op:   RemoveOp,
-			Path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "with-escrow"}},
+			Path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1", "0x6789012345678901234567890123456789012345"}},
 			Check: func(r *require.Assertions, state objects.Shop) {
-				r.Equal(2, len(state.Manifest.Payees))
-				_, has := state.Manifest.Payees["with-escrow"]
+				r.Equal(2, len(state.Manifest.Payees[1]))
+				_, has := state.Manifest.Payees[1][testAddr2.Address]
 				r.False(has)
-				_, has = state.Manifest.Payees["default"]
+				_, has = state.Manifest.Payees[1][testAddr.Address]
 				r.True(has)
-				_, has = state.Manifest.Payees["yet-another-payee"]
+				_, has = state.Manifest.Payees[1][testAddr3.Address]
 				r.True(has)
 			},
 		},
@@ -270,7 +276,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Path:  PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr},
 			Value: mustEncode(t, testAcc1),
 			Check: func(r *require.Assertions, state objects.Shop) {
-				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
 				r.True(ok)
 				r.Equal(testAcc1, acc)
 			},
@@ -280,7 +286,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   RemoveOp,
 			Path: PatchPath{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr, Fields: []string{"keyCards", "1"}},
 			Check: func(r *require.Assertions, state objects.Shop) {
-				acc, ok := state.Accounts.Get(testAcc1Addr[:])
+				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
 				r.True(ok)
 				r.Len(acc.KeyCards, 2)
 			},
@@ -292,7 +298,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Value: mustEncode(t, testAcc2),
 			Check: func(r *require.Assertions, state objects.Shop) {
 				r.Equal(2, state.Accounts.Size())
-				acc, ok := state.Accounts.Get(guestAccAddr[:])
+				acc, ok := state.Accounts.Get(guestAccAddr.Address[:])
 				r.True(ok)
 				r.Equal(testAcc2, acc)
 			},
@@ -740,6 +746,19 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
+func testCommonEthAddr(b [20]byte) common.Address {
+	return common.Address(b)
+}
+
+func testMassEthAddr(b [20]byte) objects.EthereumAddress {
+	return objects.EthereumAddress{
+		Address: testCommonEthAddr(b),
+	}
+}
+
+var testAddr123 = testCommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+var zeroAddress common.Address
+
 func newTestManifest() objects.Shop {
 	s := objects.NewShop()
 	s.SchemaVersion = 666
@@ -754,28 +773,25 @@ func newTestManifest() objects.Shop {
 	shopID.SetBytes(shopIDBuf)
 	s.Manifest = objects.Manifest{
 		ShopID: shopID,
-		Payees: map[string]objects.Payee{
-			"default": {
-				CallAsContract: false,
-				Address: objects.ChainAddress{
-					ChainID: 1337,
-					Address: objects.EthereumAddress([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}),
+		Payees: objects.Payees{
+			1337: {
+				testAddr123: {
+					CallAsContract: false,
 				},
 			},
 		},
-		AcceptedCurrencies: []objects.ChainAddress{
-			{
-				ChainID: 1337,
-				Address: objects.EthereumAddress{},
+		AcceptedCurrencies: objects.ChainAddresses{
+			1337: {
+				zeroAddress: {},
+				testAddr123: {},
 			},
-			{
-				ChainID: 1337,
-				Address: objects.EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+			1: {
+				zeroAddress: {},
 			},
 		},
 		PricingCurrency: objects.ChainAddress{
-			ChainID: 1337,
-			Address: objects.EthereumAddress{},
+			ChainID:         1337,
+			EthereumAddress: testMassEthAddr([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
 		},
 		ShippingRegions: map[string]objects.ShippingRegion{
 			"default": {
@@ -787,19 +803,17 @@ func newTestManifest() objects.Shop {
 }
 
 func TestGenerateVectorsManifestOkay(t *testing.T) {
-	testPayee := objects.Payee{
-		CallAsContract: true,
-		Address: objects.ChainAddress{
-			ChainID: 1337,
-			Address: objects.EthereumAddress([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
-		},
-	}
 	testCurrency := objects.ChainAddress{
-		ChainID: 1337,
-		Address: objects.EthereumAddress([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
+		ChainID:         1337,
+		EthereumAddress: testMassEthAddr([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
 	}
 
 	testManifest := newTestManifest().Manifest
+
+	// Test addresses for payees
+	testChainID := uint64(1337)
+	testAddr := testCommonEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44})
+	testAddrHex := testAddr.Hex()
 
 	testCases := []struct {
 		name     string
@@ -828,42 +842,30 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 			},
 		},
 
-		// array mutations
+		// map mutations for accepted currencies
 		{
-			name:  "append accepted currency",
+			name:  "add accepted currency",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "-"}},
-			value: testCurrency,
+			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "1337", "0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"}},
+			value: struct{}{},
 			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Len(m.AcceptedCurrencies, 3)
-				a.Equal(testCurrency, m.AcceptedCurrencies[2])
-			},
-		},
-		{
-			name:  "insert accepted currency at index",
-			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "0"}},
-			value: testCurrency,
-			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Len(m.AcceptedCurrencies, 3)
-				a.Equal(testCurrency, m.AcceptedCurrencies[0])
-			},
-		},
-		{
-			name:  "replace accepted currency",
-			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "0"}},
-			value: testCurrency,
-			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Equal(testCurrency, m.AcceptedCurrencies[0])
+				addrsForChain, has := m.AcceptedCurrencies[1337]
+				a.True(has)
+				a.Len(addrsForChain, 3)
+				_, exists := addrsForChain[testCurrency.Address]
+				a.True(exists)
 			},
 		},
 		{
 			name: "remove accepted currency",
 			op:   RemoveOp,
-			path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "0"}},
+			path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "1337", testAddr123.Hex()}},
 			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Len(m.AcceptedCurrencies, 1)
+				addrsForChain, has := m.AcceptedCurrencies[1337]
+				a.True(has)
+				a.Len(addrsForChain, 1)
+				_, exists := addrsForChain[zeroAddress]
+				a.True(exists)
 			},
 		},
 
@@ -871,28 +873,27 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 		{
 			name:  "replace payee",
 			op:    ReplaceOp,
-			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "default"}},
-			value: testPayee,
+			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1337", testAddr123.Hex()}},
+			value: objects.PayeeMetadata{CallAsContract: true},
 			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Equal(testPayee, m.Payees["default"])
+				a.True(m.Payees[testChainID][testAddr123].CallAsContract)
 			},
 		},
 		{
 			name:  "add a payee",
 			op:    AddOp,
-			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "test"}},
-			value: testPayee,
+			path:  PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1337", testAddrHex}},
+			value: objects.PayeeMetadata{CallAsContract: true},
 			expected: func(a *assert.Assertions, m objects.Manifest) {
-				a.Len(m.Payees, 2)
-				a.Equal(testPayee, m.Payees["test"])
+				a.True(m.Payees[testChainID][testAddr].CallAsContract)
 			},
 		},
 		{
 			name: "remove a payee",
 			op:   RemoveOp,
-			path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "default"}},
+			path: PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1337", testAddr123.Hex()}},
 			expected: func(a *assert.Assertions, m objects.Manifest) {
-				_, ok := m.Payees["default"]
+				_, ok := m.Payees[testChainID][testAddr123]
 				a.False(ok)
 			},
 		},
@@ -1003,15 +1004,15 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 		{
 			name:     "replace non-existent payee",
 			op:       ReplaceOp,
-			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "nonexistent"}},
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1", "nonexistent"}},
 			value:    objects.Payee{},
-			errMatch: "object type=manifest with fields=[payees nonexistent] not found",
+			errMatch: "object type=manifest with fields=[payees 1 nonexistent] not found",
 		},
 		{
 			name:     "remove non-existent payee",
 			op:       RemoveOp,
-			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "nonexistent"}},
-			errMatch: "object type=manifest with fields=[payees nonexistent] not found",
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"payees", "1", "nonexistent"}},
+			errMatch: "object type=manifest with fields=[payees 1 nonexistent] not found",
 		},
 		{
 			name:     "replace non-existent shipping region",
@@ -1029,9 +1030,9 @@ func TestGenerateVectorsManifestError(t *testing.T) {
 		{
 			name:     "invalid index for acceptedCurrencies",
 			op:       ReplaceOp,
-			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "999"}},
+			path:     PatchPath{Type: ObjectTypeManifest, Fields: []string{"acceptedCurrencies", "999", testAddr123.Hex()}},
 			value:    objects.ChainAddress{},
-			errMatch: "object type=manifest with fields=[acceptedCurrencies 999] not found",
+			errMatch: "object type=manifest with fields=[acceptedCurrencies 999 0x0102030405060708090a0B0c0d0e0f1011121314] not found",
 		},
 		{
 			name:     "invalid value type for pricingCurrency",
@@ -1819,23 +1820,22 @@ func TestGenerateVectorsTagError(t *testing.T) {
 }
 
 var otherCurrency = objects.ChainAddress{
-	ChainID: 1338,
-	Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+	ChainID:         1338,
+	EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 }
 
 func newTestOrder() (objects.Shop, objects.Order) {
 	s := newTestManifest()
 
-	s.Manifest.Payees["other"] = objects.Payee{
-		Address: objects.ChainAddress{
-			ChainID: 1338,
-			Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+	s.Manifest.Payees[1338] = map[common.Address]objects.PayeeMetadata{
+		common.HexToAddress("0x1122334455667788990011223344556677889900"): {
+			CallAsContract: true,
 		},
 	}
 
-	s.Manifest.AcceptedCurrencies = append(s.Manifest.AcceptedCurrencies,
-		otherCurrency,
-	)
+	s.Manifest.AcceptedCurrencies[1338] = map[common.Address]struct{}{
+		otherCurrency.Address: {},
+	}
 
 	testListing1 := objects.Listing{
 		ID:        5555,
@@ -2088,15 +2088,15 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			path: PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"chosenPayee"}},
 			value: objects.Payee{
 				Address: objects.ChainAddress{
-					ChainID: 1338,
-					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+					ChainID:         1338,
+					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				},
 			},
 			expected: func(a *assert.Assertions, o objects.Order) {
 				a.NotNil(o.ChosenPayee)
 				a.Equal(objects.ChainAddress{
-					ChainID: 1338,
-					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+					ChainID:         1338,
+					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				}, o.ChosenPayee.Address)
 			},
 		},
@@ -2105,14 +2105,14 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			op:   ReplaceOp,
 			path: PatchPath{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []string{"chosenCurrency"}},
 			value: objects.ChainAddress{
-				ChainID: 1338,
-				Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+				ChainID:         1338,
+				EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 			},
 			expected: func(a *assert.Assertions, o objects.Order) {
 				a.NotNil(o.ChosenCurrency)
 				a.EqualValues(&objects.ChainAddress{
-					ChainID: 1338,
-					Address: [20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00},
+					ChainID:         1338,
+					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				}, o.ChosenCurrency)
 			},
 		},

@@ -157,7 +157,8 @@ type ethKeyPair struct {
 func (kp ethKeyPair) Wallet() objects.EthereumAddress {
 	publicKey := kp.secret.Public()
 	publicKeyECDSA := publicKey.(*ecdsa.PublicKey)
-	return objects.EthereumAddress(crypto.PubkeyToAddress(*publicKeyECDSA))
+	commonAddr := crypto.PubkeyToAddress(*publicKeyECDSA)
+	return objects.EthereumAddress{Address: commonAddr}
 }
 
 func (kp ethKeyPair) PublicKey() objects.PublicKey {

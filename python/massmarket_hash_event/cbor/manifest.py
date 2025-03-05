@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, Set
 from dataclasses import dataclass
 
 import cbor2
@@ -11,35 +11,27 @@ from massmarket_hash_event.cbor.base_types import (
     Uint256,
     ChainAddress,
     ShippingRegion,
-    Payee,
+    PayeeMetadata,
+    EthereumAddress,
 )
 
 
 @dataclass
 class Manifest:
     shop_id: Uint256
-    payees: Dict[str, Payee] = {}
-    accepted_currencies: List[ChainAddress] = []
+    payees: Dict[int, Dict[EthereumAddress, PayeeMetadata]]
+    accepted_currencies: Dict[int, Set[EthereumAddress]]
     pricing_currency: ChainAddress
     shipping_regions: Optional[Dict[str, ShippingRegion]] = None
 
     def __post_init__(self):
-        if not self.accepted_currencies:
-            raise ValueError("AcceptedCurrencies must not be empty")
         if self.shipping_regions is not None and not self.shipping_regions:
             raise ValueError("ShippingRegions map cannot be empty if present")
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "Manifest":
-        payees = {k: Payee.from_cbor_dict(v) for k, v in d["Payees"].items()} if "Payees" in d else None
-        accepted_currencies = [
-            (
-                ChainAddress.from_cbor_dict(item)
-                if isinstance(item, dict)
-                else item
-            )
-            for item in d["AcceptedCurrencies"]
-        ]
+        payees = { chainId: {EthereumAddress.from_bytes(a): PayeeMetadata.from_cbor_dict(v) for a, v in addrs.items()} for chainId, addrs in d["Payees"].items()}
+        accepted_currencies = { chainId: {EthereumAddress.from_cbor(a) for a in addrs} for chainId, addrs in d["AcceptedCurrencies"].items()}
         pricing_currency = (
             ChainAddress.from_cbor_dict(d["PricingCurrency"])
             if isinstance(d["PricingCurrency"], dict)
@@ -62,11 +54,8 @@ class Manifest:
     def to_cbor_dict(self) -> dict:
         d = {
             "ShopID": int(self.shop_id),
-            "Payees": {k: v.to_cbor_dict() for k, v in self.payees.items()},
-            "AcceptedCurrencies": [
-                item.to_cbor_dict() if hasattr(item, "to_cbor_dict") else item
-                for item in self.accepted_currencies
-            ],
+            "Payees": {chainId: {a.to_bytes(): meta.to_cbor_dict() for a, meta in addrs.items()} for chainId, addrs in self.payees.items()},
+            "AcceptedCurrencies": {chainId: {a.to_bytes(): {} for a in addrs} for chainId, addrs in self.accepted_currencies.items()},
             "PricingCurrency": (
                 self.pricing_currency.to_cbor_dict()
                 if hasattr(self.pricing_currency, "to_cbor_dict")

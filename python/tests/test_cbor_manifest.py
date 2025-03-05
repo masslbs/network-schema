@@ -13,10 +13,11 @@ from massmarket_hash_event.cbor.base_types import (
     Uint256,
     PriceModifier,
     ModificationAbsolute,
+    EthereumAddress,
 )
 from massmarket_hash_event.cbor.manifest import (
     Manifest,
-    Payee,
+    PayeeMetadata,
     ShippingRegion,
 )
 from massmarket_hash_event.cbor import Shop
@@ -24,22 +25,20 @@ from massmarket_hash_event.cbor import Shop
 
 def test_cbor_manifest_cbor_keys():
     # Create a simple Manifest instance matching a valid Go schema.
+    test_addr = EthereumAddress("0x0102030405060708090a0b0c0d0e0f1011121314")
     manifest = Manifest(
         shop_id=Uint256.random(),
         payees={
-            "default": Payee(
-                address="0x0102030405060708090a0b0c0d0e0f1011121314",  # or a ChainAddress if implemented
-                call_as_contract=False,
-            )
+            1337: {
+                test_addr: PayeeMetadata(call_as_contract=False),
+            }
         },
-        accepted_currencies=[
-            ChainAddress(
-                chain_id=1337, address="0x0000000000000000000000000000000000000000"
-            ),
-            ChainAddress(
-                chain_id=1337, address="0xffffffffffffffffffffffffffffffffffffffff"
-            ),
-        ],
+        accepted_currencies={
+            1337: {
+                EthereumAddress("0x0000000000000000000000000000000000000000"),
+                EthereumAddress("0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"),
+            }
+        },
         pricing_currency=ChainAddress(
             chain_id=1337, address="0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"
         ),
@@ -67,9 +66,9 @@ def test_cbor_manifest_cbor_keys():
     assert "ShippingRegions" in cbor_dict
 
     # Also check that the payee subdict used the Go naming
-    payee_dict = cbor_dict["Payees"]["default"]
-    assert "Address" in payee_dict
-    assert "CallAsContract" in payee_dict
+    payee_dict = cbor_dict["Payees"][1337]
+    assert test_addr in payee_dict
+    assert "CallAsContract" in payee_dict[test_addr]
 
 
 def test_cbor_manifest_roundtrip():
@@ -77,21 +76,17 @@ def test_cbor_manifest_roundtrip():
     original = Manifest(
         shop_id=Uint256.random(),
         payees={
-            "default": Payee(
-                address=ChainAddress(
-                    chain_id=1337, address="0x0102030405060708090a0b0c0d0e0f1011121314"
-                ),
-                call_as_contract=False,
-            )
+            1337: {
+                EthereumAddress("0x0102030405060708090a0b0c0d0e0f1011121314"): PayeeMetadata(call_as_contract=True),
+                EthereumAddress("0xffffffffffffffffffffffffffffffffffffffff"): PayeeMetadata(call_as_contract=False),
+            }
         },
-        accepted_currencies=[
-            ChainAddress(
-                chain_id=1337, address="0x0000000000000000000000000000000000000000"
-            ),
-            ChainAddress(
-                chain_id=1337, address="0xffffffffffffffffffffffffffffffffffffffff"
-            ),
-        ],
+        accepted_currencies={
+            1337: {
+                EthereumAddress("0x0000000000000000000000000000000000000000"),
+                EthereumAddress("0xffffffffffffffffffffffffffffffffffffffff"),
+            }
+        },
         pricing_currency=ChainAddress(
             chain_id=1337, address="0x0000000000000000000000000000000000000000"
         ),
@@ -157,6 +152,7 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
 
     # Check pricing currency
     if "PricingCurrency" in expected and expected["PricingCurrency"] is not None:
+        print(expected["PricingCurrency"])
         expected_pricing_currency = ChainAddress(
             chain_id=expected["PricingCurrency"]["ChainID"],
             address=expected["PricingCurrency"]["Address"],
@@ -168,30 +164,32 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
     # Check payees
     if "Payees" in expected and expected["Payees"] is not None:
         assert len(manifest_obj.payees) == len(expected["Payees"])
-        for key, expected_payee in expected["Payees"].items():
-            assert key in manifest_obj.payees
-            expected_payee_addr = ChainAddress(
-                chain_id=expected_payee["Address"]["ChainID"],
-                address=expected_payee["Address"]["Address"],
-            )
-            assert manifest_obj.payees[key].address == expected_payee_addr
-            assert (
-                manifest_obj.payees[key].call_as_contract
-                == expected_payee["CallAsContract"]
-            )
+        for chain_id_str, expected_payees in expected["Payees"].items():
+            chain_id = int(chain_id_str)
+            assert chain_id in manifest_obj.payees
+            assert len(manifest_obj.payees[chain_id]) == len(expected_payees)
+            
+            for eth_addr_hex, expected_metadata in expected_payees.items():
+                eth_addr = EthereumAddress(eth_addr_hex)
+                assert eth_addr in manifest_obj.payees[chain_id]
+                assert (
+                    manifest_obj.payees[chain_id][eth_addr].call_as_contract
+                    == expected_metadata["CallAsContract"]
+                )
     else:
         assert manifest_obj.payees is None or len(manifest_obj.payees) == 0
 
     # Check accepted currencies
     if "AcceptedCurrencies" in expected and expected["AcceptedCurrencies"] is not None:
-        assert len(manifest_obj.accepted_currencies) == len(
-            expected["AcceptedCurrencies"]
-        )
-        for i, expected_curr in enumerate(expected["AcceptedCurrencies"]):
-            expected_chain_addr = ChainAddress(
-                chain_id=expected_curr["ChainID"], address=expected_curr["Address"]
-            )
-            assert manifest_obj.accepted_currencies[i] == expected_chain_addr
+        assert len(manifest_obj.accepted_currencies) == len(expected["AcceptedCurrencies"])
+        for chain_id_str, expected_currencies in expected["AcceptedCurrencies"].items():
+            chain_id = int(chain_id_str)
+            assert chain_id in manifest_obj.accepted_currencies
+            assert len(manifest_obj.accepted_currencies[chain_id]) == len(expected_currencies)
+            
+            for eth_addr_hex in expected_currencies:
+                eth_addr = EthereumAddress(eth_addr_hex)
+                assert eth_addr in manifest_obj.accepted_currencies[chain_id]
     else:
         assert (
             manifest_obj.accepted_currencies is None
