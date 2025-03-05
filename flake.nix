@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
-
 {
   description = "Mass Market Network Schema";
   inputs = {
@@ -142,6 +141,7 @@
         unconvert
         godef
         clang
+        cddl # can be used to generate json from cddl files
         cbor-diag
         protoc-gen-go
         buf

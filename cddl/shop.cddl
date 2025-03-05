@@ -1,0 +1,172 @@
+uint32 = uint .size 4
+
+Tags = { * text => Tag }
+Tag = {
+    name: text,
+    listing_ids: [* uint]
+}
+
+Orders = { * uint => Order }
+
+Accounts = { * EthereumAddress => Account }
+
+Listings = { * uint => Listing }
+
+Inventory = { * bytes => uint }
+
+Shop = {
+    schema_version: uint,
+    tags: Tags,
+    orders: Orders,
+    accounts: Accounts,
+    listings: Listings,
+    manifest: Manifest,
+    inventory: Inventory
+}
+
+; Base types
+SignatureSize = 65
+PublicKeySize = 33
+HashSize = 32
+EthereumAddressSize = 20
+
+Signature = bytes .size SignatureSize
+PublicKey = bytes .size PublicKeySize
+Hash = bytes .size HashSize
+EthereumAddress = bytes .size EthereumAddressSize
+Uint256 = bytes
+
+ChainAddress = {
+    chain_id: uint,
+    address: EthereumAddress
+}
+
+Payee = {
+    address: ChainAddress,
+    call_as_contract: bool
+}
+
+; Manifest
+Manifest = {
+    shop_id: Uint256,
+    payees: { * text => Payee },
+    accepted_currencies: [* ChainAddress],
+    pricing_currency: ChainAddress,
+    ? shipping_regions: { * text => ShippingRegion }
+}
+
+ShippingRegion = {
+    country: text,
+    postal_code: text,
+    city: text,
+    ? price_modifiers: { * text => PriceModifier }
+}
+
+PriceModifier = {
+    ? modification_precents: Uint256,
+    ? modification_absolute: ModificationAbsolute
+}
+
+ModificationAbsolute = {
+    amount: Uint256,
+    plus: bool
+}
+
+; Listing
+Listing = {
+    id: uint,
+    price: Uint256,
+    metadata: ListingMetadata,
+    view_state: ListingViewState,
+    ? options: { * text => ListingOption },
+    ? stock_statuses: [* ListingStockStatus]
+}
+
+ListingMetadata = {
+    title: text,
+    description: text,
+    ? images: [* text]
+}
+
+ListingOption = {
+    title: text,
+    ? variations: { * text => ListingVariation }
+}
+
+ListingVariation = {
+    variation_info: ListingMetadata,
+    ? price_modifier: PriceModifier,
+    ? sku: text
+}
+
+ListingViewState = &(
+    unspecified: 0,
+    published: 1,
+    deleted: 2
+)
+
+ListingStockStatus = {
+    variation_ids: [* text],
+    ? in_stock: bool,
+    ? expected_in_stock_by: time
+}
+
+; Account
+Account = {
+    key_cards: [+ PublicKey],
+    guest: bool
+}
+
+; Order
+Order = {
+    id: uint,
+    items: [* OrderedItem],
+    state: OrderState,
+    ? invoice_address: AddressDetails,
+    ? shipping_address: AddressDetails,
+    ? canceled_at: time,
+    ? chosen_payee: Payee,
+    ? chosen_currency: ChainAddress,
+    ? payment_details: PaymentDetails,
+    ? tx_details: OrderPaid
+}
+
+OrderedItem = {
+    listing_id: uint,
+    ? variation_ids: [* text],
+    quantity: uint32
+}
+
+OrderState = &(
+    unspecified: 0,
+    open: 1,
+    canceled: 2,
+    committed: 3,
+    unpaid: 4,
+    paid: 5
+)
+
+AddressDetails = {
+    name: text,
+    address1: text,
+    ? address2: text,
+    city: text,
+    postal_code: text,
+    country: text,
+    email_address: text,
+    ? phone_number: text
+}
+
+PaymentDetails = {
+    payment_id: Hash,
+    total: Uint256,
+    listing_hashes: [+ bytes],
+    ttl: uint,
+    shop_signature: Signature
+}
+
+OrderPaid = {
+    ? tx_hash: Hash,
+    block_hash: Hash
+}
+

@@ -1,0 +1,20 @@
+SignedPatchSet = {
+  Header: PatchSetHeader,
+  Signature: bstr,   ; objects.Signature as bytes
+  Patches: [+ Patch] ; non-empty array of Patches
+}
+
+PatchSetHeader = {
+  KeyCardNonce: uint,  ; uint64 > 0
+  ShopID: bstr,       ; objects.Uint256 as bytes
+  Timestamp: number,    ; RFC3339 timestamp
+  RootHash: bstr      ; objects.Hash as bytes
+}
+
+Patch = {
+  Op: OpString,
+  Path: [* text],     ; PatchPath as string array
+  Value: bstr         ; cbor.RawMessage as bytes
+}
+
+OpString = "add" / "replace" / "remove" / "increment" / "decrement"
