@@ -1,3 +1,7 @@
+; SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
+;
+; SPDX-License-Identifier: MIT
+
 uint32 = uint .size 4
 
 Tags = { * text => Tag }
@@ -142,8 +146,9 @@ OrderState = &(
     open: 1,
     canceled: 2,
     committed: 3,
-    unpaid: 4,
-    paid: 5
+    payment_chosen: 4,
+    unpaid: 5,
+    paid: 6
 )
 
 AddressDetails = {

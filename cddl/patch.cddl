@@ -1,3 +1,8 @@
+; SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
+;
+; SPDX-License-Identifier: MIT
+
+
 SignedPatchSet = {
   Header: PatchSetHeader,
   Signature: bstr,   ; objects.Signature as bytes

@@ -249,7 +249,9 @@ class Order:
             "ID": self.id,
             "Items": [item.to_cbor_dict() for item in self.items],
             # TODO: why isnt this tested..?
-            "State": self.state.value if isinstance(self.state, OrderState) else self.state,
+            "State": (
+                self.state.value if isinstance(self.state, OrderState) else self.state
+            ),
         }
 
         if self.invoice_address is not None:

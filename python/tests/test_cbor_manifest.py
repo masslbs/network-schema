@@ -77,8 +77,12 @@ def test_cbor_manifest_roundtrip():
         shop_id=Uint256.random(),
         payees={
             1337: {
-                EthereumAddress("0x0102030405060708090a0b0c0d0e0f1011121314"): PayeeMetadata(call_as_contract=True),
-                EthereumAddress("0xffffffffffffffffffffffffffffffffffffffff"): PayeeMetadata(call_as_contract=False),
+                EthereumAddress(
+                    "0x0102030405060708090a0b0c0d0e0f1011121314"
+                ): PayeeMetadata(call_as_contract=True),
+                EthereumAddress(
+                    "0xffffffffffffffffffffffffffffffffffffffff"
+                ): PayeeMetadata(call_as_contract=False),
             }
         },
         accepted_currencies={
@@ -168,7 +172,7 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
             chain_id = int(chain_id_str)
             assert chain_id in manifest_obj.payees
             assert len(manifest_obj.payees[chain_id]) == len(expected_payees)
-            
+
             for eth_addr_hex, expected_metadata in expected_payees.items():
                 eth_addr = EthereumAddress(eth_addr_hex)
                 assert eth_addr in manifest_obj.payees[chain_id]
@@ -181,12 +185,16 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
 
     # Check accepted currencies
     if "AcceptedCurrencies" in expected and expected["AcceptedCurrencies"] is not None:
-        assert len(manifest_obj.accepted_currencies) == len(expected["AcceptedCurrencies"])
+        assert len(manifest_obj.accepted_currencies) == len(
+            expected["AcceptedCurrencies"]
+        )
         for chain_id_str, expected_currencies in expected["AcceptedCurrencies"].items():
             chain_id = int(chain_id_str)
             assert chain_id in manifest_obj.accepted_currencies
-            assert len(manifest_obj.accepted_currencies[chain_id]) == len(expected_currencies)
-            
+            assert len(manifest_obj.accepted_currencies[chain_id]) == len(
+                expected_currencies
+            )
+
             for eth_addr_hex in expected_currencies:
                 eth_addr = EthereumAddress(eth_addr_hex)
                 assert eth_addr in manifest_obj.accepted_currencies[chain_id]

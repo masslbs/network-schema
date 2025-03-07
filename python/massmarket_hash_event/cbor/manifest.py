@@ -30,8 +30,17 @@ class Manifest:
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "Manifest":
-        payees = { chainId: {EthereumAddress.from_bytes(a): PayeeMetadata.from_cbor_dict(v) for a, v in addrs.items()} for chainId, addrs in d["Payees"].items()}
-        accepted_currencies = { chainId: {EthereumAddress.from_cbor(a) for a in addrs} for chainId, addrs in d["AcceptedCurrencies"].items()}
+        payees = {
+            chainId: {
+                EthereumAddress.from_bytes(a): PayeeMetadata.from_cbor_dict(v)
+                for a, v in addrs.items()
+            }
+            for chainId, addrs in d["Payees"].items()
+        }
+        accepted_currencies = {
+            chainId: {EthereumAddress.from_cbor(a) for a in addrs}
+            for chainId, addrs in d["AcceptedCurrencies"].items()
+        }
         pricing_currency = (
             ChainAddress.from_cbor_dict(d["PricingCurrency"])
             if isinstance(d["PricingCurrency"], dict)
@@ -54,8 +63,16 @@ class Manifest:
     def to_cbor_dict(self) -> dict:
         d = {
             "ShopID": int(self.shop_id),
-            "Payees": {chainId: {a.to_bytes(): meta.to_cbor_dict() for a, meta in addrs.items()} for chainId, addrs in self.payees.items()},
-            "AcceptedCurrencies": {chainId: {a.to_bytes(): {} for a in addrs} for chainId, addrs in self.accepted_currencies.items()},
+            "Payees": {
+                chainId: {
+                    a.to_bytes(): meta.to_cbor_dict() for a, meta in addrs.items()
+                }
+                for chainId, addrs in self.payees.items()
+            },
+            "AcceptedCurrencies": {
+                chainId: {a.to_bytes(): {} for a in addrs}
+                for chainId, addrs in self.accepted_currencies.items()
+            },
             "PricingCurrency": (
                 self.pricing_currency.to_cbor_dict()
                 if hasattr(self.pricing_currency, "to_cbor_dict")
