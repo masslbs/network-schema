@@ -17,8 +17,9 @@ class OrderState(IntEnum):
     OPEN = 1
     CANCELED = 2
     COMMITTED = 3
-    UNPAID = 4
-    PAID = 5
+    PAYMENT_CHOSEN = 4
+    UNPAID = 5
+    PAID = 6
 
 
 @dataclass

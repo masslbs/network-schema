@@ -267,8 +267,9 @@ def test_order_state():
     assert OrderState.OPEN.value == 1
     assert OrderState.CANCELED.value == 2
     assert OrderState.COMMITTED.value == 3
-    assert OrderState.UNPAID.value == 4
-    assert OrderState.PAID.value == 5
+    assert OrderState.PAYMENT_CHOSEN.value == 4
+    assert OrderState.UNPAID.value == 5
+    assert OrderState.PAID.value == 6
 
 
 # this does not test the patching logic, just the roundtrip from the _after_ state

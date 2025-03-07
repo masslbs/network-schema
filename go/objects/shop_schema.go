@@ -616,6 +616,8 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.PaymentDetails == nil {
 			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
+		fallthrough
+	case OrderStatePaymentChosen:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
 		}
@@ -657,6 +659,7 @@ const (
 	OrderStateOpen
 	OrderStateCanceled
 	OrderStateCommitted
+	OrderStatePaymentChosen
 	OrderStateUnpaid
 	OrderStatePaid
 
