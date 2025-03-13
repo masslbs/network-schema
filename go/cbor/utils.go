@@ -37,7 +37,7 @@ func Unmarshal(data []byte, v interface{}) error {
 
 // DefaultEncoder returns a new encoder for the given writer.
 func DefaultEncoder(w io.Writer) *cbor.Encoder {
-	opts := cbor.CanonicalEncOptions()
+	opts := cbor.CoreDetEncOptions()
 	opts.BigIntConvert = cbor.BigIntConvertShortest
 	opts.Time = cbor.TimeRFC3339
 	opts.TimeTag = cbor.EncTagRequired
