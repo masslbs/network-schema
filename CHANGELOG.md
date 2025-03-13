@@ -6,6 +6,7 @@ SPDX-License-Identifier: MIT
 
 # V4 (2024-12-12) DRAFT
 
+- Deprecates V3
 - Implement shop event types in CBOR
   - This enables canonical encoding of events
   - Which also paves the way for merkle roots of a shop

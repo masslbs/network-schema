@@ -181,13 +181,14 @@
         buildInputs = [pkgs.go_1_23];
         src = ./.;
         buildPhase = ''
+          mkdir -p $out
+          cp constants.txt $out
+          cp VERSION $out
+          cp -r cddl $out/cddl
           test -d go || {
             echo "go/ directory not found, skipping vector generation"
             exit 0
           }
-          mkdir -p $out
-          cp constants.txt $out
-          cp VERSION $out
           mkdir -p $out/vectors
           export TEST_DATA_OUT=$out/vectors
           pushd go/patch
