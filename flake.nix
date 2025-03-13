@@ -185,6 +185,8 @@
           cp constants.txt $out
           cp VERSION $out
           cp -r cddl $out/cddl
+          mkdir -p $out/pb
+          cp *.proto $out/pb
           test -d go || {
             echo "go/ directory not found, skipping vector generation"
             exit 0
