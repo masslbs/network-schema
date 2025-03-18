@@ -102,8 +102,11 @@ ListingVariation = {
 }
 
 ListingViewState = &(
+    ; hidden
     Unspecified: 0,
+    ; published
     Published: 1,
+    ; soft-deleted
     Deleted: 2
 )
 
@@ -146,13 +149,20 @@ OrderedItem = {
 }
 
 OrderState = &(
-    Unspecified: 0, ; invalid state
-    Open: 1, ; open to being changed
-    Canceled: 2, ; canceled
-    Committed: 3, ; items frozen
-    PaymentChosen: 4, ; currency and payee chosen
-    Unpaid: 5, ; details for payment created
-    Paid: 6 
+    ; invalid state
+    Unspecified: 0,
+    ; open to being changed
+    Open: 1,
+    ; canceled
+    Canceled: 2,
+    ; items frozen
+    Committed: 3,
+    ; currency and payee chosen
+    PaymentChosen: 4,
+    ; details for payment created
+    Unpaid: 5,
+    ; payment completed/received
+    Paid: 6
 )
 
 AddressDetails = {
@@ -169,7 +179,7 @@ AddressDetails = {
 PaymentDetails = {
     PaymentID: Hash,
     Total: Uint256,
-    ListingHashes: [+ bytes],
+    ListingHashes: [+ Hash],
     TTL: uint,
     ShopSignature: Signature
 }
@@ -178,15 +188,3 @@ OrderPaid = {
     ? TxHash: Hash,
     BlockHash: Hash
 }
-
-;; TODO: validation of Hamt currently breaks on the recursion
-Hamt<T> = [
-    bitmap: uint,
-    entries: [* HamtEntry<T>]
-]
-
-HamtEntry<T> = [
-    key: uint,
-    value: T,
-    node: Hamt<T> // null
-]

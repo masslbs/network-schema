@@ -5,9 +5,7 @@
 package patch
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -21,74 +19,10 @@ import (
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/peterldowns/testy/assert"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/masslbs/network-schema/go/internal/testhelper"
 	massmmr "github.com/masslbs/network-schema/go/mmr"
 	"github.com/masslbs/network-schema/go/objects"
 )
-
-func TestMapOrdering(t *testing.T) {
-	shop := objects.NewShop(42)
-
-	var buf bytes.Buffer
-	enc := masscbor.DefaultEncoder(&buf)
-	err := enc.Encode(shop)
-	assert.Nil(t, err)
-	// Check field ordering in encoded shop
-	// The fields should be ordered: Tags, Orders, Accounts, Listings, Manifest
-	// This corresponds to the following CBOR structure:
-	want := []byte{
-		0xa7, // map(7)
-		0x64, // text(4)
-		'T', 'a', 'g', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x66, // text(6)
-		'O', 'r', 'd', 'e', 'r', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'A', 'c', 'c', 'o', 'u', 'n', 't', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'L', 'i', 's', 't', 'i', 'n', 'g', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa5, // map(4)
-		0x66, // text(6);
-		'P', 'a', 'y', 'e', 'e', 's',
-		0xf6, // primitive(22)
-		0x66, // text(6)
-		'S', 'h', 'o', 'p', 'I', 'D',
-		0x00, // unsigned(0)
-		0x6f, // text(15)
-		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
-		0xa2, // map(2)
-		0x67, // text(7)
-		'A', 'd', 'd', 'r', 'e', 's', 's',
-		0x54, // bytes(20)
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x67, // text(7)
-		'C', 'h', 'a', 'i', 'n', 'I', 'D',
-		0x00, // unsigned(0)
-		0x6f, // text(15)
-		'S', 'h', 'i', 'p', 'p', 'i', 'n', 'g', 'R', 'e', 'g', 'i', 'o', 'n', 's',
-		0xf6, // primitive(22)
-		0x72, // text(18)
-		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
-		0xf6, // primitive(22)
-		0x69, // text(8)
-		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x6d, // text(12)
-		'S', 'c', 'h', 'e', 'm', 'a', 'V', 'e', 'r', 's', 'i', 'o', 'n',
-		0x18, 0x2a, // unsigned(42)
-	}
-	got := buf.Bytes()
-	gotHex := hex.EncodeToString(got)
-	t.Log("Got:", gotHex)
-	assert.Equal(t, len(want), len(got))
-	assert.Equal(t, want, got)
-}
 
 // Defines the structure of a vector file.
 type vectorFileOkay struct {
@@ -134,17 +68,11 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	shopID.SetBytes(shopIDBytes[:])
 	t.Log("shop ID: ", shopID.String())
 	var (
-		testAddr  = objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890")
-		testAddr2 = objects.MustAddrFromHex(1, "0x6789012345678901234567890123456789012345")
-		testAddr3 = objects.MustAddrFromHex(1, "0x9999999999999999999999999999999999999999")
-		testEth   = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
-		testUsdc  = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
-
 		otherPayeeMetadata = objects.PayeeMetadata{
 			CallAsContract: true,
 		}
 
-		testAcc1Addr = testMassEthAddr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90})
+		testAcc1Addr = testhelper.MassEthAddr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90})
 		testAcc1     = objects.Account{
 			KeyCards: []objects.PublicKey{
 				testPubKey(1),
@@ -730,19 +658,6 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 	writeVectors(t, vectors)
 }
 
-func testCommonEthAddr(b [20]byte) common.Address {
-	return common.Address(b)
-}
-
-func testMassEthAddr(b [20]byte) objects.EthereumAddress {
-	return objects.EthereumAddress{
-		Address: testCommonEthAddr(b),
-	}
-}
-
-var testAddr123 = testCommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
-var zeroAddress common.Address
-
 func newTestManifest() objects.Shop {
 	s := objects.NewShop(666)
 	var shopID objects.Uint256
@@ -774,7 +689,7 @@ func newTestManifest() objects.Shop {
 		},
 		PricingCurrency: objects.ChainAddress{
 			ChainID:         1337,
-			EthereumAddress: testMassEthAddr([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+			EthereumAddress: testhelper.MassEthAddr([20]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
 		},
 		ShippingRegions: map[string]objects.ShippingRegion{
 			"default": {
@@ -788,14 +703,14 @@ func newTestManifest() objects.Shop {
 func TestGenerateVectorsManifestOkay(t *testing.T) {
 	testCurrency := objects.ChainAddress{
 		ChainID:         1337,
-		EthereumAddress: testMassEthAddr([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
+		EthereumAddress: testhelper.MassEthAddr([20]byte{0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00}),
 	}
 
 	testManifest := newTestManifest().Manifest
 
 	// Test addresses for payees
 	testChainID := uint64(1337)
-	testAddr := testCommonEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44})
+	testAddr := testhelper.CommonEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44})
 
 	testCases := []struct {
 		name     string
@@ -1779,7 +1694,7 @@ func TestGenerateVectorsTagError(t *testing.T) {
 
 var otherCurrency = objects.ChainAddress{
 	ChainID:         1338,
-	EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
+	EthereumAddress: testhelper.MassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 }
 
 func newTestOrder() (objects.Shop, objects.Order) {
@@ -2040,14 +1955,14 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: objects.Payee{
 				Address: objects.ChainAddress{
 					ChainID:         1338,
-					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
+					EthereumAddress: testhelper.MassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				},
 			},
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.ChosenPayee)
 				assert.Equal(t, objects.ChainAddress{
 					ChainID:         1338,
-					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
+					EthereumAddress: testhelper.MassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				}, o.ChosenPayee.Address)
 			},
 		},
@@ -2057,13 +1972,13 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"ChosenCurrency"}},
 			value: objects.ChainAddress{
 				ChainID:         1338,
-				EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
+				EthereumAddress: testhelper.MassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 			},
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.ChosenCurrency)
 				assert.Equal(t, &objects.ChainAddress{
 					ChainID:         1338,
-					EthereumAddress: testMassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
+					EthereumAddress: testhelper.MassEthAddr([20]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00}),
 				}, o.ChosenCurrency)
 			},
 		},

@@ -39,12 +39,8 @@ func main() {
 		fmt.Println("encoded: ", hex.EncodeToString(out))
 
 		// Find where they diverge
-		minLen := len(data)
-		if len(out) < minLen {
-			minLen = len(out)
-		}
-
-		for i := 0; i < minLen; i++ {
+		minLen := min(len(data), len(out))
+		for i := range minLen {
 			if data[i] != out[i] {
 				fmt.Printf("first difference at position %d: original=0x%02x, encoded=0x%02x\n",
 					i, data[i], out[i])

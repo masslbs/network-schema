@@ -3,7 +3,7 @@
 ; SPDX-License-Identifier: MIT
 
 SignedPatchSet = {
-  Header: PatchsetHeader,
+  Header: PatchSetHeader,
   Signature: Signature,
   Patches: [+ Patch]
 }
@@ -15,7 +15,7 @@ Uint256 = bytes .size (1..32)
 PathSegment = text / unsigned / bytes
 OpString = "add" / "replace" / "remove" / "increment" / "decrement" / "append"
 
-PatchsetHeader = {
+PatchSetHeader = {
   KeyCardNonce: uint,
   ShopID: Uint256,
   Timestamp: text,
