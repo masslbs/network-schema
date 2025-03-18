@@ -25,6 +25,66 @@ import (
 	"github.com/masslbs/network-schema/go/internal/testhelper"
 )
 
+func TestMapOrdering(t *testing.T) {
+	shop := NewShop(42)
+
+	var buf bytes.Buffer
+	enc := masscbor.DefaultEncoder(&buf)
+	err := enc.Encode(shop)
+	assert.Nil(t, err)
+	// Check field ordering in encoded shop
+	// The fields should be ordered: Tags, Orders, Accounts, Listings, Manifest
+	// This corresponds to the following CBOR structure:
+	want := []byte{
+		0xa7, // map(7)
+		0x64, // text(4)
+		'T', 'a', 'g', 's',
+		0x82, 0x00, 0xf6, // empty hamt
+		0x66, // text(6)
+		'O', 'r', 'd', 'e', 'r', 's',
+		0x82, 0x00, 0xf6, // empty hamt
+		0x68, // text(8)
+		'A', 'c', 'c', 'o', 'u', 'n', 't', 's',
+		0x82, 0x00, 0xf6, // empty hamt
+		0x68, // text(8)
+		'L', 'i', 's', 't', 'i', 'n', 'g', 's',
+		0x82, 0x00, 0xf6, // empty hamt
+		0x68, // text(8)
+		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
+		0xa4, // map(4)
+		0x66, // text(6);
+		'P', 'a', 'y', 'e', 'e', 's',
+		0xf6, // primitive(22)
+		0x66, // text(6)
+		'S', 'h', 'o', 'p', 'I', 'D',
+		0x00, // unsigned(0)
+		0x6f, // text(15)
+		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
+		0xa2, // map(2)
+		0x67, // text(7)
+		'A', 'd', 'd', 'r', 'e', 's', 's',
+		0x54, // bytes(20)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x67, // text(7)
+		'C', 'h', 'a', 'i', 'n', 'I', 'D',
+		0x00, // unsigned(0)
+		0x72, // text(18)
+		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
+		0xf6, // primitive(22)
+		0x69, // text(8)
+		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
+		0x82, 0x00, 0xf6, // empty hamt
+		0x6d, // text(12)
+		'S', 'c', 'h', 'e', 'm', 'a', 'V', 'e', 'r', 's', 'i', 'o', 'n',
+		0x18, 0x2a, // unsigned(42)
+	}
+	got := buf.Bytes()
+	gotHex := hex.EncodeToString(got)
+	t.Log("Got:", gotHex)
+	assert.Equal(t, len(want), len(got))
+	assert.Equal(t, want, got)
+}
+
 var validate = DefaultValidator()
 
 func TestECDAPublicKeySize(t *testing.T) {
@@ -175,7 +235,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Title:       "Rot",
 								Description: "short desc",
 							},
-							PriceModifier: PriceModifier{
+							PriceModifier: &PriceModifier{
 								ModificationPrecents: big.NewInt(95),
 							},
 						},
@@ -184,7 +244,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Title:       "Grün",
 								Description: "short desc",
 							},
-							PriceModifier: PriceModifier{
+							PriceModifier: &PriceModifier{
 								ModificationAbsolute: &ModificationAbsolute{
 									Amount: *big.NewInt(161),
 									Plus:   false,

@@ -18,10 +18,10 @@ type Listing struct {
 	Price     Uint256         `validate:"required"`
 	Metadata  ListingMetadata `validate:"required"`
 	ViewState ListingViewState
-	Options   ListingOptions `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	Options   ListingOptions `cbor:",omitempty" validate:"nonEmptyMapKeys" json:",omitempty"`
 
 	// one for each combination of variations
-	StockStatuses []ListingStockStatus `cbor:",omitempty"`
+	StockStatuses []ListingStockStatus `cbor:",omitempty" json:",omitempty"`
 }
 
 // ListingOptions maps from a variation title to a listing option
@@ -34,7 +34,7 @@ type listingStockStatusHack struct {
 	VariationIDs []string // list of variation map keys
 
 	// one of the following needs to be set
-	InStock           *bool      `cbor:",omitempty"`
+	InStock           *bool      `cbor:",omitempty" json:",omitempty"`
 	ExpectedInStockBy *time.Time `cbor:",omitempty"`
 }
 
@@ -58,14 +58,14 @@ func (ls *ListingStockStatus) UnmarshalCBOR(data []byte) error {
 type ListingMetadata struct {
 	Title       string   `validate:"required,notblank"`
 	Description string   `validate:"required,notblank"`
-	Images      []string `cbor:",omitempty"`
+	Images      []string `cbor:",omitempty" json:",omitempty"`
 }
 
 // ListingOption represents a product option
 type ListingOption struct {
 	// the title of the option (like Color, Size, etc.)
 	Title      string            `validate:"required,notblank"`
-	Variations ListingVariations `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	Variations ListingVariations `cbor:",omitempty" validate:"nonEmptyMapKeys" json:",omitempty"`
 }
 
 // ListingVariations maps from a variation title to a listing variation
@@ -77,8 +77,8 @@ type ListingVariation struct {
 	// VariationInfo is the metadata of the variation: for example if the option is Color
 	// then the title might be "Red"
 	VariationInfo ListingMetadata `validate:"required"`
-	PriceModifier PriceModifier   `cbor:",omitempty"`
-	SKU           string          `cbor:",omitempty"`
+	PriceModifier *PriceModifier  `cbor:",omitempty" json:",omitempty"`
+	SKU           string          `cbor:",omitempty" json:",omitempty"`
 }
 
 // ListingViewState represents the publication state of a listing

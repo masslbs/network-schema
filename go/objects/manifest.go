@@ -13,7 +13,7 @@ type Manifest struct {
 	Payees             Payees
 	AcceptedCurrencies ChainAddresses
 	PricingCurrency    ChainAddress    // the currency listings are priced in
-	ShippingRegions    ShippingRegions `validate:"nonEmptyMapKeys"`
+	ShippingRegions    ShippingRegions `json:",omitempty"`
 }
 
 // PayeeMetadata stores additional metadata about a payee

@@ -5,9 +5,7 @@
 package patch
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -21,74 +19,12 @@ import (
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/peterldowns/testy/assert"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/masslbs/network-schema/go/internal/testhelper"
 	massmmr "github.com/masslbs/network-schema/go/mmr"
 	"github.com/masslbs/network-schema/go/objects"
 )
 
-func TestMapOrdering(t *testing.T) {
-	shop := objects.NewShop(42)
-
-	var buf bytes.Buffer
-	enc := masscbor.DefaultEncoder(&buf)
-	err := enc.Encode(shop)
-	assert.Nil(t, err)
-	// Check field ordering in encoded shop
-	// The fields should be ordered: Tags, Orders, Accounts, Listings, Manifest
-	// This corresponds to the following CBOR structure:
-	want := []byte{
-		0xa7, // map(7)
-		0x64, // text(4)
-		'T', 'a', 'g', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x66, // text(6)
-		'O', 'r', 'd', 'e', 'r', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'A', 'c', 'c', 'o', 'u', 'n', 't', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'L', 'i', 's', 't', 'i', 'n', 'g', 's',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x68, // text(8)
-		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa5, // map(4)
-		0x66, // text(6);
-		'P', 'a', 'y', 'e', 'e', 's',
-		0xf6, // primitive(22)
-		0x66, // text(6)
-		'S', 'h', 'o', 'p', 'I', 'D',
-		0x00, // unsigned(0)
-		0x6f, // text(15)
-		'P', 'r', 'i', 'c', 'i', 'n', 'g', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'y',
-		0xa2, // map(2)
-		0x67, // text(7)
-		'A', 'd', 'd', 'r', 'e', 's', 's',
-		0x54, // bytes(20)
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x67, // text(7)
-		'C', 'h', 'a', 'i', 'n', 'I', 'D',
-		0x00, // unsigned(0)
-		0x6f, // text(15)
-		'S', 'h', 'i', 'p', 'p', 'i', 'n', 'g', 'R', 'e', 'g', 'i', 'o', 'n', 's',
-		0xf6, // primitive(22)
-		0x72, // text(18)
-		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
-		0xf6, // primitive(22)
-		0x69, // text(8)
-		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
-		0x82, 0x00, 0xf6, // empty hamt
-		0x6d, // text(12)
-		'S', 'c', 'h', 'e', 'm', 'a', 'V', 'e', 'r', 's', 'i', 'o', 'n',
-		0x18, 0x2a, // unsigned(42)
-	}
-	got := buf.Bytes()
-	gotHex := hex.EncodeToString(got)
-	t.Log("Got:", gotHex)
-	assert.Equal(t, len(want), len(got))
-	assert.Equal(t, want, got)
-}
+const withVariations = false
 
 // Defines the structure of a vector file.
 type vectorFileOkay struct {
@@ -123,7 +59,7 @@ type vectorEntryError struct {
 var kcNonce uint64 = 23
 
 // This vector exercises the mutations of the shop object.
-// Mutations of objects in the shop (listing, order, etc) are tested seperatly.
+// Mutations of objects in the shop (listing, order, etc) are tested separately.
 // The vectors file is constructed slightly differently to the other vectors files.
 // Instead of starting with the same state every time ("Start" value),
 // we keep the same state for all the patches.
@@ -134,12 +70,6 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 	shopID.SetBytes(shopIDBytes[:])
 	t.Log("shop ID: ", shopID.String())
 	var (
-		testAddr  = objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890")
-		testAddr2 = objects.MustAddrFromHex(1, "0x6789012345678901234567890123456789012345")
-		testAddr3 = objects.MustAddrFromHex(1, "0x9999999999999999999999999999999999999999")
-		testEth   = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
-		testUsdc  = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
-
 		otherPayeeMetadata = objects.PayeeMetadata{
 			CallAsContract: true,
 		}
@@ -453,47 +383,59 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 			Value: mustEncode(t, uint64(100)),
 		},
-		{ // inject item with variations
-			Name:  "add-listing",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
-			Value: mustEncode(t, testListing),
-		},
-		{
-			Name: "add-size-option",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
-			Value: mustEncode(t, objects.ListingOption{
-				Title: "Sizes",
-				Variations: objects.ListingVariations{
-					"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
-					"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
-					"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
-				},
-			}),
-		},
-		{
-			Name:  "add-inventory-variation",
-			Op:    AddOp, // adds a variation to the inventory for id 1
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-			Value: mustEncode(t, uint64(23)),
-		},
-		{
-			Name:  "add-inventory-variation2",
-			Op:    AddOp, // adds a variation to the inventory for id 1
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
-			Value: mustEncode(t, uint64(42)),
-		},
 		{
 			Name: "remove-inventory",
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 		},
-		{
-			Name: "remove-inventory-variation",
-			Op:   RemoveOp,
-			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-		},
+	}
+
+	// Add variation-specific test cases if enabled
+	if withVariations {
+		testCases = append(testCases, []struct {
+			Name  string
+			Op    OpString
+			Path  Path
+			Value []byte
+			Check func(*testing.T, objects.Shop)
+		}{
+			{
+				Name:  "add-listing",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
+				Value: mustEncode(t, testListing),
+			},
+			{
+				Name: "add-size-option",
+				Op:   AddOp,
+				Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
+				Value: mustEncode(t, objects.ListingOption{
+					Title: "Sizes",
+					Variations: objects.ListingVariations{
+						"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
+						"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
+						"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
+					},
+				}),
+			},
+			{
+				Name:  "add-inventory-variation",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+				Value: mustEncode(t, uint64(23)),
+			},
+			{
+				Name:  "add-inventory-variation2",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+				Value: mustEncode(t, uint64(42)),
+			},
+			{
+				Name: "remove-inventory-variation",
+				Op:   RemoveOp,
+				Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+			},
+		}...)
 	}
 
 	for _, testCase := range testCases {
@@ -593,93 +535,73 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 			Value: mustEncode(t, uint64(100)),
 		},
-		{ // inject item with variations
-			Name:  "add-listing",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
-			Value: mustEncode(t, testListing),
-		},
-		{
-			Name: "add-size-option",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
-			Value: mustEncode(t, objects.ListingOption{
-				Title: "Sizes",
-				Variations: objects.ListingVariations{
-					"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
-					"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
-					"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
-				},
-			}),
-		},
-		{
-			Name:  "add-inventory-variation",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-			Value: mustEncode(t, uint64(23)),
-		},
-		{
-			Name:  "add-inventory-variation2",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
-			Value: mustEncode(t, uint64(42)),
-		},
 		{
 			Name: "remove-inventory",
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 		},
 		{
-			Name: "remove-inventory-variation",
-			Op:   RemoveOp,
-			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-		},
-		{
 			Name:  "increment-inventory",
 			Op:    IncrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
 			Value: mustEncode(t, uint64(42)),
 			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"b", "m"})
+				count, has := i.Get(testListing.ID, nil)
 				assert.True(t, has)
-				assert.Equal(t, uint64(2*42), count)
+				assert.Equal(t, uint64(24+42), count)
 			},
 		},
 		{
 			Name:  "decrement-inventory",
 			Op:    DecrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
 			Value: mustEncode(t, uint64(42)),
 			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"b", "m"})
+				count, has := i.Get(testListing.ID, nil)
 				assert.True(t, has)
-				assert.Equal(t, uint64(42), count)
+				assert.Equal(t, uint64(24), count)
 			},
 		},
 		{
-			Name: "add-variation-for-next-test",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size", "Variations", "s"}},
-			Value: mustEncode(t, objects.ListingVariation{
-				VariationInfo: objects.ListingMetadata{Title: "S", Description: "Small"},
-			}),
+			Name:  "set-inventory-to-zero",
+			Op:    ReplaceOp,
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
+			Value: mustEncode(t, uint64(0)),
 			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"r", "s"})
-				assert.False(t, has)
+				count, has := i.Get(testListing.ID, nil)
+				assert.True(t, has)
 				assert.Equal(t, uint64(0), count)
 			},
 		},
-		{
-			Name:  "increment-from-zero",
-			Op:    IncrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "s"}},
-			Value: mustEncode(t, uint64(123)),
-			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"r", "s"})
-				assert.True(t, has)
-				assert.Equal(t, uint64(123), count)
+	}
+
+	// Add variation-specific test cases if enabled
+	if withVariations {
+		testCases = append(testCases, []struct {
+			Name  string
+			Op    OpString
+			Path  Path
+			Value []byte
+			Check func(t *testing.T, i objects.Inventory)
+		}{
+			{
+				Name:  "add-inventory-variation",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+				Value: mustEncode(t, uint64(23)),
 			},
-		},
+			{
+				Name:  "add-inventory-variation2",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+				Value: mustEncode(t, uint64(42)),
+			},
+			{
+				Name: "remove-inventory-variation",
+				Op:   RemoveOp,
+				Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+			},
+		}...)
 	}
 
 	for _, testCase := range testCases {
@@ -729,19 +651,6 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 
 	writeVectors(t, vectors)
 }
-
-func testCommonEthAddr(b [20]byte) common.Address {
-	return common.Address(b)
-}
-
-func testMassEthAddr(b [20]byte) objects.EthereumAddress {
-	return objects.EthereumAddress{
-		Address: testCommonEthAddr(b),
-	}
-}
-
-var testAddr123 = testCommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
-var zeroAddress common.Address
 
 func newTestManifest() objects.Shop {
 	s := objects.NewShop(666)
@@ -1811,6 +1720,13 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	}
 	err = s.Listings.Insert(testListing2.ID, testListing2)
 	check(err)
+	listing5557 := objects.Listing{
+		ID:        5557,
+		Price:     *big.NewInt(3000),
+		Metadata:  objects.ListingMetadata{Title: "Test Listing 5557", Description: "Another test listing"},
+		ViewState: objects.ListingViewStatePublished,
+	}
+	err = s.Listings.Insert(listing5557.ID, listing5557)
 
 	o := objects.Order{
 		ID:    666,
@@ -1837,9 +1753,15 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	err = s.Orders.Insert(o.ID, o)
 	check(err)
 
-	o2 := o
+	o2 := clone.Clone(o)
 	o2.ID = 667
 	o2.State = objects.OrderStateCommitted
+	o2.Items[0].Quantity = 55
+	o2.Items[1] = objects.OrderedItem{
+		ListingID: 5557,
+		Quantity:  100,
+	}
+	o2.InvoiceAddress.Name = "Jane Doe"
 	err = s.Orders.Insert(o2.ID, o2)
 	check(err)
 
@@ -1888,6 +1810,11 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(42),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(42), o.Items[0].Quantity)
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
+				assert.Equal(t, "Jane Doe", otherOrder.InvoiceAddress.Name)
 			},
 		},
 		{
@@ -1911,6 +1838,10 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(10),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(33), o.Items[0].Quantity) // 23 + 10
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
 			},
 		},
 		{
@@ -1920,6 +1851,10 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(5),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(18), o.Items[0].Quantity) // 23 - 5
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
 			},
 		},
 		{

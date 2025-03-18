@@ -7,6 +7,7 @@ package patch
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/peterldowns/testy/assert"
@@ -25,6 +27,42 @@ import (
 	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/masslbs/network-schema/go/objects"
 )
+
+var (
+	zeroAddress common.Address
+
+	testAddr  = objects.MustAddrFromHex(1, "0x1234567890123456789012345678901234567890")
+	testAddr2 = objects.MustAddrFromHex(1, "0x6789012345678901234567890123456789012345")
+	testAddr3 = objects.MustAddrFromHex(1, "0x9999999999999999999999999999999999999999")
+	testEth   = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
+	testUsdc  = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+
+	testAddr123 = testCommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+)
+
+func testCommonEthAddr(b [20]byte) common.Address {
+	return common.Address(b)
+}
+
+func testMassEthAddr(b [20]byte) objects.EthereumAddress {
+	return objects.EthereumAddress{
+		Address: testCommonEthAddr(b),
+	}
+}
+
+func testMassEthAddrPtr(b [20]byte) *objects.EthereumAddress {
+	return &objects.EthereumAddress{
+		Address: testCommonEthAddr(b),
+	}
+}
+
+func testRandomUint256() objects.Uint256 {
+	var v [32]byte
+	rand.Read(v[:])
+	var obj objects.Uint256
+	obj.SetBytes(v[:])
+	return obj
+}
 
 func TestNextPowerOf2(t *testing.T) {
 	assert.Equal(t, NextPowerOf2(1), 1)
@@ -69,6 +107,11 @@ var validate = objects.DefaultValidator()
 
 func openTestFile(t testing.TB, fileName string) *os.File {
 	path := filepath.Join(os.Getenv("TEST_DATA_OUT"), fileName)
+	// Check if the target folder exists, and create it if it doesn't
+	err := os.MkdirAll(filepath.Dir(path), 0755)
+	if err != nil {
+		t.Fatalf("Failed to create directory for test file: %v", err)
+	}
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	assert.Nil(t, err)
 	return file
