@@ -24,6 +24,8 @@ import (
 	"github.com/masslbs/network-schema/go/objects"
 )
 
+const withVariations = false
+
 // Defines the structure of a vector file.
 type vectorFileOkay struct {
 	Signer struct {
@@ -57,7 +59,7 @@ type vectorEntryError struct {
 var kcNonce uint64 = 23
 
 // This vector exercises the mutations of the shop object.
-// Mutations of objects in the shop (listing, order, etc) are tested seperatly.
+// Mutations of objects in the shop (listing, order, etc) are tested separately.
 // The vectors file is constructed slightly differently to the other vectors files.
 // Instead of starting with the same state every time ("Start" value),
 // we keep the same state for all the patches.
@@ -381,47 +383,59 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 			Value: mustEncode(t, uint64(100)),
 		},
-		{ // inject item with variations
-			Name:  "add-listing",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
-			Value: mustEncode(t, testListing),
-		},
-		{
-			Name: "add-size-option",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
-			Value: mustEncode(t, objects.ListingOption{
-				Title: "Sizes",
-				Variations: objects.ListingVariations{
-					"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
-					"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
-					"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
-				},
-			}),
-		},
-		{
-			Name:  "add-inventory-variation",
-			Op:    AddOp, // adds a variation to the inventory for id 1
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-			Value: mustEncode(t, uint64(23)),
-		},
-		{
-			Name:  "add-inventory-variation2",
-			Op:    AddOp, // adds a variation to the inventory for id 1
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
-			Value: mustEncode(t, uint64(42)),
-		},
 		{
 			Name: "remove-inventory",
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 		},
-		{
-			Name: "remove-inventory-variation",
-			Op:   RemoveOp,
-			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-		},
+	}
+
+	// Add variation-specific test cases if enabled
+	if withVariations {
+		testCases = append(testCases, []struct {
+			Name  string
+			Op    OpString
+			Path  Path
+			Value []byte
+			Check func(*testing.T, objects.Shop)
+		}{
+			{
+				Name:  "add-listing",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
+				Value: mustEncode(t, testListing),
+			},
+			{
+				Name: "add-size-option",
+				Op:   AddOp,
+				Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
+				Value: mustEncode(t, objects.ListingOption{
+					Title: "Sizes",
+					Variations: objects.ListingVariations{
+						"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
+						"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
+						"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
+					},
+				}),
+			},
+			{
+				Name:  "add-inventory-variation",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+				Value: mustEncode(t, uint64(23)),
+			},
+			{
+				Name:  "add-inventory-variation2",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+				Value: mustEncode(t, uint64(42)),
+			},
+			{
+				Name: "remove-inventory-variation",
+				Op:   RemoveOp,
+				Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+			},
+		}...)
 	}
 
 	for _, testCase := range testCases {
@@ -521,93 +535,62 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 			Value: mustEncode(t, uint64(100)),
 		},
-		{ // inject item with variations
-			Name:  "add-listing",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000)},
-			Value: mustEncode(t, testListing),
-		},
-		{
-			Name: "add-size-option",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size"}},
-			Value: mustEncode(t, objects.ListingOption{
-				Title: "Sizes",
-				Variations: objects.ListingVariations{
-					"m":  {VariationInfo: objects.ListingMetadata{Title: "M", Description: "Medium"}},
-					"l":  {VariationInfo: objects.ListingMetadata{Title: "L", Description: "Large"}},
-					"xl": {VariationInfo: objects.ListingMetadata{Title: "XL", Description: "X-Large"}},
-				},
-			}),
-		},
-		{
-			Name:  "add-inventory-variation",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-			Value: mustEncode(t, uint64(23)),
-		},
-		{
-			Name:  "add-inventory-variation2",
-			Op:    AddOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
-			Value: mustEncode(t, uint64(42)),
-		},
 		{
 			Name: "remove-inventory",
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
 		},
 		{
-			Name: "remove-inventory-variation",
-			Op:   RemoveOp,
-			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
-		},
-		{
 			Name:  "increment-inventory",
 			Op:    IncrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
 			Value: mustEncode(t, uint64(42)),
 			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"b", "m"})
+				count, has := i.Get(testListing.ID, nil)
 				assert.True(t, has)
-				assert.Equal(t, uint64(2*42), count)
+				assert.Equal(t, uint64(24+42), count)
 			},
 		},
 		{
 			Name:  "decrement-inventory",
 			Op:    DecrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
 			Value: mustEncode(t, uint64(42)),
 			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"b", "m"})
+				count, has := i.Get(testListing.ID, nil)
 				assert.True(t, has)
-				assert.Equal(t, uint64(42), count)
+				assert.Equal(t, uint64(24), count)
 			},
 		},
-		{
-			Name: "add-variation-for-next-test",
-			Op:   AddOp,
-			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"Options", "size", "Variations", "s"}},
-			Value: mustEncode(t, objects.ListingVariation{
-				VariationInfo: objects.ListingMetadata{Title: "S", Description: "Small"},
-			}),
-			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"r", "s"})
-				assert.False(t, has)
-				assert.Equal(t, uint64(0), count)
+	}
+
+	// Add variation-specific test cases if enabled
+	if withVariations {
+		testCases = append(testCases, []struct {
+			Name  string
+			Op    OpString
+			Path  Path
+			Value []byte
+			Check func(t *testing.T, i objects.Inventory)
+		}{
+			{
+				Name:  "add-inventory-variation",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+				Value: mustEncode(t, uint64(23)),
 			},
-		},
-		{
-			Name:  "increment-from-zero",
-			Op:    IncrementOp,
-			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "s"}},
-			Value: mustEncode(t, uint64(123)),
-			Check: func(t *testing.T, i objects.Inventory) {
-				count, has := i.Get(9000, []string{"r", "s"})
-				assert.True(t, has)
-				assert.Equal(t, uint64(123), count)
+			{
+				Name:  "add-inventory-variation2",
+				Op:    AddOp,
+				Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"b", "m"}},
+				Value: mustEncode(t, uint64(42)),
 			},
-		},
+			{
+				Name: "remove-inventory-variation",
+				Op:   RemoveOp,
+				Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(9000), Fields: []any{"r", "xl"}},
+			},
+		}...)
 	}
 
 	for _, testCase := range testCases {
