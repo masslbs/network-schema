@@ -38,7 +38,7 @@ func TestGenerateVectorsUserFlows(t *testing.T) {
 func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 	// Setup the empty shop
 	shop := objects.NewShop(42)
-	shopID := testhelper.RandomUint256()
+	shopID := testRandomUint256()
 	shop.Manifest.ShopID = shopID
 
 	// Initialize vectors
@@ -96,7 +96,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			name: "CreateCustomerAccount",
 			patch: createPatch(t, AddOp, Path{
 				Type:        ObjectTypeAccount,
-				AccountAddr: testhelper.MassEthAddrPtr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90}),
+				AccountAddr: testMassEthAddrPtr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90}),
 			}, objects.Account{
 				KeyCards: []objects.PublicKey{testPubKey(42)},
 				Guest:    true,
@@ -289,7 +289,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 	// Setup the empty shop
 	shop := objects.NewShop(42)
-	shopID := testhelper.RandomUint256()
+	shopID := testRandomUint256()
 	shop.Manifest.ShopID = shopID
 
 	// Initialize vectors
@@ -368,7 +368,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			name: "CreateCustomerAccount",
 			patch: createPatch(t, AddOp, Path{
 				Type:        ObjectTypeAccount,
-				AccountAddr: testhelper.MassEthAddrPtr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90}),
+				AccountAddr: testMassEthAddrPtr([20]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90}),
 			}, objects.Account{
 				KeyCards: []objects.PublicKey{testPubKey(42)},
 				Guest:    true,

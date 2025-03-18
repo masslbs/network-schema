@@ -26,7 +26,7 @@ import (
 )
 
 func TestMapOrdering(t *testing.T) {
-	shop := objects.NewShop(42)
+	shop := NewShop(42)
 
 	var buf bytes.Buffer
 	enc := masscbor.DefaultEncoder(&buf)
@@ -51,7 +51,7 @@ func TestMapOrdering(t *testing.T) {
 		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa5, // map(4)
+		0xa4, // map(4)
 		0x66, // text(6);
 		'P', 'a', 'y', 'e', 'e', 's',
 		0xf6, // primitive(22)
@@ -68,9 +68,6 @@ func TestMapOrdering(t *testing.T) {
 		0x67, // text(7)
 		'C', 'h', 'a', 'i', 'n', 'I', 'D',
 		0x00, // unsigned(0)
-		0x6f, // text(15)
-		'S', 'h', 'i', 'p', 'p', 'i', 'n', 'g', 'R', 'e', 'g', 'i', 'o', 'n', 's',
-		0xf6, // primitive(22)
 		0x72, // text(18)
 		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
 		0xf6, // primitive(22)
@@ -238,7 +235,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Title:       "Rot",
 								Description: "short desc",
 							},
-							PriceModifier: PriceModifier{
+							PriceModifier: &PriceModifier{
 								ModificationPrecents: big.NewInt(95),
 							},
 						},
@@ -247,7 +244,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Title:       "Grün",
 								Description: "short desc",
 							},
-							PriceModifier: PriceModifier{
+							PriceModifier: &PriceModifier{
 								ModificationAbsolute: &ModificationAbsolute{
 									Amount: *big.NewInt(161),
 									Plus:   false,

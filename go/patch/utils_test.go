@@ -7,6 +7,7 @@ package patch
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -24,7 +25,6 @@ import (
 	"github.com/peterldowns/testy/assert"
 
 	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/internal/testhelper"
 	"github.com/masslbs/network-schema/go/objects"
 )
 
@@ -37,8 +37,32 @@ var (
 	testEth   = objects.MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
 	testUsdc  = objects.MustAddrFromHex(1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 
-	testAddr123 = testhelper.CommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	testAddr123 = testCommonEthAddr([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 )
+
+func testCommonEthAddr(b [20]byte) common.Address {
+	return common.Address(b)
+}
+
+func testMassEthAddr(b [20]byte) objects.EthereumAddress {
+	return objects.EthereumAddress{
+		Address: testCommonEthAddr(b),
+	}
+}
+
+func testMassEthAddrPtr(b [20]byte) *objects.EthereumAddress {
+	return &objects.EthereumAddress{
+		Address: testCommonEthAddr(b),
+	}
+}
+
+func testRandomUint256() objects.Uint256 {
+	var v [32]byte
+	rand.Read(v[:])
+	var obj objects.Uint256
+	obj.SetBytes(v[:])
+	return obj
+}
 
 func TestNextPowerOf2(t *testing.T) {
 	assert.Equal(t, NextPowerOf2(1), 1)

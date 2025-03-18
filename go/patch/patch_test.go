@@ -20,7 +20,7 @@ import (
 )
 
 func TestPatchObjectIDs(t *testing.T) {
-	testAddr := testhelper.MassEthAddr([20]byte{0xff})
+	testAddr := testMassEthAddr([20]byte{0xff})
 
 	type testCase struct {
 		Path Path
