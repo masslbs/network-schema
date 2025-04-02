@@ -158,7 +158,7 @@ type ShippingRegion struct {
 	Country        string
 	PostalCode     string
 	City           string
-	PriceModifiers map[string]PriceModifier `cbor:",omitempty" validate:"nonEmptyMapKeys"`
+	PriceModifiers map[string]PriceModifier `cbor:",omitempty"`
 }
 
 // PriceModifier represents a price modification
