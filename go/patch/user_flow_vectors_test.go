@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mass Labs
+//
+// SPDX-License-Identifier: MIT
+
 package patch
 
 import (

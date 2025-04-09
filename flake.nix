@@ -148,6 +148,7 @@
         buf
         black
         reuse
+        typos-lsp
         protobuf
         protolint
         pyright

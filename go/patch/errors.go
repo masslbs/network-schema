@@ -48,6 +48,7 @@ func (e OutOfStockError) Error() string {
 	return fmt.Sprintf("inventory %d out of stock", e.ListingID)
 }
 
+// IndexOutOfBoundsError is an error that occurs when an index is out of bounds
 type IndexOutOfBoundsError struct {
 	Index    int
 	MaxIndex int
