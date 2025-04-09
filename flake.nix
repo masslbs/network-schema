@@ -140,7 +140,6 @@
         delve
         revive
         errcheck
-        unconvert
         godef
         clang
         cddl # can be used to generate json from cddl files

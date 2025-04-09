@@ -1709,6 +1709,13 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	}
 	err = s.Listings.Insert(testListing2.ID, testListing2)
 	check(err)
+	listing5557 := objects.Listing{
+		ID:        5557,
+		Price:     *big.NewInt(3000),
+		Metadata:  objects.ListingMetadata{Title: "Test Listing 5557", Description: "Another test listing"},
+		ViewState: objects.ListingViewStatePublished,
+	}
+	err = s.Listings.Insert(listing5557.ID, listing5557)
 
 	o := objects.Order{
 		ID:    666,
@@ -1735,9 +1742,15 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	err = s.Orders.Insert(o.ID, o)
 	check(err)
 
-	o2 := o
+	o2 := clone.Clone(o)
 	o2.ID = 667
 	o2.State = objects.OrderStateCommitted
+	o2.Items[0].Quantity = 55
+	o2.Items[1] = objects.OrderedItem{
+		ListingID: 5557,
+		Quantity:  100,
+	}
+	o2.InvoiceAddress.Name = "Jane Doe"
 	err = s.Orders.Insert(o2.ID, o2)
 	check(err)
 
@@ -1786,6 +1799,11 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(42),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(42), o.Items[0].Quantity)
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
+				assert.Equal(t, "Jane Doe", otherOrder.InvoiceAddress.Name)
 			},
 		},
 		{
@@ -1809,6 +1827,10 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(10),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(33), o.Items[0].Quantity) // 23 + 10
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
 			},
 		},
 		{
@@ -1818,6 +1840,10 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: uint32(5),
 			expected: func(t *testing.T, o objects.Order) {
 				assert.Equal(t, uint32(18), o.Items[0].Quantity) // 23 - 5
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, uint32(55), otherOrder.Items[0].Quantity)
 			},
 		},
 		{
