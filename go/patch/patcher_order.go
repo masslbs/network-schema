@@ -152,7 +152,7 @@ func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	return nil
 }
 
-var errCannotModdifyCommitedOrder = fmt.Errorf("cannot modify commited order")
+var errCannotModdifyCommittedOrder = fmt.Errorf("cannot modify committed order")
 
 func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
@@ -171,7 +171,7 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		order.CanceledAt = &canceledAt
 	case "Items":
 		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommitedOrder
+			return errCannotModdifyCommittedOrder
 		}
 
 		if len(patch.Path.Fields) < 2 {
@@ -298,7 +298,7 @@ func (p *Patcher) appendOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
 		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommitedOrder
+			return errCannotModdifyCommittedOrder
 		}
 		var item objects.OrderedItem
 		if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
@@ -391,7 +391,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 
 	case "Items":
 		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommitedOrder
+			return errCannotModdifyCommittedOrder
 		}
 		switch {
 		case nFields == 1:
@@ -487,7 +487,7 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
 		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommitedOrder
+			return errCannotModdifyCommittedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
 			return fmt.Errorf("invalid items path")
@@ -522,7 +522,7 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
 	if order.State >= objects.OrderStateCommitted {
-		return errCannotModdifyCommitedOrder
+		return errCannotModdifyCommittedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)
 	if err != nil {

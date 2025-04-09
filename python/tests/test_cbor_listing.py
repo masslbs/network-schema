@@ -249,7 +249,7 @@ def verify_listing(listing_obj: Listing, expected: dict):
         assert listing_obj.metadata.title == expected["Metadata"]["Title"]
         assert listing_obj.metadata.description == expected["Metadata"]["Description"]
         # TODO: JSON idiosyncrasies
-        if len(expected["Metadata"]["Images"]) > 0:
+        if "Images" in expected["Metadata"] and len(expected["Metadata"]["Images"]) > 0:
             assert listing_obj.metadata.images == expected["Metadata"]["Images"]
         else:
             assert listing_obj.metadata.images == None
@@ -292,7 +292,10 @@ def verify_listing(listing_obj: Listing, expected: dict):
                             == expected_var_value["VariationInfo"]["Description"]
                         )
                         # TODO: JSON idiosyncrasies
-                        if expected_var_value["SKU"] != "":
+                        if (
+                            "SKU" in expected_var_value
+                            and expected_var_value["SKU"] != ""
+                        ):
                             assert variation.sku == expected_var_value["SKU"]
                         else:
                             assert variation.sku == None
@@ -308,7 +311,8 @@ def verify_listing(listing_obj: Listing, expected: dict):
                 listing_obj.stock_statuses, expected["StockStatuses"]
             ):
                 assert actual.variation_ids == expected_status["VariationIDs"]
-                assert actual.in_stock == expected_status["InStock"]
+                if "InStock" in expected_status:
+                    assert actual.in_stock == expected_status["InStock"]
                 if (
                     "ExpectedInStockBy" in expected_status
                     and expected_status["ExpectedInStockBy"]

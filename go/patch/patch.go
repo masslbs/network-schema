@@ -35,8 +35,8 @@ type SetHeader struct {
 	// The sequence values need to increase monotonicly.
 	KeyCardNonce uint64 `validate:"required,gt=0"`
 
-	// Every signed event must be tied to a shop id. This allow the
-	// event to processed outside the context of the currenct connection.
+	// Every signed event must be tied to a shop id. This allows the
+	// event to be processed outside the context of the current connection.
 	ShopID objects.Uint256 `validate:"required"`
 
 	// The time when this event was created.
