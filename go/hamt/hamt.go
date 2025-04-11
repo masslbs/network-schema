@@ -134,9 +134,6 @@ func (t *Trie[V]) UnmarshalCBOR(data []byte) error {
 	if t == nil {
 		t = &Trie[V]{}
 	}
-	if t.root != nil {
-		return fmt.Errorf("trie already initialized")
-	}
 	t.root = &Node[V]{}
 	if err := masscbor.Unmarshal(data, &t.root); err != nil {
 		return err

@@ -107,6 +107,9 @@ func FuzzPatcherSimple(f *testing.F) {
 	}
 	for _, vectorType := range testVectorTypes {
 		v := loadTestVectors(f, vectorType)
+		if v == nil {
+			continue
+		}
 		for _, snapshot := range v.Snapshots {
 			shop := clone.Clone(snapshot.Before.Value)
 			shopStates = append(shopStates, &shop)
