@@ -20,6 +20,8 @@ vectors/ShopOkay.cbor:
 
 go-tests: vectors/hamt_test.cbor
 	cd go && go test ./...
+	# need to run this separately because we need the vectors to be generated first
+	cd go/patch && go test -fuzz=Simple -fuzztime=1m
 
 lint:
 	$(PYTHON) ./check.py
