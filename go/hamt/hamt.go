@@ -131,6 +131,13 @@ func (t *Trie[V]) MarshalCBOR() ([]byte, error) {
 // UnmarshalCBOR unmarshals a CBOR encoded byte slice into a HAMT and
 // recalculates the size by counting all leaf entries.
 func (t *Trie[V]) UnmarshalCBOR(data []byte) error {
+	if t == nil {
+		t = &Trie[V]{}
+	}
+	if t.root != nil {
+		return fmt.Errorf("trie already initialized")
+	}
+	t.root = &Node[V]{}
 	if err := masscbor.Unmarshal(data, &t.root); err != nil {
 		return err
 	}
@@ -159,6 +166,9 @@ func (t *Trie[V]) UnmarshalCBOR(data []byte) error {
 // Insert adds or updates a key-value pair in the HAMT.
 // Returns an error if the operation fails.
 func (t *Trie[V]) Insert(key []byte, value V) error {
+	if t == nil {
+		t = NewTrie[V]()
+	}
 	if t.root == nil {
 		t.root = &Node[V]{}
 	}
@@ -295,7 +305,7 @@ func (n *Node[V]) insertFallback(key []byte, value V) (bool, error) {
 // Get retrieves the value associated with a key from the HAMT.
 // Returns the value and a boolean indicating whether the key was found.
 func (t *Trie[V]) Get(key []byte) (V, bool) {
-	if t.root == nil {
+	if t == nil || t.root == nil {
 		var nilValue V
 		return nilValue, false
 	}
