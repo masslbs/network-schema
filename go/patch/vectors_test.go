@@ -11,6 +11,7 @@ import (
 	"math"
 	"math/big"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -57,6 +58,8 @@ type vectorEntryError struct {
 }
 
 var kcNonce uint64 = 23
+
+var biggestObjectID = objects.ObjectID(math.MaxUint64)
 
 // This vector exercises the mutations of the shop object.
 // Mutations of objects in the shop (listing, order, etc) are tested separately.
@@ -315,6 +318,19 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(666)},
 		},
+		{
+			Name: "biggest item ID",
+			Op:   AddOp,
+			Path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(math.MaxUint64)},
+			Value: mustEncode(t, objects.Listing{
+				ID:    biggestObjectID,
+				Price: *big.NewInt(1234567890),
+				Metadata: objects.ListingMetadata{
+					Title:       "biggest itemID",
+					Description: strconv.FormatUint(math.MaxUint64, 10),
+				},
+			}),
+		},
 		// Tags
 		{
 			Name:  "add-tag",
@@ -364,6 +380,18 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64 - 2)},
 		},
+		{
+			Name: "biggest order ID",
+			Op:   AddOp,
+			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64)},
+			Value: mustEncode(t, objects.Order{
+				ID:    biggestObjectID,
+				State: objects.OrderStateOpen,
+				Items: []objects.OrderedItem{
+					{ListingID: biggestObjectID, Quantity: 789},
+				},
+			}),
+		},
 		// inventory
 		{
 			Name:  "add-inventory",
@@ -387,6 +415,12 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Name: "remove-inventory",
 			Op:   RemoveOp,
 			Path: Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(42)},
+		},
+		{
+			Name:  "biggest item ID",
+			Op:    AddOp,
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(math.MaxUint64)},
+			Value: mustEncode(t, uint64(100)),
 		},
 	}
 
