@@ -129,6 +129,7 @@ Order = {
     ? ChosenCurrency: ChainAddress,
     ? PaymentDetails: PaymentDetails,
     ? TxDetails: OrderPaid
+    ? Errors: [+ text]
 }
 
 OrderedItem = {
@@ -144,7 +145,8 @@ OrderState = &(
     Committed: 3, ; items frozen
     PaymentChosen: 4, ; currency and payee chosen
     Unpaid: 5, ; details for payment created
-    Paid: 6 
+    Paid: 6, 
+    Errored: 7,
 )
 
 AddressDetails = {
