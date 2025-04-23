@@ -1992,6 +1992,15 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 		// replace ops
 		// ===========
 		{
+			name:  "replace items with empty array",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"Items"}},
+			value: []objects.OrderedItem{},
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, 0, len(o.Items))
+			},
+		},
+		{
 			name: "replace payee",
 			op:   ReplaceOp,
 			path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"ChosenPayee"}},
