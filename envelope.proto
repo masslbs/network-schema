@@ -56,7 +56,7 @@ message Envelope {
     // shop requests
     GetBlobUploadURLRequest get_blob_upload_url_request = 9;
 
-    // authentification messages
+    // authentication messages
     AuthenticateRequest auth_request = 10;
     ChallengeSolvedRequest challenge_solution_request = 11;
   }

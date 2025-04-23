@@ -9,6 +9,11 @@ package market.mass;
 message Error {
   ErrorCodes code = 1;
   string message = 2;
+  // optional, in case of not_found or out_of_stock
+  AdditionalInfo additional_info = 3;
+  message AdditionalInfo {
+    uint64 object_id = 1;
+  }
 }
 
 enum ErrorCodes {
