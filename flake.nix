@@ -142,6 +142,7 @@
         errcheck
         godef
         clang
+        typos-lsp
         cddl # can be used to generate json from cddl files
         cbor-diag
         protoc-gen-go

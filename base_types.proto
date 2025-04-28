@@ -7,10 +7,9 @@ syntax = "proto3";
 package market.mass;
 
 message RequestId {
-  // sender chooses a unique number per request that must not
+  // Sender chooses a unique number per request that must not
   // conflict with requests the other party sends.
-  // one suggestion would be each party keeps a counter per sessions.
-  // responses use the negative request number.
+  // One suggestion would be each party keeps a counter per session.
   sint64 raw = 1;
 }
 

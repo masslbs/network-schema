@@ -9,7 +9,7 @@ package market.mass;
 message Error {
   ErrorCodes code = 1;
   string message = 2;
-  // optional, in case of not_found or out_of_stock
+  // (optional) present in case of not_found or out_of_stock
   AdditionalInfo additional_info = 3;
   message AdditionalInfo {
     uint64 object_id = 1;
@@ -27,7 +27,7 @@ enum ErrorCodes {
   ERROR_CODES_UNLINKED_KEYCARD = 7;
   ERROR_CODES_MINIMUM_VERSION_NOT_REACHED = 8;
   ERROR_CODES_OUT_OF_STOCK = 9;
-  // use to signal randmom/simulated errors
+  // used to signal random, simulated errors
   ERROR_CODES_SIMULATED = 10;
   // used to cleanly stop sending events from the relay to the client
   ERROR_CODES_CLOSE_SUBSCRIPTION = 11;
