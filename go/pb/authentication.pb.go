@@ -28,7 +28,7 @@ const (
 )
 
 // Initiates the challenge/response protocol.
-// reponse via GenericResponse
+// response via GenericResponse
 // Returns an error if the public key is not an enrolled KeyCard.
 // or a challenge to be signed by the KeyCard.
 type AuthenticateRequest struct {
@@ -76,7 +76,7 @@ func (x *AuthenticateRequest) GetPublicKey() *PublicKey {
 }
 
 // Completes authentication by supplying the signature over the challenge.
-// Responded with GnericResponse. // No error means the user is authenticated.
+// Responded with GenericResponse. // No error means the user is authenticated.
 type ChallengeSolvedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Signature     *Signature             `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`

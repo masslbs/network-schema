@@ -40,7 +40,7 @@ const (
 	ErrorCodes_UNLINKED_KEYCARD             ErrorCodes = 7
 	ErrorCodes_MINIMUM_VERSION_NOT_REACHED  ErrorCodes = 8
 	ErrorCodes_OUT_OF_STOCK                 ErrorCodes = 9
-	// use to signal randmom/simulated errors
+	// use to signal random, simulated errors
 	ErrorCodes_SIMULATED ErrorCodes = 10
 	// used to cleanly stop sending events from the relay to the client
 	ErrorCodes_CLOSE_SUBSCRIPTION ErrorCodes = 11
@@ -109,7 +109,7 @@ type Error struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Code    ErrorCodes             `protobuf:"varint,1,opt,name=code,proto3,enum=market.mass.ErrorCodes" json:"code,omitempty"`
 	Message string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// optional, in case of not_found or out_of_stock
+	// (optional) present in case of not_found or out_of_stock
 	AdditionalInfo *Error_AdditionalInfo `protobuf:"bytes,3,opt,name=additional_info,json=additionalInfo,proto3" json:"additional_info,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache

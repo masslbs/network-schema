@@ -38,7 +38,7 @@ const (
 	// accounts refer to keycards enrollments and customer accounts
 	ObjectType_OBJECT_TYPE_ACCOUNT  ObjectType = 4
 	ObjectType_OBJECT_TYPE_MANIFEST ObjectType = 5
-	// inventory is seperated since you must first authenticate to get the events
+	// inventory is separated since you must first authenticate to get the events
 	ObjectType_OBJECT_TYPE_INVENTORY ObjectType = 6
 )
 
@@ -93,7 +93,7 @@ func (ObjectType) EnumDescriptor() ([]byte, []int) {
 
 // Used by the client to subscribe to a subset of event from the store
 //
-// on success reponds with a subscription_id in the payload of GenericResponse
+// on success responds with a subscription_id in the payload of GenericResponse
 type SubscriptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The relay will send events from the shop log starting from this
@@ -104,7 +104,7 @@ type SubscriptionRequest struct {
 	// is not specified then the relay will return all the events for
 	// the shop given the currently level of authentication.
 	ShopId *Uint256 `protobuf:"bytes,2,opt,name=shop_id,json=shopId,proto3" json:"shop_id,omitempty"`
-	// Filter can be applyed to return only a subset of events
+	// Filter can be applied to return only a subset of events
 	Filters       []*SubscriptionRequest_Filter `protobuf:"bytes,3,rep,name=filters,proto3" json:"filters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

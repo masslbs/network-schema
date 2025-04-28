@@ -13,7 +13,7 @@
 //
 // Furthermore, we expect only one message per write/binary frame.
 // This means no buffering of multiple messages into a single write.
-// The protocol offers repeated fields where approriate for higher throughput.
+// The protocol offers repeated fields where appropriate for higher throughput.
 // A suggested transport is WebSocket over HTTPS but the protocol is
 // agnostic, as long as it can handle binary data and keeps the framing intact.
 // This design, specifically the push from the relay to client, assumes
@@ -29,7 +29,7 @@
 // As of this version, the protocol is grouped into 4 areas:
 // 1) the transport (this file)
 // 2) authentication for establishing access rights
-// 3) shop specific requets
+// 3) shop specific request
 // 4) shop events
 //
 

@@ -38,7 +38,7 @@ func TestGenerateVectorsUserFlows(t *testing.T) {
 	}
 }
 
-// A simple user story: user browses shop, adds item to cart, checks out
+// A simple user story: user browses shop, adds item to order, checks out
 func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 	// Setup the empty shop
 	shop := objects.NewShop(42)
@@ -289,7 +289,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 	kp.TestSignPatchSet(t, &vectors.PatchSet)
 }
 
-// A simple user story: user browses shop, adds item to cart, checks out
+// A simple user story: user browses shop, adds item to order, checks out
 func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 	// Setup the empty shop
 	shop := objects.NewShop(42)
