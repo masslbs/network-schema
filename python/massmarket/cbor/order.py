@@ -30,8 +30,8 @@ class OrderedItem:
 
     def __post_init__(self):
         if self.listing_id <= 0:
-            raise ValueError("ListingID must be greater than 0")
-        if self.quantity <= 0:
+            raise ValueError("ListingID must be greater-or-equal to 0")
+        if self.quantity < 0:
             raise ValueError("Quantity must be greater than 0")
 
     @classmethod
