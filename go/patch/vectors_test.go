@@ -209,6 +209,19 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
 				assert.True(t, ok)
 				assert.Equal(t, testAcc1, acc)
+				assert.Equal(t, 3, len(acc.KeyCards))
+			},
+		},
+		{
+			Name:  "append-keycard",
+			Op:    AppendOp,
+			Path:  Path{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr, Fields: []any{"KeyCards"}},
+			Value: mustEncode(t, testPubKey(5)),
+			Check: func(t *testing.T, state objects.Shop) {
+				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
+				assert.True(t, ok)
+				assert.Equal(t, 4, len(acc.KeyCards))
+				assert.Equal(t, testPubKey(5), acc.KeyCards[3])
 			},
 		},
 		{
@@ -218,7 +231,9 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Check: func(t *testing.T, state objects.Shop) {
 				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
 				assert.True(t, ok)
-				assert.Equal(t, 2, len(acc.KeyCards))
+				assert.Equal(t, 3, len(acc.KeyCards))
+				assert.Equal(t, testPubKey(1), acc.KeyCards[0])
+				assert.Equal(t, testPubKey(3), acc.KeyCards[1])
 			},
 		},
 		{
@@ -231,17 +246,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 				acc, ok := state.Accounts.Get(guestAccAddr.Address[:])
 				assert.True(t, ok)
 				assert.Equal(t, testAcc2, acc)
-			},
-		},
-		{
-			Name:  "append-keycard",
-			Op:    AppendOp,
-			Path:  Path{Type: ObjectTypeAccount, AccountAddr: &testAcc1Addr, Fields: []any{"KeyCards"}},
-			Value: mustEncode(t, testPubKey(5)),
-			Check: func(t *testing.T, state objects.Shop) {
-				acc, ok := state.Accounts.Get(testAcc1Addr.Address[:])
-				assert.True(t, ok)
-				assert.Equal(t, 3, len(acc.KeyCards))
+				assert.Equal(t, 2, state.Accounts.Size())
 			},
 		},
 		// listing
