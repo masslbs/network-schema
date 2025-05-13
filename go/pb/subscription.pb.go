@@ -91,7 +91,7 @@ func (ObjectType) EnumDescriptor() ([]byte, []int) {
 	return file_subscription_proto_rawDescGZIP(), []int{0}
 }
 
-// Used by the client to subscribe to a subset of event from the store
+// Used by the client to subscribe to a subset of event from the shop
 //
 // on success responds with a subscription_id in the payload of GenericResponse
 type SubscriptionRequest struct {
@@ -269,7 +269,7 @@ type SubscriptionRequest_Filter struct {
 	// will return a  stream of events
 	// that modify that object type. For example subscribing to LISTING
 	// will return a stream of all the events
-	// that modify listings in the store.
+	// that modify listings in the shop.
 	ObjectType ObjectType `protobuf:"varint,3,opt,name=object_type,json=objectType,proto3,enum=market.mass.ObjectType" json:"object_type,omitempty"`
 	// Optional subscribe to only events that modify a single item.
 	// We assume object_id is only unique for a given object_type, so

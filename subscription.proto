@@ -22,7 +22,7 @@ enum ObjectType {
   OBJECT_TYPE_INVENTORY = 6;
 }
 
-// Used by the client to subscribe to a subset of event from the store
+// Used by the client to subscribe to a subset of event from the shop
 //
 // on success responds with a subscription_id in the payload of GenericResponse
 message SubscriptionRequest {
@@ -41,7 +41,7 @@ message SubscriptionRequest {
     // will return a  stream of events
     // that modify that object type. For example subscribing to LISTING
     // will return a stream of all the events
-    // that modify listings in the store.
+    // that modify listings in the shop.
     ObjectType object_type = 3;
     // Optional subscribe to only events that modify a single item.
     // We assume object_id is only unique for a given object_type, so
