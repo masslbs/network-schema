@@ -14,7 +14,7 @@ Shop = {
 
 ; HAMT-like map types
 
-Accounts = { * EthereumAddress => Account }
+AccountsClerk = [ * EthereumAddress ]
 Listings = { * uint => Listing }
 Tags = { * text => Tag }
 Orders = { * uint => Order }
@@ -120,12 +120,6 @@ ListingStockStatus = {
 Tag = {
     Name: text,
     ListingIDs: [* uint]
-}
-
-; Account
-Account = {
-    KeyCards: [* PublicKey],
-    Guest: bool
 }
 
 ; Order

@@ -26,30 +26,8 @@ enum ObjectType {
 //
 // on success responds with a subscription_id in the payload of GenericResponse
 message SubscriptionRequest {
-  // The relay will send events from the shop log starting from this
-  // sequence number.
-  // what happens if this no longer exists?
-  uint64 start_shop_seq_no = 1;
-  // The id of the shop that is being subscribed to. If an objectType
-  // is not specified then the relay will return all the events for
-  // the shop given the currently level of authentication.
-  Uint256 shop_id = 2;
-  // Filter can be applied to return only a subset of events
-  repeated Filter filters = 3;
-  message Filter {
-    // Which object that is being subscribed to. Subscribing to an object
-    // will return a  stream of events
-    // that modify that object type. For example subscribing to LISTING
-    // will return a stream of all the events
-    // that modify listings in the shop.
-    ObjectType object_type = 3;
-    // Optional subscribe to only events that modify a single item.
-    // We assume object_id is only unique for a given object_type, so
-    // object_type is required.
-    optional ObjectId object_id = 4;
-  }
-  // the cbor encoded capability token
-  bytes token = 5;
+  // the cbor encoded signedSubscriptionRequest
+  bytes cbor = 5;
 }
 
 // Used by the relay to push events to the client.
