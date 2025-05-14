@@ -2,12 +2,8 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-SignedPatchSet = {
-  Header: PatchSetHeader,
-  Signature: Signature,
-  Patches: [+ Patch]
-}
 
+PublicKey = bytes
 Hash = bytes .size 32
 Signature = bytes .size 65
 Uint256 = bytes .size (1..32)
@@ -15,12 +11,25 @@ Uint256 = bytes .size (1..32)
 PathSegment = text / unsigned / bytes
 OpString = "add" / "replace" / "remove" / "increment" / "decrement" / "append"
 
-PatchSetHeader = {
-  KeyCardNonce: uint,
-  ShopID: Uint256,
-  Timestamp: text,
-  RootHash: Hash
+Capability = {
+  can: [+ OpString],
+  path: [+ PathSegment]
 }
+
+CapTokenHeader = {
+  iss: PublicKey      ; the PublicKey of the issuer
+  ? exp: uint,        ; Expiration Time https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4
+  ? nfb: uint,        ; not before https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.5
+  aud: bytes,         ; audence https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
+  shopid: bytes,
+  caps: [+ Capability]
+  proofs: [+ CapToken];
+}
+
+CapToken = [
+ CapHeader,
+ signature
+]
 
 Patch = {
   Op: OpString,
@@ -28,3 +37,14 @@ Patch = {
   Value: any
 }
 
+PatchSetHeader = {
+  token: CapToken,
+  patchSetRootHash: bytes
+  nonce: uint,
+  iat: uint         ; Issued At https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
+}
+
+SignedPatchSet = [
+  header: PatchSetHeader,
+  signature : bstr
+]
