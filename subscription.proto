@@ -48,6 +48,8 @@ message SubscriptionRequest {
     // object_type is required.
     optional ObjectId object_id = 4;
   }
+  // the cbor encoded capability token
+  bytes token = 5;
 }
 
 // Used by the relay to push events to the client.
