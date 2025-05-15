@@ -601,6 +601,17 @@ func TestGenerateVectorsInventoryOkay(t *testing.T) {
 				assert.Equal(t, uint64(24), count)
 			},
 		},
+		{
+			Name:  "set-inventory-to-zero",
+			Op:    ReplaceOp,
+			Path:  Path{Type: ObjectTypeInventory, ObjectID: testhelper.Uint64ptr(testListing.ID)},
+			Value: mustEncode(t, uint64(0)),
+			Check: func(t *testing.T, i objects.Inventory) {
+				count, has := i.Get(testListing.ID, nil)
+				assert.True(t, has)
+				assert.Equal(t, uint64(0), count)
+			},
+		},
 	}
 
 	// Add variation-specific test cases if enabled
