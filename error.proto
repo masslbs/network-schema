@@ -27,7 +27,7 @@ enum ErrorCodes {
   ERROR_CODES_UNLINKED_KEYCARD = 7;
   ERROR_CODES_MINIMUM_VERSION_NOT_REACHED = 8;
   ERROR_CODES_OUT_OF_STOCK = 9;
-  // use to signal random, simulated errors
+  // used to signal random, simulated errors
   ERROR_CODES_SIMULATED = 10;
   // used to cleanly stop sending events from the relay to the client
   ERROR_CODES_CLOSE_SUBSCRIPTION = 11;

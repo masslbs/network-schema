@@ -9,7 +9,7 @@ package market.mass;
 import "base_types.proto";
 
 // Initiates the challenge/response protocol.
-// response via GenericResponse
+// Response via GenericResponse.
 // Returns an error if the public key is not an enrolled KeyCard.
 // or a challenge to be signed by the KeyCard.
 message AuthenticateRequest {
@@ -17,7 +17,7 @@ message AuthenticateRequest {
 }
 
 // Completes authentication by supplying the signature over the challenge.
-// Responded with GenericResponse. // No error means the user is authenticated.
+// Responded with GenericResponse. No error means the user is authenticated.
 message ChallengeSolvedRequest {
   Signature signature = 2;
 }
