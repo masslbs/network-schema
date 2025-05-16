@@ -10,14 +10,14 @@ import "base_types.proto";
 
 // Initiates the challenge/response protocol.
 // Response via GenericResponse.
-// Returns an error if the public key is not an enrolled KeyCard.
+// Returns an error if the public key is not an enrolled KeyCard,
 // or a challenge to be signed by the KeyCard.
 message AuthenticateRequest {
   PublicKey public_key = 2; // of their keyCard
 }
 
 // Completes authentication by supplying the signature over the challenge.
-// Responded with GenericResponse. No error means the user is authenticated.
+// Responded to with GenericResponse. No error means the user is authenticated.
 message ChallengeSolvedRequest {
   Signature signature = 2;
 }

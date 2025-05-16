@@ -9,7 +9,7 @@ package market.mass;
 message RequestId {
   // Sender chooses a unique number per request that must not
   // conflict with requests the other party sends.
-  // One suggestion would be each party keeps a counter per sessions.
+  // One suggestion would be each party keeps a counter per session.
   sint64 raw = 1;
 }
 
