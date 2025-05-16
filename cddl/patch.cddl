@@ -8,53 +8,78 @@ Signature = bytes .size 65
 Uint256 = bytes .size (1..32)
 
 PathSegment = text / unsigned / bytes
-OpString = "add" / "replace" / "remove" / "increment" / "decrement" / "append"
+Path = [+ PathSegment]
+PatchVerbs = ("add", "replace", "remove", "increment", "decrement", "append")
+AllVerbs = (PatchVerbs, "read")
 
-Patch = {
-  Op: OpString,
-  Path: [+ PathSegment],
-  Value: any
-}
-
-PatchSet = {
-  tokens: [+CapToken],
-  patchSetRootHash: bytes
-  nonce: uint,
-  iat: uint         ; Issued At https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
-}
-
+; https://www.iana.org/assignments/cose/cose.xhtml#header-parameters
 CoseHeader = {
-   alg: -47 /  -65537 ; sep256k1 or SIWE encoded
+   (alg: 1): -47 / -65537 ; sep256k1 or -65537 for future SIWE encoded
 }
 
-SignedPatchSet = #6.18([
-   header : bstr .cbor CoseHeader,
-   payload : bstr .cbor PatchSet,
+; COSE_Sign1 https://www.rfc-editor.org/rfc/rfc8152.html#section-4.2
+COSE_Sign1<Payload> = #6.18([
+   header : bytes .cbor CoseHeader,
+   unprotected: {},                         ; not used
+   payload : bytes .cbor Payload,
    Signature
 ])
 
+Patch = {
+  op: &(PatchVerbs),    ; choose one item from the "Ops" group
+  path: Path,
+  value: any
+}
+
+PatchSet = [+ Patch]
+
+PatchSetPayload = {
+  tokens: [+CapToken],
+  nonce: uint,
+  iat: uint         ; Issued At https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
+  patchSetRoot: Hash,
+}
+
+SignedPatchSet = COSE_Sign1<PatchSetPayload>
+
+PatchSetContainer = [
+    PatchSet
+    SignedPatchSet
+]
+
 Capability = {
-  can: [+ OpString],
-  path: [+ PathSegment]
+  can: [+ &(AllVerbs)],
+  path: Path
 }
 
 CapTokenPayload = {
+  ver: 1              ; The Capability Token Version Number
   iss: PublicKey      ; the PublicKey of the issuer
-  aud: bytes,         ; audence https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
+  aud: PublicKey,     ; audence https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
   iat: uint           ; Issued At https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
   ? exp: uint,        ; Expiration Time https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4
   ? nfb: uint,        ; not before https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.5
   shopid: Uint256,
   att: [+ Capability] ; attenuation https://github.com/ucan-wg/ucan-ipld/?tab=readme-ov-file
-  prf: [* CapToken];   ; proof
+  prf: [* CapToken];  ; proof
 }
 
-CapToken = #6.18([
- header : bytes .cbor CoseHeader,
- payload : bytes .cbor CapTokenPayload,
- Signature
-])
+CapToken = COSE_Sign1<CapTokenPayload>
 
+SubscriptionReqest = {
+ ; The relay will send events from the shop log starting from this
+ ; sequence number.
+ start_shop_seq_no: uint,
+ ; paths being subscribed to
+ paths: [+ Path],
+ tokens: [+ CapToken]        ; The CapTokens need to have a "read" verb for all the above "paths"
+}
+
+SignedSubscriptionReqest = COSE_Sign1<SubscriptionReqest>
+
+;;
+;; Default Capabilities for Guests and Clerks
+;;
 GuestCaps = [{
   can: ["read"],
   path: ["listings"]
@@ -66,34 +91,23 @@ GuestCaps = [{
   path: ["tags"]
 }, {
   can: ["add"],
-  path: ["orders"]
+  path: ["orders", PublicKey]
+},
+{
+  can: ["read", "add", "replace"],
+  path: ["orders", PublicKey]    ; PublicKey of the keycard of the guest
 }]
 
 ClerkCaps = [{
-  can: ["read", "write"],
+  can: [AllVerbs],
   path: ["listings"]
 }, {
-  can: ["read", "write"],
+  can: [AllVerbs],
   path: ["manifest"]
 }, {
-  can: ["read", "write"],
+  can: [AllVerbs],
   path: ["tags"]
 },{
-  can: ["read", "write"],
+  can: [AllVerbs],
   path: ["orders"]
 }]
-
-SubscriptionReqest = {
- // The relay will send events from the shop log starting from this
- // sequence number.
- start_shop_seq_no: uint64,
- // paths being subscribed to
- paths = [+ [+ PathSegment]],
- tokens = [+ CapToken]
-}
-
-SignedSubscriptionReqest = #6.18([
-   header : bstr .cbor CoseHeader,
-   payload : bstr .cbor SubscriptionReqest,
-   Signature
-])
