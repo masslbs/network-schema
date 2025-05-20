@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
+// SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,42 +7,40 @@ syntax = "proto3";
 package market.mass;
 
 import "base_types.proto";
-import "transport.proto";
 
-// The types of objects that events effect
+// The types of objects that events affect
 enum ObjectType {
   OBJECT_TYPE_UNSPECIFIED = 0; // invalid
 
   OBJECT_TYPE_LISTING = 1;
   OBJECT_TYPE_TAG = 2;
   OBJECT_TYPE_ORDER = 3;
-  // accounts refer to keycards enrollments and customer accounts
+  // accounts refer to keycard enrollments and customer accounts
   OBJECT_TYPE_ACCOUNT = 4;
   OBJECT_TYPE_MANIFEST = 5;
-  // inventory is seperated since you must first authenticate to get the events
+  // inventory is separated since you must first authenticate to get the events
   OBJECT_TYPE_INVENTORY = 6;
 }
 
-// Used by the client to subscribe to a subset of event from the store
+// Used by the client to subscribe to a subset of events from the shop
 //
-// on success reponds with a subscription_id in the payload of GenericResponse
+// On success responds with a subscription_id in the payload of GenericResponse
 message SubscriptionRequest {
   // The relay will send events from the shop log starting from this
   // sequence number.
-  // what happens if this no longer exists?
   uint64 start_shop_seq_no = 1;
   // The id of the shop that is being subscribed to. If an objectType
   // is not specified then the relay will return all the events for
-  // the shop given the currently level of authentication.
+  // the shop given the current level of authentication.
   Uint256 shop_id = 2;
-  // Filter can be applyed to return only a subset of events
+  // Filter can be applied to return only a subset of events
   repeated Filter filters = 3;
   message Filter {
-    // Which object that is being subscribed to. Subscribing to an object
-    // will return a  stream of events
+    // Which object is being subscribed to. Subscribing to an object
+    // will return a stream of events
     // that modify that object type. For example subscribing to LISTING
     // will return a stream of all the events
-    // that modify listings in the store.
+    // that modify listings in the shop.
     ObjectType object_type = 3;
     // Optional subscribe to only events that modify a single item.
     // We assume object_id is only unique for a given object_type, so
@@ -52,20 +50,26 @@ message SubscriptionRequest {
 }
 
 // Used by the relay to push events to the client.
-// Will not sent more events until the client has acknowledged the last batch.
+// Will not send more events until the client has acknowledged the last batch.
 //
-// Client sends a GenericResponse without an error to acknowledge recepetion.
+// Client sends a GenericResponse without an error to acknowledge recption.
 // To close a subscription, respond with ERROR_CODES_CLOSE_SUBSCRIPTION
 message SubscriptionPushRequest {
   bytes subscription_id = 1;
-  repeated SequencedEvent events = 2;
-  message SequencedEvent {
-    SignedEvent event = 1;
-    uint64 seq_no = 2;
+  repeated SequencedPartialPatchSet sets = 2;
+  message SequencedPartialPatchSet {
+    uint64 shop_seq_no = 1; // sequence number of the patchSet in the shop log
+    uint32 patch_leaf_index = 2; // index of the patch in the patch set
+
+    bytes header = 3;    // cbor patchSet header data (see go/cbor/patches.go)
+    bytes signature = 4; // eip191 signature of the above
+
+    repeated bytes patches = 5; // array of cbor patch data
+    repeated bytes proofs = 6; // array of cbor proof data [index, tree_size, [proof1, proof2, ...]]
   }
 }
 
-// Used by a client to stop sending more events for an subscription
+// Used by a client to stop a relay from sending more events for a given subscription
 message SubscriptionCancelRequest {
   bytes subscription_id = 1;
 }

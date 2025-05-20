@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Mass Labs
+# SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "massmarket_hash_event"
+name = "massmarket"
 dynamic = [ "version" ]
 authors = [
     {name = "Henry Bubert", email = "henry@mass.market"},
@@ -48,7 +48,7 @@ xfail_strict = true
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["massmarket_hash_event"]
+include = ["massmarket"]
 namespaces = false
 
 [tool.setuptools_scm]

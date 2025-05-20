@@ -1,0 +1,184 @@
+; SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
+;
+; SPDX-License-Identifier: MIT
+
+Shop = {
+    SchemaVersion: uint,
+    Manifest: Manifest,
+    Accounts: Hamt<Account>,
+    Listings: Hamt<Listing>,
+    Tags: Hamt<Tag>,
+    Orders: Hamt<Order>,
+    Inventory: Hamt<uint>
+}
+
+; Base types
+SignatureSize = 65
+PublicKeySize = 33
+HashSize = 32
+EthereumAddressSize = 20
+
+Signature = bytes .size SignatureSize
+PublicKey = bytes .size PublicKeySize
+Hash = bytes .size HashSize
+EthereumAddress = bytes .size EthereumAddressSize
+Uint256 = bytes .size (1..32) ; bigInt, using big-endian encoding
+
+Uint32 = uint .size 4
+
+ChainAddress = {
+    ChainID: uint,
+    Address: EthereumAddress
+}
+
+Payee = {
+    Address: ChainAddress,
+    CallAsContract: bool
+}
+
+PayeeMetadata = {
+    CallAsContract: bool
+}
+
+; Manifest
+Manifest = {
+    ShopID: Uint256,
+    Payees: { * uint => { * EthereumAddress => PayeeMetadata } },
+    AcceptedCurrencies: { * uint => { * EthereumAddress => null } },
+    PricingCurrency: ChainAddress,
+    ? ShippingRegions: { * text => ShippingRegion }
+}
+
+ShippingRegion = {
+    Country: text,
+    PostalCode: text,
+    City: text,
+    ? PriceModifiers: { * text => PriceModifier }
+}
+
+PriceModifier = {
+    ? ModificationPrecents: Uint256,
+    ? ModificationAbsolute: ModificationAbsolute
+}
+
+ModificationAbsolute = {
+    Amount: Uint256,
+    Plus: bool
+}
+
+; Listing
+Listing = {
+    ID: uint,
+    Price: Uint256,
+    Metadata: ListingMetadata,
+    ViewState: ListingViewState,
+    ? Options: { * text => ListingOption },
+    ? StockStatuses: [* ListingStockStatus]
+}
+
+ListingMetadata = {
+    Title: text,
+    Description: text,
+    ? Images: [* text]
+}
+
+ListingOption = {
+    title: text,
+    ? variations: { * text => ListingVariation }
+}
+
+ListingVariation = {
+    VariationInfo: ListingMetadata,
+    ? PriceModifier: PriceModifier,
+    ? SKU: text
+}
+
+ListingViewState = &(
+    Unspecified: 0,
+    Published: 1,
+    Deleted: 2
+)
+
+ListingStockStatus = {
+    VariationIDs: [* text],
+    ? InStock: bool,
+    ? ExpectedInStockBy: text
+}
+
+; Tag
+Tag = {
+    Name: text,
+    ListingIDs: [* uint]
+}
+
+; Account
+Account = {
+    KeyCards: [* PublicKey],
+    Guest: bool
+}
+
+; Order
+Order = {
+    ID: uint,
+    Items: [* OrderedItem],
+    State: OrderState,
+    ? InvoiceAddress: AddressDetails,
+    ? ShippingAddress: AddressDetails,
+    ? CanceledAt: text,
+    ? ChosenPayee: Payee,
+    ? ChosenCurrency: ChainAddress,
+    ? PaymentDetails: PaymentDetails,
+    ? TxDetails: OrderPaid
+}
+
+OrderedItem = {
+    ListingID: uint,
+    ? VariationIDs: [+ text],
+    Quantity: Uint32
+}
+
+OrderState = &(
+    Unspecified: 0, ; invalid state
+    Open: 1, ; open to being changed
+    Canceled: 2, ; canceled
+    Committed: 3, ; items frozen
+    PaymentChosen: 4, ; currency and payee chosen
+    Unpaid: 5, ; details for payment created
+    Paid: 6 
+)
+
+AddressDetails = {
+    Name: text,
+    Address1: text,
+    ? Address2: text,
+    City: text,
+    PostalCode: text,
+    Country: text,
+    EmailAddress: text,
+    ? PhoneNumber: text
+}
+
+PaymentDetails = {
+    PaymentID: Hash,
+    Total: Uint256,
+    ListingHashes: [+ bytes],
+    TTL: uint,
+    ShopSignature: Signature
+}
+
+OrderPaid = {
+    ? TxHash: Hash,
+    BlockHash: Hash
+}
+
+;; TODO: validation of Hamt currently breaks on the recursion
+Hamt<T> = [
+    bitmap: uint,
+    entries: [* HamtEntry<T>]
+]
+
+HamtEntry<T> = [
+    key: uint,
+    value: T,
+    node: Hamt<T> // null
+]

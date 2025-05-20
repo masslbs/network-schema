@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
+// SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,19 +6,11 @@ syntax = "proto3";
 
 package market.mass;
 
-import "google/protobuf/timestamp.proto";
-
 message RequestId {
-  // sender chooses a unique number per request that must not
+  // Sender chooses a unique number per request that must not
   // conflict with requests the other party sends.
-  // one suggestion would be each party keeps a counter per sessions.
-  // responses use the negative request number.
+  // One suggestion would be each party keeps a counter per session.
   sint64 raw = 1;
-}
-
-message ObjectId {
-  // at least 8 bytes. used to references updates to their objects.
-  bytes raw = 1;
 }
 
 message Signature {
@@ -29,168 +21,10 @@ message PublicKey {
   bytes raw = 1;
 }
 
-message Hash {
-  bytes raw = 1;
-}
-
-message EthereumAddress {
-  bytes raw = 1;
-}
-
-message IPFSAddress {
-  string cid = 1;
-}
-
 message Uint256 {
   bytes raw = 1;
 }
 
-message ShopCurrency {
-  uint64 chain_id = 1;
-  // Contract address for an ERC20 token.
-  // 20 zero bytes for native chain currency, like ETH.
-  EthereumAddress address = 2;
-}
-
-message Payee {
-  // user handle, like "escrow" or "direct", used during checkout
-  string name = 1;
-  EthereumAddress address = 2;
-  uint64 chain_id = 3;
-
-  // controls how the payment is reaches the payee.
-  // true:  forwarded via pay() method
-  // false: normal transfer
-  // See also:
-  // https://github.com/masslbs/contracts/
-  // commit: 377aba24796e029945696350db581ec1f65da657
-  // file: src/IPayments.sol#L90-L95.
-  bool call_as_contract = 4;
-}
-
-message ShippingRegion {
-  // user-focused identifier for the region
-  string name = 1;
-
-  /* the location
-
-     the region for an order is picked by successivly matching fields.
-     empty-string values match everything / act as catch-all's.
-
-     therefore this can be used to say "only on this city" for pickups.
-     Or, for an international region, all three fields should be empty.
-
-     TODO: need a country map and dropdowns for matching to work
-  */
-  string country = 2;
-  string postal_code = 3;
-  string city = 4;
-
-  repeated OrderPriceModifier order_price_modifiers = 5;
-}
-
-message OrderPriceModifier {
-  // the title of the option (like VAT Tax, Premium Shipping.)
-  string title = 1;
-
-  oneof modification {
-    // this is multiplied with the sub-total before being divided by 100.
-    Uint256 percentage = 2;
-    PlusMinus absolute = 3;
-  }
-}
-
-// + or - some value
-message PlusMinus {
-  bool plus_sign = 1; // true for + / false for -
-  Uint256 diff = 2;
-}
-
-// listing related messages
-// ========================
-
-message ListingMetadata {
-  string title = 1;
-  string description = 2;
-  repeated string images = 3;
-}
-
-message ListingOption {
-  ObjectId id = 1;
-  // the title of the option (like Color, Size, etc.)
-  string title = 2;
-  repeated ListingVariation variations = 3;
-}
-
-message ListingVariation {
-  ObjectId id = 1; // needs to be unique per listing
-  // the metadata of the variation: for example if the option is Color
-  // then the title might be "Red"
-  ListingMetadata variation_info = 2;
-  // this alters the price
-  PlusMinus diff = 3;
-}
-
-// Wether a listing sould be published or not
-enum ListingViewState {
-  LISTING_VIEW_STATE_UNSPECIFIED = 0;
-  LISTING_VIEW_STATE_PUBLISHED = 1;
-  LISTING_VIEW_STATE_DELETED = 2;
-}
-
-// used to signal general availability, not the concrete numbers
-// See ChangeStock for that
-message ListingStockStatus {
-  // each variation must belong to a different option
-  repeated ObjectId variation_ids = 1;
-
-  oneof status {
-    bool in_stock = 2;
-    google.protobuf.Timestamp expected_in_stock_by = 3;
-  }
-}
-
-// order related messages
-message AddressDetails {
-  string name = 1;
-  string address1 = 2;
-  string address2 = 3;
-  string city = 4;
-  string postal_code = 5;
-  string country = 6;
-  string email_address = 7;
-  optional string phone_number = 8;
-}
-
-// Created by the relay after an order has been commited.
-// It signals that an order is needs to be payed.
-message PaymentDetails {
-  // for verification. Compare against getPaymentId(PaymentReq)
-  Hash payment_id = 1;
-
-  // start of PaymentRequest data
-  // (rest can be determained by other order fields)
-  Uint256 total = 2;
-  // content-addressable hashes of the listing(s) being purchased
-  repeated IPFSAddress listing_hashes = 3;
-  // PaymentRequest fields that are not obvious to the caller
-  string ttl = 4;
-  Signature shop_signature = 5;
-  // end of PaymentRequest data
-
-  ShippingRegion shipping_region = 6;
-}
-
-// generate by the relay to notify that the oder has been paid for
-message OrderTransaction {
-  // might not have a tx hash in case of an internal transaction
-  Hash tx_hash = 1;
-  Hash block_hash = 2;
-}
-
-// OrderedItems is used to add items to or remove items from an order.
-message OrderedItem {
-  ObjectId listing_id = 1;
-  repeated ObjectId variation_ids = 2;
-  uint32 quantity = 3;
+message ObjectId {
+  bytes raw = 1;
 }

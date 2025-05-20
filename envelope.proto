@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Mass Labs
+// SPDX-FileCopyrightText: 2023 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@
 //
 // Furthermore, we expect only one message per write/binary frame.
 // This means no buffering of multiple messages into a single write.
-// The protocol offers repeated fields where approriate for higher throughput.
+// The protocol offers repeated fields where appropriate for higher throughput.
 // A suggested transport is WebSocket over HTTPS but the protocol is
 // agnostic, as long as it can handle binary data and keeps the framing intact.
 // This design, specifically the push from the relay to client, assumes
@@ -42,7 +42,7 @@ message Envelope {
     GenericResponse response = 2;
 
     // write operation
-    EventWriteRequest event_write_request = 3;
+    PatchSetWriteRequest patch_set_write_request = 3;
 
     // subscriptions
     SubscriptionRequest subscription_request = 4;
@@ -56,7 +56,7 @@ message Envelope {
     // shop requests
     GetBlobUploadURLRequest get_blob_upload_url_request = 9;
 
-    // authentification messages
+    // authentication messages
     AuthenticateRequest auth_request = 10;
     ChallengeSolvedRequest challenge_solution_request = 11;
   }

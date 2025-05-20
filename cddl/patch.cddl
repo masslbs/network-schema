@@ -1,0 +1,30 @@
+; SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
+;
+; SPDX-License-Identifier: MIT
+
+SignedPatchSet = {
+  Header: PatchSetHeader,
+  Signature: Signature,
+  Patches: [+ Patch]
+}
+
+Hash = bytes .size 32
+Signature = bytes .size 65
+Uint256 = bytes .size (1..32)
+
+PathSegment = text / unsigned / bytes
+OpString = "add" / "replace" / "remove" / "increment" / "decrement" / "append"
+
+PatchSetHeader = {
+  KeyCardNonce: uint,
+  ShopID: Uint256,
+  Timestamp: text,
+  RootHash: Hash
+}
+
+Patch = {
+  Op: OpString,
+  Path: [+ PathSegment],
+  Value: any
+}
+

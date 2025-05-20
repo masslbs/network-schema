@@ -1,8 +1,23 @@
 <!--
-SPDX-FileCopyrightText: 2024 Mass Labs
+SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 
 SPDX-License-Identifier: MIT
 -->
+
+# V4 (2024-12-12) DRAFT
+
+- Deprecates V3
+- Implement shop event types in CBOR
+  - This enables canonical encoding of events
+  - Which also paves the way for merkle roots of a shop
+  - See `cddl/shop_logical.cddl`
+- Required checks via go-playground/validator
+- patch vectors for testing updates of a shop
+- Introduces Merkle Mountain Range (MMR) for proofs of inclusion of events
+  - See https://datatracker.ietf.org/doc/html/draft-bryce-cose-merkle-mountain-range-proofs
+- Introduces a Hashed Array Mapped Trie (HAMT) for shop object storage
+- Introduces a new patch format for shop updates
+   - See `cddl/patch.cddl`
 
 # V3 (2024-11-12) DevCon '24 relase, shipping regions and currency management
 

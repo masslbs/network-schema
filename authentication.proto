@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Mass Labs
+// SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,15 +9,15 @@ package market.mass;
 import "base_types.proto";
 
 // Initiates the challenge/response protocol.
-// reponse via GenericResponse
-// Returns an error if the public key is not an enrolled KeyCard.
+// Response via GenericResponse.
+// Returns an error if the public key is not an enrolled KeyCard,
 // or a challenge to be signed by the KeyCard.
 message AuthenticateRequest {
   PublicKey public_key = 2; // of their keyCard
 }
 
 // Completes authentication by supplying the signature over the challenge.
-// Responded with GnericResponse. // No error means the user is authenticated.
+// Responded to with GenericResponse. No error means the user is authenticated.
 message ChallengeSolvedRequest {
   Signature signature = 2;
 }

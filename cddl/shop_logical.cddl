@@ -1,0 +1,190 @@
+; SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
+;
+; SPDX-License-Identifier: MIT
+
+Shop = {
+    SchemaVersion: uint,
+    Manifest: Manifest,
+    Accounts: Accounts,
+    Listings: Listings,
+    Tags: Tags,
+    Orders: Orders,
+    Inventory: Inventory
+}
+
+; HAMT-like map types
+
+Accounts = { * EthereumAddress => Account }
+Listings = { * uint => Listing }
+Tags = { * text => Tag }
+Orders = { * uint => Order }
+Inventory = { * uint => uint }
+
+; Base types
+SignatureSize = 65
+PublicKeySize = 33
+HashSize = 32
+EthereumAddressSize = 20
+
+Signature = bytes .size SignatureSize
+PublicKey = bytes .size PublicKeySize
+Hash = bytes .size HashSize
+EthereumAddress = bytes .size EthereumAddressSize
+Uint256 = bytes .size (1..32) ; bigInt, using big-endian encoding
+
+Uint32 = uint .size 4
+
+ChainAddress = {
+    ChainID: uint,
+    Address: EthereumAddress
+}
+
+Payee = {
+    Address: ChainAddress,
+    CallAsContract: bool
+}
+
+PayeeMetadata = {
+    CallAsContract: bool
+}
+
+; Manifest
+Manifest = {
+    ShopID: Uint256,
+    Payees: { * uint => { * EthereumAddress => PayeeMetadata } },
+    AcceptedCurrencies: { * uint => { * EthereumAddress => null } },
+    PricingCurrency: ChainAddress,
+    ? ShippingRegions: { * text => ShippingRegion }
+}
+
+ShippingRegion = {
+    Country: text,
+    PostalCode: text,
+    City: text,
+    ? PriceModifiers: { * text => PriceModifier }
+}
+
+PriceModifier = {
+    ? ModificationPrecents: Uint256,
+    ? ModificationAbsolute: ModificationAbsolute
+}
+
+ModificationAbsolute = {
+    Amount: Uint256,
+    Plus: bool
+}
+
+; Listing
+Listing = {
+    ID: uint,
+    Price: Uint256,
+    Metadata: ListingMetadata,
+    ViewState: ListingViewState,
+    ? Options: { * text => ListingOption },
+    ? StockStatuses: [* ListingStockStatus]
+}
+
+ListingMetadata = {
+    Title: text,
+    Description: text,
+    ? Images: [* text]
+}
+
+ListingOption = {
+    title: text,
+    ? variations: { * text => ListingVariation }
+}
+
+ListingVariation = {
+    VariationInfo: ListingMetadata,
+    ? PriceModifier: PriceModifier,
+    ? SKU: text
+}
+
+ListingViewState = &(
+    ; hidden
+    Unspecified: 0,
+    ; published
+    Published: 1,
+    ; soft-deleted
+    Deleted: 2
+)
+
+ListingStockStatus = {
+    VariationIDs: [* text],
+    ? InStock: bool,
+    ? ExpectedInStockBy: text
+}
+
+; Tag
+Tag = {
+    Name: text,
+    ListingIDs: [* uint]
+}
+
+; Account
+Account = {
+    KeyCards: [* PublicKey],
+    Guest: bool
+}
+
+; Order
+Order = {
+    ID: uint,
+    Items: [* OrderedItem],
+    State: OrderState,
+    ? InvoiceAddress: AddressDetails,
+    ? ShippingAddress: AddressDetails,
+    ? CanceledAt: text,
+    ? ChosenPayee: Payee,
+    ? ChosenCurrency: ChainAddress,
+    ? PaymentDetails: PaymentDetails,
+    ? TxDetails: OrderPaid
+}
+
+OrderedItem = {
+    ListingID: uint,
+    ? VariationIDs: [+ text],
+    Quantity: Uint32
+}
+
+OrderState = &(
+    ; invalid state
+    Unspecified: 0,
+    ; open to being changed
+    Open: 1,
+    ; canceled
+    Canceled: 2,
+    ; items frozen
+    Committed: 3,
+    ; currency and payee chosen
+    PaymentChosen: 4,
+    ; details for payment created
+    Unpaid: 5,
+    ; payment completed/received
+    Paid: 6
+)
+
+AddressDetails = {
+    Name: text,
+    Address1: text,
+    ? Address2: text,
+    City: text,
+    PostalCode: text,
+    Country: text,
+    EmailAddress: text,
+    ? PhoneNumber: text
+}
+
+PaymentDetails = {
+    PaymentID: Hash,
+    Total: Uint256,
+    ListingHashes: [+ Hash],
+    TTL: uint,
+    ShopSignature: Signature
+}
+
+OrderPaid = {
+    ? TxHash: Hash,
+    BlockHash: Hash
+}
