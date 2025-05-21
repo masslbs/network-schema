@@ -95,7 +95,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 		}
 
 		testVAT = objects.PriceModifier{
-			ModificationPrecents: new(objects.Uint256).SetUint64(19),
+			ModificationPercent: new(objects.Uint256).SetUint64(19),
 		}
 		testGermany = objects.ShippingRegion{
 			Country: "Germany",

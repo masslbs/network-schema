@@ -27,11 +27,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Get an URL to upload a blob to.
+// Get a URL to upload a blob to.
 // This exists for future-proofing the protocol
-// and reduce stress on the websocket connection.
+// and reducing stress on the WebSocket connection.
 // GenericResponse returns a single-use URL to upload a blob to.
-// The HTTP response will contain the blob's IPFS path.
+// The HTTP response from that URL will contain another URL where the blob can be downloaded from.
 type GetBlobUploadURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields

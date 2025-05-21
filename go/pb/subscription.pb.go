@@ -27,7 +27,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The types of objects that events effect
+// The types of objects that events affect
 type ObjectType int32
 
 const (
@@ -35,7 +35,7 @@ const (
 	ObjectType_OBJECT_TYPE_LISTING     ObjectType = 1
 	ObjectType_OBJECT_TYPE_TAG         ObjectType = 2
 	ObjectType_OBJECT_TYPE_ORDER       ObjectType = 3
-	// accounts refer to keycards enrollments and customer accounts
+	// accounts refer to keycard enrollments and customer accounts
 	ObjectType_OBJECT_TYPE_ACCOUNT  ObjectType = 4
 	ObjectType_OBJECT_TYPE_MANIFEST ObjectType = 5
 	// inventory is separated since you must first authenticate to get the events
@@ -91,18 +91,17 @@ func (ObjectType) EnumDescriptor() ([]byte, []int) {
 	return file_subscription_proto_rawDescGZIP(), []int{0}
 }
 
-// Used by the client to subscribe to a subset of event from the shop
+// Used by the client to subscribe to a subset of events from the shop
 //
-// on success responds with a subscription_id in the payload of GenericResponse
+// On success responds with a subscription_id in the payload of GenericResponse
 type SubscriptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The relay will send events from the shop log starting from this
 	// sequence number.
-	// what happens if this no longer exists?
 	StartShopSeqNo uint64 `protobuf:"varint,1,opt,name=start_shop_seq_no,json=startShopSeqNo,proto3" json:"start_shop_seq_no,omitempty"`
 	// The id of the shop that is being subscribed to. If an objectType
 	// is not specified then the relay will return all the events for
-	// the shop given the currently level of authentication.
+	// the shop given the current level of authentication.
 	ShopId *Uint256 `protobuf:"bytes,2,opt,name=shop_id,json=shopId,proto3" json:"shop_id,omitempty"`
 	// Filter can be applied to return only a subset of events
 	Filters       []*SubscriptionRequest_Filter `protobuf:"bytes,3,rep,name=filters,proto3" json:"filters,omitempty"`
@@ -162,9 +161,9 @@ func (x *SubscriptionRequest) GetFilters() []*SubscriptionRequest_Filter {
 }
 
 // Used by the relay to push events to the client.
-// Will not sent more events until the client has acknowledged the last batch.
+// Will not send more events until the client has acknowledged the last batch.
 //
-// Client sends a GenericResponse without an error to acknowledge recepetion.
+// Client sends a GenericResponse without an error to acknowledge recption.
 // To close a subscription, respond with ERROR_CODES_CLOSE_SUBSCRIPTION
 type SubscriptionPushRequest struct {
 	state          protoimpl.MessageState                              `protogen:"open.v1"`
@@ -218,7 +217,7 @@ func (x *SubscriptionPushRequest) GetSets() []*SubscriptionPushRequest_Sequenced
 	return nil
 }
 
-// Used by a client to stop sending more events for an subscription
+// Used by a client to stop a relay from sending more events for a given subscription
 type SubscriptionCancelRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SubscriptionId []byte                 `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
@@ -265,8 +264,8 @@ func (x *SubscriptionCancelRequest) GetSubscriptionId() []byte {
 
 type SubscriptionRequest_Filter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Which object that is being subscribed to. Subscribing to an object
-	// will return a  stream of events
+	// Which object is being subscribed to. Subscribing to an object
+	// will return a stream of events
 	// that modify that object type. For example subscribing to LISTING
 	// will return a stream of all the events
 	// that modify listings in the shop.

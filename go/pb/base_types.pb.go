@@ -29,10 +29,9 @@ const (
 
 type RequestId struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// sender chooses a unique number per request that must not
+	// Sender chooses a unique number per request that must not
 	// conflict with requests the other party sends.
-	// one suggestion would be each party keeps a counter per sessions.
-	// responses use the negative request number.
+	// One suggestion would be each party keeps a counter per session.
 	Raw           int64 `protobuf:"zigzag64,1,opt,name=raw,proto3" json:"raw,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -49,7 +49,7 @@ def test_cbor_manifest_cbor_keys():
                 city="",
                 price_modifiers={
                     "some_modifier": PriceModifier(
-                        modification_percents=Uint256(5),
+                        modification_percent=Uint256(5),
                     )
                 },
             )

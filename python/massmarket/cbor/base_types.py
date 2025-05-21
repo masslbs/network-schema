@@ -251,37 +251,37 @@ class ModificationAbsolute:
 
 @dataclass
 class PriceModifier:
-    modification_percents: Optional[Uint256] = None
+    modification_percent: Optional[Uint256] = None
     modification_absolute: Optional[ModificationAbsolute] = None
 
     def __post_init__(self):
-        if self.modification_percents is None and self.modification_absolute is None:
+        if self.modification_percent is None and self.modification_absolute is None:
             raise ValueError(
-                "One of modification_percents or modification_absolute must be set"
+                "One of modification_percent or modification_absolute must be set"
             )
         if (
-            self.modification_percents is not None
+            self.modification_percent is not None
             and self.modification_absolute is not None
         ):
             raise ValueError(
-                "Only one of modification_percents or modification_absolute can be set"
+                "Only one of modification_percent or modification_absolute can be set"
             )
 
     @classmethod
     def from_cbor_dict(cls, d: dict) -> "PriceModifier":
-        mp = d.get("ModificationPrecents")
+        mp = d.get("ModificationPercent")
         ma = d.get("ModificationAbsolute")
         if ma is not None and isinstance(ma, dict):
             ma = ModificationAbsolute.from_cbor_dict(ma)
         return cls(
-            modification_percents=mp,
+            modification_percent=mp,
             modification_absolute=ma,
         )
 
     def to_cbor_dict(self) -> dict:
         d = {}
-        if self.modification_percents is not None:
-            d["ModificationPrecents"] = self.modification_percents
+        if self.modification_percent is not None:
+            d["ModificationPercent"] = self.modification_percent
         if self.modification_absolute is not None:
             d["ModificationAbsolute"] = self.modification_absolute.to_cbor_dict()
         return d

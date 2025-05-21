@@ -40,7 +40,7 @@ const (
 	ErrorCodes_UNLINKED_KEYCARD             ErrorCodes = 7
 	ErrorCodes_MINIMUM_VERSION_NOT_REACHED  ErrorCodes = 8
 	ErrorCodes_OUT_OF_STOCK                 ErrorCodes = 9
-	// use to signal random, simulated errors
+	// used to signal random, simulated errors
 	ErrorCodes_SIMULATED ErrorCodes = 10
 	// used to cleanly stop sending events from the relay to the client
 	ErrorCodes_CLOSE_SUBSCRIPTION ErrorCodes = 11
