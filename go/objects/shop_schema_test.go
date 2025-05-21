@@ -199,7 +199,7 @@ func TestCreateAllTypes(t *testing.T) {
 				"default": {
 					PriceModifiers: map[string]PriceModifier{
 						"discount": {
-							ModificationPrecents: big.NewInt(95),
+							ModificationPercent: big.NewInt(95),
 						},
 						"static": {
 							ModificationAbsolute: &ModificationAbsolute{
@@ -236,7 +236,7 @@ func TestCreateAllTypes(t *testing.T) {
 								Description: "short desc",
 							},
 							PriceModifier: &PriceModifier{
-								ModificationPrecents: big.NewInt(95),
+								ModificationPercent: big.NewInt(95),
 							},
 						},
 						"G": {

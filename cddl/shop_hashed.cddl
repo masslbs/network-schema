@@ -57,7 +57,7 @@ ShippingRegion = {
 }
 
 PriceModifier = {
-    ? ModificationPrecents: Uint256,
+    ? ModificationPercent: Uint256,
     ? ModificationAbsolute: ModificationAbsolute
 }
 

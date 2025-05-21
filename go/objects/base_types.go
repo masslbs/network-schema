@@ -165,11 +165,11 @@ type ShippingRegion struct {
 type PriceModifier priceModifierHack
 
 // using pointers here to express optionality clearer
-// TODO: add validate:"either_or=ModificationPrecents,ModificationAbsolute"`
+// TODO: add validate:"either_or=ModificationPercent,ModificationAbsolute"`
 type priceModifierHack struct {
 	// one of the following should be set
 	// this is multiplied with the sub-total before being divided by 100.
-	ModificationPrecents *Uint256              `cbor:",omitempty"`
+	ModificationPercent  *Uint256              `cbor:",omitempty"`
 	ModificationAbsolute *ModificationAbsolute `cbor:",omitempty"`
 }
 
@@ -181,8 +181,8 @@ func (pm *PriceModifier) UnmarshalCBOR(data []byte) error {
 	if err != nil {
 		return err
 	}
-	if pm2.ModificationPrecents == nil && pm2.ModificationAbsolute == nil {
-		return fmt.Errorf("one of ModificationPrecents or ModificationAbsolute must be set")
+	if pm2.ModificationPercent == nil && pm2.ModificationAbsolute == nil {
+		return fmt.Errorf("one of ModificationPercent or ModificationAbsolute must be set")
 	}
 	*pm = PriceModifier(pm2)
 	return nil
