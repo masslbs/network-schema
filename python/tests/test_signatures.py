@@ -12,15 +12,17 @@ from massmarket import (
 )
 from massmarket.cbor.patch import SignedPatchSet
 
+from utils import list_vector_files, get_vector_file
+
 
 # check that we can recompute the signatures from the test vectors
 def test_verify_vector_file():
-    files = [f for f in os.listdir("../vectors") if f.endswith("Okay.cbor")]
+    files = list_vector_files("Okay.cbor")
     assert len(files) > 0, "no test vectors found"
     for file in files:
         if file in ["InventoryOkay.cbor", "ShopOkay.cbor"]:
             continue  # TODO: canonical fix needed
-        with open(f"../vectors/{file}", "rb") as f:
+        with open(get_vector_file(file), "rb") as f:
             print(file)
             vector = cbor2.load(f)
             check_vector(vector)

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-import os
 import json
 import base64
 
@@ -27,6 +26,8 @@ from massmarket.cbor.order import (
     OrderPaid,
     Order,
 )
+
+from utils import get_vector_file
 
 
 def test_ordered_item_roundtrip():
@@ -274,9 +275,7 @@ def test_order_state():
 
 # this does not test the patching logic, just the roundtrip from the _after_ state
 def test_order_from_vectors_file():
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "OrderOkay.json"
-    )
+    file_path = get_vector_file("OrderOkay.json")
     with open(file_path, "r") as f:
         vectors = json.load(f)
 

@@ -4,10 +4,8 @@
 
 import pytest
 from datetime import datetime, timezone
-import os
 import json
 import base64
-
 import cbor2
 
 from massmarket.cbor.base_types import (
@@ -28,6 +26,8 @@ from massmarket.cbor.listing import (
     ListingStockStatus,
     ListingViewState,
 )
+
+from utils import get_vector_file
 
 
 def test_listing_metadata_roundtrip():
@@ -63,7 +63,7 @@ def test_listing_variation_roundtrip():
     )
 
     encoded = cbor_encode(variation.to_cbor_dict())
-    decoded = ListingVariation.from_cbor_dict(variation.to_cbor_dict())
+    decoded = ListingVariation.from_cbor_dict(cbor2.loads(encoded))
 
     assert decoded.variation_info.title == variation.variation_info.title
     assert decoded.sku == variation.sku
@@ -95,7 +95,7 @@ def test_listing_option_roundtrip():
     )
 
     encoded = cbor_encode(option.to_cbor_dict())
-    decoded = ListingOption.from_cbor_dict(option.to_cbor_dict())
+    decoded = ListingOption.from_cbor_dict(cbor2.loads(encoded))
 
     assert decoded.title == option.title
     assert len(decoded.variations) == len(option.variations)
@@ -118,7 +118,7 @@ def test_listing_stock_status_roundtrip():
 
     for status in [status1, status2]:
         encoded = cbor_encode(status.to_cbor_dict())
-        decoded = ListingStockStatus.from_cbor_dict(status.to_cbor_dict())
+        decoded = ListingStockStatus.from_cbor_dict(cbor2.loads(encoded))
 
         assert decoded.variation_ids == status.variation_ids
         assert decoded.in_stock == status.in_stock
@@ -158,7 +158,7 @@ def test_full_listing_roundtrip():
     )
 
     encoded = cbor_encode(listing.to_cbor_dict())
-    decoded = Listing.from_cbor_dict(listing.to_cbor_dict())
+    decoded = Listing.from_cbor_dict(cbor2.loads(encoded))
 
     assert decoded.id == listing.id
     assert decoded.price == listing.price
@@ -199,9 +199,7 @@ def test_listing_view_state():
 
 # this does not test the patching logic, just the roundtrip from the _after_ state
 def test_listing_from_vectors_file():
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "ListingOkay.json"
-    )
+    file_path = get_vector_file("ListingOkay.json")
     with open(file_path, "r") as f:
         vectors = json.load(f)
 

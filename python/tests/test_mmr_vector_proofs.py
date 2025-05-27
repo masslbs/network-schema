@@ -11,6 +11,7 @@ from massmarket.mmr.algorithms import add_leaf_hash
 from massmarket.mmr.db import FlatDB
 
 from massmarket import verify_proof, RootMismatchError
+from utils import get_vector_file
 
 
 def hex(x: bytes) -> str:
@@ -18,7 +19,7 @@ def hex(x: bytes) -> str:
 
 
 def test_merkle_proofs():
-    vector_file = "../vectors/MerkleProofs.cbor"
+    vector_file = get_vector_file("MerkleProofs.cbor")
     """Verify merkle proofs from test vectors."""
     with open(vector_file, "rb") as f:
         vectors = cbor2.load(f)
