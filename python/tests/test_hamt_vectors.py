@@ -10,10 +10,11 @@ from pprint import pprint
 
 from massmarket.hamt import Trie
 from massmarket.cbor import Shop
+from utils import get_vector_file, list_vector_files
 
 
 def test_hamt_standalone_vectors():
-    vectors_path = "../vectors/hamt_test.cbor"
+    vectors_path = get_vector_file("hamt_test.cbor")
     with open(vectors_path, "rb") as f:
         test_vectors = cbor2.load(f)
 
@@ -35,10 +36,10 @@ def test_hamt_standalone_vectors():
 
 
 def test_hamt_shop_vectors():
-    files = [f for f in os.listdir("../vectors") if f.endswith("Okay.json")]
+    files = list_vector_files("Okay.json")
     assert len(files) > 0
     for file in files:
-        with open(os.path.join("../vectors", file)) as f:
+        with open(get_vector_file(file)) as f:
             vectors = json.load(f)
 
         # print(f"Testing {file}")

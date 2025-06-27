@@ -131,6 +131,71 @@
           ]
       );
 
+      # First define the test vectors derivation
+      test-vectors = pkgs.buildGoApplication {
+        name = "MassMarket Test Vectors";
+        modules = ./gomod2nix.toml;
+        buildInputs = [pkgs.go_1_23];
+        src = ./.;
+        buildPhase = ''
+          mkdir -p $out
+          cp constants.txt $out
+          cp VERSION $out
+          cp -r cddl $out/cddl
+          mkdir -p $out/pb
+          cp *.proto $out/pb
+          test -d go || {
+            echo "go/ directory not found, skipping vector generation"
+            exit 0
+          }
+          mkdir -p $out/vectors
+          export TEST_DATA_OUT=$out/vectors
+          pushd go/patch
+          go test
+          popd
+          cd python
+          ${mass-python}/bin/python generate_hamt_test_vectors.py
+        '';
+      };
+
+
+      # Python package derivation for massmarket
+      massmarket-python = pinnedPython.pkgs.buildPythonPackage rec {
+        pname = "massmarket";
+        version = "0.1.0";
+        format = "pyproject";
+        src = ./python;
+        
+        nativeBuildInputs = with pkgs; [ protobuf ] ++ (with pinnedPython.pkgs; [ setuptools setuptools-scm ]);
+        propagatedBuildInputs = with pinnedPython.pkgs; [ web3 protobuf cbor2 ];
+        
+        dontPatch = true;
+        SETUPTOOLS_SCM_PRETEND_VERSION = version;
+        
+        postPatch = ''
+          echo "# Mass Market Network Schema Python Package" > README.md
+          for proto in ../*.proto; do [ -f "$proto" ] && cp "$proto" .; done
+          mkdir -p massmarket
+          protoc --python_out=massmarket --pyi_out=massmarket *.proto
+          python tweak_imports.py
+          rm -f *.proto
+        '';
+        
+        pythonImportsCheck = [ "massmarket" ];
+        nativeCheckInputs = with pinnedPython.pkgs; [ pytest ];
+        checkPhase = ''
+          runHook preCheck
+          export MASS_TEST_VECTORS_DIR=${test-vectors}/vectors
+          pytest tests/
+          runHook postCheck
+        '';
+        
+        meta = with pkgs.lib; {
+          description = "Mass Market Network Schema Python Package";
+          license = licenses.mit;
+        };
+      };
+
       buildInputs = with pkgs; [
         go_1_23
         go-outline
@@ -176,30 +241,12 @@
           export TEST_DATA_OUT=$PWD/vectors
         '';
       };
-      packages.default = pkgs.buildGoApplication {
-        name = "MassMarket Test Vectors";
-        modules = ./gomod2nix.toml;
-        buildInputs = [pkgs.go_1_23];
-        src = ./.;
-        buildPhase = ''
-          mkdir -p $out
-          cp constants.txt $out
-          cp VERSION $out
-          cp -r cddl $out/cddl
-          mkdir -p $out/pb
-          cp *.proto $out/pb
-          test -d go || {
-            echo "go/ directory not found, skipping vector generation"
-            exit 0
-          }
-          mkdir -p $out/vectors
-          export TEST_DATA_OUT=$out/vectors
-          pushd go/patch
-          go test
-          popd
-          cd python
-          ${mass-python}/bin/python generate_hamt_test_vectors.py
-        '';
+
+      packages = {
+        default = test-vectors;
+        test-vectors = test-vectors;
+        massmarket-python = massmarket-python;
+        mass-python = mass-python;  # Expose the Python environment with its overrides
       };
     });
 }

@@ -15,12 +15,12 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
-      - name: Run tests
-        run: nix develop -c bash -c "make"
-      - name: Build
-        run: nix build
+      - name: Build test vectors
+        run: nix build '.#test-vectors'
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-result
+          name: result-test-vectors
           path: result/
+      - name: Build python package
+        run: rm result; nix build '.#massmarket-python'

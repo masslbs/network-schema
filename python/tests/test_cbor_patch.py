@@ -20,6 +20,7 @@ from massmarket.cbor.base_types import (
     EthereumAddress,
 )
 
+from utils import get_vector_file
 
 def test_patch_path_manifest():
     # Test manifest path (no ID needed)
@@ -127,14 +128,8 @@ def test_patch_path_from_cbor():
     assert path.fields == ["price"]
 
 
-import os
-import cbor2
-
-
 def test_patch_from_vectors_file():
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "ManifestOkay.cbor"
-    )
+    file_path = get_vector_file("ManifestOkay.cbor")
     with open(file_path, "rb") as f:
         vectors = cbor2.load(f)
 
@@ -156,9 +151,7 @@ def test_patch_from_vectors_file():
             assert patch.value is not None
 
     # Test error patches
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "ManifestError.cbor"
-    )
+    file_path = get_vector_file("ManifestError.cbor")
     with open(file_path, "rb") as f:
         vectors = cbor2.load(f)
 
@@ -177,9 +170,7 @@ def test_patch_from_vectors_file():
 
 
 def test_signed_patch_set_from_vectors():
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "ManifestOkay.cbor"
-    )
+    file_path = get_vector_file("ManifestOkay.cbor")
     with open(file_path, "rb") as f:
         vectors = cbor2.load(f)
 

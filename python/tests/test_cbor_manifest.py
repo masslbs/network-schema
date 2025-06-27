@@ -4,7 +4,6 @@
 
 import base64
 import json
-import os
 import pytest
 import cbor2
 
@@ -21,7 +20,7 @@ from massmarket.cbor.manifest import (
     ShippingRegion,
 )
 from massmarket.cbor import Shop
-
+from utils import get_vector_file
 
 def test_cbor_manifest_cbor_keys():
     # Create a simple Manifest instance matching a valid Go schema.
@@ -123,9 +122,7 @@ def test_cbor_price_modifier_validation():
 
 
 def test_cbor_manifest_from_vectors_file():
-    file_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "vectors", "ManifestOkay.json"
-    )
+    file_path = get_vector_file("ManifestOkay.json")
     with open(file_path, "r") as f:
         vectors = json.load(f)
 
