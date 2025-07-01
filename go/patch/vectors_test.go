@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	clone "github.com/huandu/go-clone/generic"
@@ -1034,12 +1033,6 @@ func newTestListing() (objects.Shop, objects.Listing) {
 			},
 		},
 	}
-	lis.StockStatuses = []objects.ListingStockStatus{
-		{
-			VariationIDs: []string{"r"},
-			InStock:      testhelper.Boolptr(true),
-		},
-	}
 	s := newTestManifest()
 	err := s.Listings.Insert(lis.ID, lis)
 	if err != nil {
@@ -1084,7 +1077,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			},
 		},
 	}
-	testTimeFuture := time.Unix(10000000000, 0).UTC()
 
 	shop, testListing := newTestListing()
 
@@ -1186,80 +1178,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			value: objects.ListingViewStatePublished,
 			expected: func(t *testing.T, l objects.Listing) {
 				assert.Equal(t, objects.ListingViewStatePublished, l.ViewState)
-			},
-		},
-
-		{
-			name: "append a stock status",
-			op:   AppendOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses"}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(true),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 2, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[1]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.True(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name: "prepend a stock status",
-			op:   AddOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(true),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 2, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[0]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.True(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name: "replace stock status",
-			op:   ReplaceOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(false),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 1, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[0]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.False(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name:  "replace expectedInStockBy",
-			op:    ReplaceOp,
-			path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0, "ExpectedInStockBy"}},
-			value: testTimeFuture,
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, nil, l.StockStatuses[0].InStock)
-				assert.Equal(t, testTimeFuture, *l.StockStatuses[0].ExpectedInStockBy)
-			},
-		},
-		{
-			name:  "replace inStock",
-			op:    ReplaceOp,
-			path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0, "InStock"}},
-			value: true,
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.True(t, *l.StockStatuses[0].InStock)
-				assert.Equal(t, nil, l.StockStatuses[0].ExpectedInStockBy)
-			},
-		},
-		{
-			name: "remove stock status",
-			op:   RemoveOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 0, len(l.StockStatuses))
 			},
 		},
 
@@ -1412,19 +1330,6 @@ func TestGenerateVectorsListingError(t *testing.T) {
 			op:       RemoveOp,
 			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"Metadata", "Nonexistent"}},
 			errMatch: "fields=[Metadata Nonexistent] not found",
-		},
-		{
-			name:     "invalid array index",
-			op:       ReplaceOp,
-			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 999}},
-			value:    objects.ListingStockStatus{},
-			errMatch: "fields=[StockStatuses 999] not found",
-		},
-		{
-			name:     "remove non-existent stock status",
-			op:       RemoveOp,
-			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 999}},
-			errMatch: "fields=[StockStatuses 999] not found",
 		},
 		{
 			name:     "invalid value type for price",
@@ -2303,9 +2208,7 @@ func (patch Path) MarshalJSON() ([]byte, error) {
 	if !either && patch.Type != ObjectTypeManifest {
 		return nil, fmt.Errorf("either ObjectID, TagName or AccountID must be set")
 	}
-	for _, field := range patch.Fields {
-		path = append(path, field)
-	}
+	path = append(path, patch.Fields...)
 	return json.Marshal(path)
 }
 

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"slices"
-	"time"
 
 	masscbor "github.com/masslbs/network-schema/go/cbor"
 	"github.com/masslbs/network-schema/go/objects"
@@ -106,8 +105,6 @@ func (p *Patcher) addListingField(listing *objects.Listing, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Metadata":
 		return p.addListingMetadata(listing, patch)
-	case "StockStatuses":
-		return p.addListingStockStatus(listing, patch)
 	case "Options":
 		return p.addListingOption(listing, patch)
 	default:
@@ -132,13 +129,6 @@ func (p *Patcher) appendListingField(listing *objects.Listing, patch Patch) erro
 		default:
 			return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 		}
-	case "StockStatuses":
-		var stockStatus objects.ListingStockStatus
-		if err := masscbor.Unmarshal(patch.Value, &stockStatus); err != nil {
-			return fmt.Errorf("failed to unmarshal stock status: %w", err)
-		}
-		listing.StockStatuses = append(listing.StockStatuses, stockStatus)
-		return nil
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
 	}
@@ -148,8 +138,6 @@ func (p *Patcher) removeListingField(listing *objects.Listing, patch Patch) erro
 	switch patch.Path.Fields[0] {
 	case "Metadata":
 		return p.removeListingMetadata(listing, patch)
-	case "StockStatuses":
-		return p.removeListingStockStatus(listing, patch)
 	case "Options":
 		return p.removeListingOption(listing, patch)
 	default:
@@ -161,8 +149,6 @@ func (p *Patcher) replaceListingField(listing *objects.Listing, patch Patch) err
 	switch patch.Path.Fields[0] {
 	case "Metadata":
 		return p.replaceListingMetadata(listing, patch)
-	case "StockStatuses":
-		return p.replaceListingStockStatuses(listing, patch)
 	case "Options":
 		return p.replaceListingOptions(listing, patch)
 	case "Price":
@@ -274,81 +260,6 @@ func (p *Patcher) replaceListingMetadata(listing *objects.Listing, patch Patch) 
 	default:
 		return fmt.Errorf("unsupported metadata field: %s", patch.Path.Fields[1])
 	}
-	return nil
-}
-
-func (p *Patcher) addListingStockStatus(listing *objects.Listing, patch Patch) error {
-	if len(patch.Path.Fields) < 2 {
-		return fmt.Errorf("invalid stockStatuses path")
-	}
-
-	index, err := indexFromAny(patch.Path.Fields[1], len(listing.StockStatuses))
-	if err != nil {
-		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
-	}
-
-	var newSS objects.ListingStockStatus
-	if err := masscbor.Unmarshal(patch.Value, &newSS); err != nil {
-		return fmt.Errorf("failed to unmarshal stock status: %w", err)
-	}
-
-	listing.StockStatuses = slices.Insert(listing.StockStatuses, index, newSS)
-
-	return nil
-}
-
-func (p *Patcher) removeListingStockStatus(listing *objects.Listing, patch Patch) error {
-	if len(patch.Path.Fields) < 2 {
-		return fmt.Errorf("invalid stockStatuses path")
-	}
-	i, err := indexFromAny(patch.Path.Fields[1], len(listing.StockStatuses))
-	if err != nil {
-		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
-	}
-	listing.StockStatuses = slices.Delete(listing.StockStatuses, i, i+1)
-	return nil
-}
-
-func (p *Patcher) replaceListingStockStatuses(listing *objects.Listing, patch Patch) error {
-	if len(patch.Path.Fields) == 1 {
-		var statuses []objects.ListingStockStatus
-		if err := masscbor.Unmarshal(patch.Value, &statuses); err != nil {
-			return fmt.Errorf("failed to unmarshal stock statuses: %w", err)
-		}
-		listing.StockStatuses = statuses
-		return nil
-	}
-	i, err := indexFromAny(patch.Path.Fields[1], len(listing.StockStatuses))
-	if err != nil {
-		return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: patch.Path}
-	}
-	if len(patch.Path.Fields) == 2 {
-		var ss objects.ListingStockStatus
-		if err := masscbor.Unmarshal(patch.Value, &ss); err != nil {
-			return fmt.Errorf("failed to unmarshal stock status: %w", err)
-		}
-		listing.StockStatuses[i] = ss
-		return nil
-	}
-	switch patch.Path.Fields[2] {
-	case "InStock":
-		var val bool
-		if err := masscbor.Unmarshal(patch.Value, &val); err != nil {
-			return fmt.Errorf("failed to unmarshal inStock: %w", err)
-		}
-		listing.StockStatuses[i].InStock = &val
-		listing.StockStatuses[i].ExpectedInStockBy = nil
-	case "ExpectedInStockBy":
-		var t time.Time
-		if err := masscbor.Unmarshal(patch.Value, &t); err != nil {
-			return fmt.Errorf("failed to unmarshal expectedInStockBy: %w", err)
-		}
-		listing.StockStatuses[i].ExpectedInStockBy = &t
-		listing.StockStatuses[i].InStock = nil
-	default:
-		return fmt.Errorf("unsupported stockStatus field: %s", patch.Path.Fields[2])
-	}
-
 	return nil
 }
 

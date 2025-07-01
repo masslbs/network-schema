@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
@@ -178,7 +177,6 @@ func TestCreateAllTypes(t *testing.T) {
 		EmailAddress: "test@foo.bar",
 		PhoneNumber:  testhelper.Strptr("+21911223344"),
 	}
-	expectedInStockBy := time.Unix(9999999999, 0).UTC()
 
 	vanillaEth := MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
@@ -258,20 +256,6 @@ func TestCreateAllTypes(t *testing.T) {
 							},
 						},
 					},
-				},
-			},
-			StockStatuses: []ListingStockStatus{
-				{
-					VariationIDs: []string{"r"},
-					InStock:      testhelper.Boolptr(true),
-				},
-				{
-					VariationIDs: []string{"m"},
-					InStock:      testhelper.Boolptr(false),
-				},
-				{
-					VariationIDs:      []string{"b"},
-					ExpectedInStockBy: &expectedInStockBy,
 				},
 			},
 		}},
