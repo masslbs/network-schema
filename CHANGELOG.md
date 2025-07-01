@@ -4,7 +4,15 @@ SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 SPDX-License-Identifier: MIT
 -->
 
-# V4 (2024-12-12) DRAFT
+# V5 (2025-??-??) DRAFT
+
+- Deprecates V4
+- Listing: Remove StockStatus and make inventory subscriptions public
+- Order: Rename State to PaymentState
+- Order: Add free-form strings for FulfilmentState and CommentForCustomer
+- Manifest: Add OrderPaymentTimeout
+
+# V4 (2025-05-21) CBOR conversion
 
 - Deprecates V3
 - Implement shop event types in CBOR
