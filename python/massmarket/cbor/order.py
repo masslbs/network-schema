@@ -187,7 +187,11 @@ class Order:
                     "PaymentDetails is required when state is UNPAID or PAID"
                 )
 
-        if self.payment_state in (OrderPaymentState.PAID, OrderPaymentState.UNPAID, OrderPaymentState.COMMITTED):
+        if self.payment_state in (
+            OrderPaymentState.PAID,
+            OrderPaymentState.UNPAID,
+            OrderPaymentState.COMMITTED,
+        ):
             if self.chosen_payee is None:
                 raise ValueError(
                     "ChosenPayee is required when state is COMMITTED, UNPAID, or PAID"
@@ -244,8 +248,8 @@ class Order:
             chosen_currency=chosen_currency,
             payment_details=payment_details,
             tx_details=tx_details,
-            fulfilment_state = d.get("FulfilmentState"),
-            comment_for_customer = d.get("CommentForCustomer")
+            fulfilment_state=d.get("FulfilmentState"),
+            comment_for_customer=d.get("CommentForCustomer"),
         )
 
     def to_cbor_dict(self) -> Dict[str, Any]:
@@ -253,7 +257,9 @@ class Order:
             "ID": self.id,
             "Items": [item.to_cbor_dict() for item in self.items],
             "PaymentState": (
-                self.payment_state.value if isinstance(self.payment_state, OrderPaymentState) else self.payment_state
+                self.payment_state.value
+                if isinstance(self.payment_state, OrderPaymentState)
+                else self.payment_state
             ),
         }
 
