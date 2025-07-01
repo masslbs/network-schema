@@ -19,7 +19,7 @@ from massmarket.cbor import (
 )
 
 from massmarket.cbor.order import (
-    OrderState,
+    OrderPaymentState,
     OrderedItem,
     AddressDetails,
     PaymentDetails,
@@ -148,7 +148,7 @@ def test_full_order_roundtrip():
                 variation_ids=["red"],
             )
         ],
-        state=OrderState.COMMITTED,
+        payment_state=OrderPaymentState.COMMITTED,
         invoice_address=address,
         chosen_payee=payee,
         chosen_currency=currency,
@@ -162,7 +162,7 @@ def test_full_order_roundtrip():
     assert len(decoded.items) == len(order.items)
     assert decoded.items[0].listing_id == order.items[0].listing_id
     assert decoded.items[0].quantity == order.items[0].quantity
-    assert decoded.state == order.state
+    assert decoded.payment_state == order.payment_state
     assert decoded.invoice_address.name == order.invoice_address.name
     assert decoded.chosen_payee.address.chain_id == order.chosen_payee.address.chain_id
     assert decoded.chosen_currency.chain_id == order.chosen_currency.chain_id
@@ -177,7 +177,7 @@ def test_order_validation():
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            state=OrderState.COMMITTED,
+            payment_state=OrderPaymentState.COMMITTED,
             chosen_currency=ChainAddress(chain_id=1337, address=b"\x00" * 20),
             invoice_address=AddressDetails(
                 name="John",
@@ -195,7 +195,7 @@ def test_order_validation():
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            state=OrderState.COMMITTED,
+            payment_state=OrderPaymentState.COMMITTED,
             chosen_payee=Payee(
                 address=ChainAddress(chain_id=1337, address=b"\x00" * 20),
                 call_as_contract=False,
@@ -210,7 +210,7 @@ def test_order_validation():
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            state=OrderState.CANCELED,
+            payment_state=OrderPaymentState.CANCELED,
         )
 
     # Test missing payment_details for UNPAID state
@@ -220,7 +220,7 @@ def test_order_validation():
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            state=OrderState.UNPAID,
+            payment_state=OrderPaymentState.UNPAID,
             chosen_payee=Payee(
                 address=ChainAddress(chain_id=1337, address=b"\x00" * 20),
                 call_as_contract=False,
@@ -240,7 +240,7 @@ def test_order_validation():
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            state=OrderState.PAID,
+            payment_state=OrderPaymentState.PAID,
             chosen_payee=Payee(
                 address=ChainAddress(chain_id=1337, address=b"\x00" * 20),
                 call_as_contract=False,
@@ -264,13 +264,13 @@ def test_order_validation():
 
 
 def test_order_state():
-    assert OrderState.UNSPECIFIED.value == 0
-    assert OrderState.OPEN.value == 1
-    assert OrderState.CANCELED.value == 2
-    assert OrderState.COMMITTED.value == 3
-    assert OrderState.PAYMENT_CHOSEN.value == 4
-    assert OrderState.UNPAID.value == 5
-    assert OrderState.PAID.value == 6
+    assert OrderPaymentState.UNSPECIFIED.value == 0
+    assert OrderPaymentState.OPEN.value == 1
+    assert OrderPaymentState.CANCELED.value == 2
+    assert OrderPaymentState.COMMITTED.value == 3
+    assert OrderPaymentState.PAYMENT_CHOSEN.value == 4
+    assert OrderPaymentState.UNPAID.value == 5
+    assert OrderPaymentState.PAID.value == 6
 
 
 # this does not test the patching logic, just the roundtrip from the _after_ state
@@ -340,8 +340,8 @@ def verify_order(order_obj: Order, expected: dict):
                     assert order_obj.items[i].variation_ids is None
 
     # Check state
-    if "State" in expected and expected["State"] is not None:
-        assert order_obj.state == OrderState(expected["State"])
+    if "PaymentState" in expected and expected["PaymentState"] is not None:
+        assert order_obj.payment_state == OrderPaymentState(expected["PaymentState"])
 
     # Check invoice address
     if "InvoiceAddress" in expected and expected["InvoiceAddress"] is not None:

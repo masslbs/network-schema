@@ -287,7 +287,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateOpen,
+			PaymentState: OrderPaymentStateOpen,
 		}},
 
 		{Order{
@@ -296,7 +296,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateCommitted,
+			PaymentState: OrderPaymentStateCommitted,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
@@ -311,7 +311,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateUnpaid,
+			PaymentState: OrderPaymentStateUnpaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
@@ -334,7 +334,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStatePaid,
+			PaymentState: OrderPaymentStatePaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),

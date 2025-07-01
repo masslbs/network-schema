@@ -12,7 +12,7 @@ import cbor2
 from massmarket.cbor.base_types import Uint256, ChainAddress, Payee
 
 
-class OrderState(IntEnum):
+class OrderPaymentState(IntEnum):
     UNSPECIFIED = 0
     OPEN = 1
     CANCELED = 2
@@ -164,7 +164,7 @@ class OrderPaid:
 class Order:
     id: int
     items: List[OrderedItem]
-    state: OrderState
+    payment_state: OrderPaymentState
     invoice_address: Optional[AddressDetails] = None
     shipping_address: Optional[AddressDetails] = None
     canceled_at: Optional[datetime] = None
@@ -175,17 +175,17 @@ class Order:
 
     def __post_init__(self):
         # Validate state-specific requirements
-        if self.state == OrderState.PAID:
+        if self.payment_state == OrderPaymentState.PAID:
             if self.tx_details is None:
                 raise ValueError("TxDetails is required when state is PAID")
 
-        if self.state in (OrderState.PAID, OrderState.UNPAID):
+        if self.payment_state in (OrderPaymentState.PAID, OrderPaymentState.UNPAID):
             if self.payment_details is None:
                 raise ValueError(
                     "PaymentDetails is required when state is UNPAID or PAID"
                 )
 
-        if self.state in (OrderState.PAID, OrderState.UNPAID, OrderState.COMMITTED):
+        if self.payment_state in (OrderPaymentState.PAID, OrderPaymentState.UNPAID, OrderPaymentState.COMMITTED):
             if self.chosen_payee is None:
                 raise ValueError(
                     "ChosenPayee is required when state is COMMITTED, UNPAID, or PAID"
@@ -199,7 +199,7 @@ class Order:
                     "Either InvoiceAddress or ShippingAddress is required for COMMITTED, UNPAID, or PAID states"
                 )
 
-        if self.state == OrderState.CANCELED:
+        if self.payment_state == OrderPaymentState.CANCELED:
             if self.canceled_at is None:
                 raise ValueError("CanceledAt is required when state is CANCELED")
 
@@ -234,7 +234,7 @@ class Order:
         return cls(
             id=d["ID"],
             items=items,
-            state=OrderState(d["State"]),
+            payment_state=OrderPaymentState(d["PaymentState"]),
             invoice_address=invoice_address,
             shipping_address=shipping_address,
             canceled_at=d.get("CanceledAt"),
@@ -248,9 +248,8 @@ class Order:
         d = {
             "ID": self.id,
             "Items": [item.to_cbor_dict() for item in self.items],
-            # TODO: why isnt this tested..?
-            "State": (
-                self.state.value if isinstance(self.state, OrderState) else self.state
+            "PaymentState": (
+                self.payment_state.value if isinstance(self.payment_state, OrderPaymentState) else self.payment_state
             ),
         }
 

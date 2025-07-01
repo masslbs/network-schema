@@ -170,7 +170,7 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateCommitted {
 			return errCannotModdifyCommittedOrder
 		}
 
@@ -297,7 +297,7 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) appendOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateCommitted {
 			return errCannotModdifyCommittedOrder
 		}
 		var item objects.OrderedItem
@@ -331,15 +331,15 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 
-	case "State":
+	case "PaymentState":
 		// TODO: check newState transitions
-		var newState objects.OrderState
+		var newState objects.OrderPaymentState
 		if err := masscbor.Unmarshal(patch.Value, &newState); err != nil {
 			return fmt.Errorf("failed to unmarshal order state: %w", err)
 		}
 
 		// TODO: check state transitions
-		order.State = newState
+		order.PaymentState = newState
 
 	case "ChosenPayee":
 		var payee objects.Payee
@@ -390,7 +390,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &details
 
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateCommitted {
 			return errCannotModdifyCommittedOrder
 		}
 		switch {
@@ -486,7 +486,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateCommitted {
 			return errCannotModdifyCommittedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
@@ -521,7 +521,7 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 }
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
-	if order.State >= objects.OrderStateCommitted {
+	if order.PaymentState >= objects.OrderPaymentStateCommitted {
 		return errCannotModdifyCommittedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)

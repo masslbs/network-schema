@@ -114,8 +114,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 			}, objects.Order{
-				ID:    5001,
-				State: objects.OrderStateOpen,
+				ID:           5001,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{
 						ListingID: 101,
@@ -142,7 +142,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			validate: func(t *testing.T, s objects.Shop) {
 				order, found := s.Orders.Get(5001)
 				assert.True(t, found)
-				assert.Equal(t, objects.OrderStateOpen, order.State)
+				assert.Equal(t, objects.OrderPaymentStateOpen, order.PaymentState)
 			},
 		},
 
@@ -152,8 +152,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateCommitted),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateCommitted),
 		},
 
 		{
@@ -180,8 +180,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaymentChosen),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaymentChosen),
 		},
 
 		// Step 7: Add payment details
@@ -205,8 +205,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateUnpaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateUnpaid),
 		},
 
 		// Step 8: relay found payment hash and updates order state
@@ -226,8 +226,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaid),
 		},
 
 		// Step 9: decrement inventory
@@ -386,8 +386,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 			}, objects.Order{
-				ID:    5001,
-				State: objects.OrderStateOpen,
+				ID:           5001,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{
 						ListingID:    101,
@@ -415,7 +415,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			validate: func(t *testing.T, s objects.Shop) {
 				order, found := s.Orders.Get(5001)
 				assert.True(t, found)
-				assert.Equal(t, objects.OrderStateOpen, order.State)
+				assert.Equal(t, objects.OrderPaymentStateOpen, order.PaymentState)
 			},
 		},
 
@@ -425,8 +425,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateCommitted),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateCommitted),
 		},
 
 		{
@@ -453,8 +453,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaymentChosen),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaymentChosen),
 		},
 
 		// Step 7: Add payment details
@@ -479,8 +479,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateUnpaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateUnpaid),
 		},
 
 		// Step 8: Update inventory after order
@@ -504,8 +504,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 		// 	patch: createPatch(t, ReplaceOp, Path{
 		// 		Type:     ObjectTypeOrder,
 		// 		ObjectID: testhelper.Uint64ptr(5001),
-		// 		Fields:   []any{"State"},
-		// 	}, objects.OrderStateCommitted),
+		// 		Fields:   []any{"PaymentState"},
+		// 	}, objects.OrderPaymentStateCommitted),
 		// },
 
 		// // Step 10: Add tracking information
@@ -528,8 +528,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 		// 	patch: createPatch(t, ReplaceOp, Path{
 		// 		Type:     ObjectTypeOrder,
 		// 		ObjectID: testhelper.Uint64ptr(5001),
-		// 		Fields:   []any{"State"},
-		// 	}, objects.OrderStateReceived),
+		// 		Fields:   []any{"PaymentState"},
+		// 	}, objects.OrderPaymentStateReceived),
 		// },
 	}
 

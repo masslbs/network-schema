@@ -132,7 +132,7 @@ Account = {
 Order = {
     ID: uint,
     Items: [* OrderedItem],
-    State: OrderState,
+    PaymentState: OrderState,
     ? InvoiceAddress: AddressDetails,
     ? ShippingAddress: AddressDetails,
     ? CanceledAt: text,
@@ -148,7 +148,7 @@ OrderedItem = {
     Quantity: Uint32
 }
 
-OrderState = &(
+OrderPaymentState = &(
     ; invalid state
     Unspecified: 0,
     ; open to being changed

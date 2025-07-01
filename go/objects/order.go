@@ -15,16 +15,16 @@ import (
 
 // Order represents an order placed by a user
 type Order struct {
-	ID              ObjectID        `validate:"required,gt=0"`
-	Items           OrderedItems    `validate:"required"`
-	State           OrderState      `validate:"required"`
-	InvoiceAddress  *AddressDetails `cbor:",omitempty"`
-	ShippingAddress *AddressDetails `cbor:",omitempty"`
-	CanceledAt      *time.Time      `cbor:",omitempty"`
-	ChosenPayee     *Payee          `cbor:",omitempty"`
-	ChosenCurrency  *ChainAddress   `cbor:",omitempty"`
-	PaymentDetails  *PaymentDetails `cbor:",omitempty"`
-	TxDetails       *OrderPaid      `cbor:",omitempty"`
+	ID              ObjectID          `validate:"required,gt=0"`
+	Items           OrderedItems      `validate:"required"`
+	PaymentState    OrderPaymentState `validate:"required"`
+	InvoiceAddress  *AddressDetails   `cbor:",omitempty"`
+	ShippingAddress *AddressDetails   `cbor:",omitempty"`
+	CanceledAt      *time.Time        `cbor:",omitempty"`
+	ChosenPayee     *Payee            `cbor:",omitempty"`
+	ChosenCurrency  *ChainAddress     `cbor:",omitempty"`
+	PaymentDetails  *PaymentDetails   `cbor:",omitempty"`
+	TxDetails       *OrderPaid        `cbor:",omitempty"`
 }
 
 // OrderedItems is a list of items in an order
@@ -40,18 +40,18 @@ type OrderedItem struct {
 // OrderValidation validates the state-dependent fields of an order
 func OrderValidation(sl validator.StructLevel) {
 	order := sl.Current().Interface().(Order)
-	switch order.State {
-	case OrderStatePaid:
+	switch order.PaymentState {
+	case OrderPaymentStatePaid:
 		if order.TxDetails == nil {
 			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
 		}
 		fallthrough
-	case OrderStateUnpaid:
+	case OrderPaymentStateUnpaid:
 		if order.PaymentDetails == nil {
 			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
 		fallthrough
-	case OrderStatePaymentChosen:
+	case OrderPaymentStatePaymentChosen:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
 		}
@@ -63,55 +63,55 @@ func OrderValidation(sl validator.StructLevel) {
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
 		}
 		fallthrough
-	case OrderStateCommitted:
+	case OrderPaymentStateCommitted:
 		if len(order.Items) == 0 {
 			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
-	case OrderStateCanceled:
+	case OrderPaymentStateCanceled:
 		if order.CanceledAt == nil {
 			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
 		}
-	case OrderStateOpen:
+	case OrderPaymentStateOpen:
 		// noop
 	default:
-		sl.ReportError(order.State, "State", "State", fmt.Sprintf("invalid order state: %d", order.State), "")
+		sl.ReportError(order.PaymentState, "PaymentState", "PaymentState", fmt.Sprintf("invalid order state: %d", order.PaymentState), "")
 	}
 }
 
-// OrderState represents the possible states an order can be in
-type OrderState uint
+// OrderPaymentState represents the possible states an order can be in
+type OrderPaymentState uint
 
 const (
-	// OrderStateUnspecified is the default and invalid state of an order
-	OrderStateUnspecified OrderState = iota
-	// OrderStateOpen is the state of an order which is open to being changed
-	OrderStateOpen
-	// OrderStateCanceled is the state of an order which has been canceled
-	OrderStateCanceled
-	// OrderStateCommitted is the state of an order which items have been frozen
-	OrderStateCommitted
-	// OrderStatePaymentChosen is the state of an order which has chosen a payment channel
-	OrderStatePaymentChosen
-	// OrderStateUnpaid is the state of an order which has not been paid for
-	OrderStateUnpaid
-	// OrderStatePaid is the state of an order which has been paid for
-	OrderStatePaid
+	// OrderPaymentStateUnspecified is the default and invalid state of an order
+	OrderPaymentStateUnspecified OrderPaymentState = iota
+	// OrderPaymentStateOpen is the state of an order which is open to being changed
+	OrderPaymentStateOpen
+	// OrderPaymentStateCanceled is the state of an order which has been canceled
+	OrderPaymentStateCanceled
+	// OrderPaymentStateCommitted is the state of an order which items have been frozen
+	OrderPaymentStateCommitted
+	// OrderPaymentStatePaymentChosen is the state of an order which has chosen a payment channel
+	OrderPaymentStatePaymentChosen
+	// OrderPaymentStateUnpaid is the state of an order which has not been paid for
+	OrderPaymentStateUnpaid
+	// OrderPaymentStatePaid is the state of an order which has been paid for
+	OrderPaymentStatePaid
 
-	maxOrderState
+	maxOrderPaymentState
 )
 
 // UnmarshalCBOR implements the cbor.Unmarshaler interface
-func (s *OrderState) UnmarshalCBOR(data []byte) error {
+func (s *OrderPaymentState) UnmarshalCBOR(data []byte) error {
 	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
 		return err
 	}
-	if i == uint(OrderStateUnspecified) || i >= uint(maxOrderState) {
+	if i == uint(OrderPaymentStateUnspecified) || i >= uint(maxOrderPaymentState) {
 		return fmt.Errorf("invalid order state: %d", i)
 	}
-	*s = OrderState(i)
+	*s = OrderPaymentState(i)
 	return nil
 }
 

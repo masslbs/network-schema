@@ -361,8 +361,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64 - 1)},
 			Value: mustEncode(t, objects.Order{
-				ID:    math.MaxUint64 - 1,
-				State: objects.OrderStateOpen,
+				ID:           math.MaxUint64 - 1,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: objects.ObjectID(23), Quantity: 1},
 				},
@@ -373,8 +373,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64 - 2)},
 			Value: mustEncode(t, objects.Order{
-				ID:    math.MaxUint64 - 2,
-				State: objects.OrderStateOpen,
+				ID:           math.MaxUint64 - 2,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: objects.ObjectID(42), Quantity: 1},
 				},
@@ -390,8 +390,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64)},
 			Value: mustEncode(t, objects.Order{
-				ID:    biggestObjectID,
-				State: objects.OrderStateOpen,
+				ID:           biggestObjectID,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: biggestObjectID, Quantity: 789},
 				},
@@ -1768,8 +1768,8 @@ func newTestOrder() (objects.Shop, objects.Order) {
 	err = s.Listings.Insert(listing5557.ID, listing5557)
 
 	o := objects.Order{
-		ID:    666,
-		State: objects.OrderStateOpen,
+		ID:           666,
+		PaymentState: objects.OrderPaymentStateOpen,
 		Items: []objects.OrderedItem{
 			{
 				ListingID: 5555,
@@ -1794,7 +1794,7 @@ func newTestOrder() (objects.Shop, objects.Order) {
 
 	o2 := clone.Clone(o)
 	o2.ID = 667
-	o2.State = objects.OrderStateCommitted
+	o2.PaymentState = objects.OrderPaymentStateCommitted
 	o2.Items[0].Quantity = 55
 	o2.Items[1] = objects.OrderedItem{
 		ListingID: 5557,
@@ -2072,6 +2072,19 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.TxDetails)
 				assert.Equal(t, &objects.Hash{0x04, 0x05, 0x06}, o.TxDetails.TxHash)
+			},
+		},
+		{
+			name:  "replace payment state",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"PaymentState"}},
+			value: objects.OrderPaymentStateCommitted,
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, objects.OrderPaymentStateCommitted, o.PaymentState)
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, objects.OrderPaymentStateCommitted, otherOrder.PaymentState)
 			},
 		},
 	}
