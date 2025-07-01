@@ -139,7 +139,9 @@ Order = {
     ? ChosenPayee: Payee,
     ? ChosenCurrency: ChainAddress,
     ? PaymentDetails: PaymentDetails,
-    ? TxDetails: OrderPaid
+    ? TxDetails: OrderPaid,
+    ? FulfilmentStatus: text,
+    ? CommentForCustomer: text
 }
 
 OrderedItem = {

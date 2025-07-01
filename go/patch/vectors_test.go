@@ -1766,6 +1766,7 @@ func newTestOrder() (objects.Shop, objects.Order) {
 		ViewState: objects.ListingViewStatePublished,
 	}
 	err = s.Listings.Insert(listing5557.ID, listing5557)
+	check(err)
 
 	o := objects.Order{
 		ID:           666,
@@ -1801,6 +1802,8 @@ func newTestOrder() (objects.Shop, objects.Order) {
 		Quantity:  100,
 	}
 	o2.InvoiceAddress.Name = "Jane Doe"
+	o2.FulfilmentState = "Waiting"
+	o2.CommentForCustomer = "Replace me..."
 	err = s.Orders.Insert(o2.ID, o2)
 	check(err)
 
@@ -2004,6 +2007,24 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				assert.Equal(t, &objects.Hash{0x01, 0x02, 0x03}, o.TxDetails.TxHash)
 			},
 		},
+		{
+			name:  "set-fulfillment-status",
+			op:    AddOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"FulfilmentState"}},
+			value: "WaitingForPickup",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "WaitingForPickup", o.FulfilmentState)
+			},
+		},
+		{
+			name:  "set-customer-comment",
+			op:    AddOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"CommentForCustomer"}},
+			value: "Shipment tracking: mass://tracking/12345678",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "Shipment tracking: mass://tracking/12345678", o.CommentForCustomer)
+			},
+		},
 
 		// replace ops
 		// ===========
@@ -2085,6 +2106,25 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				otherOrder, ok := shop.Orders.Get(667)
 				assert.True(t, ok)
 				assert.Equal(t, objects.OrderPaymentStateCommitted, otherOrder.PaymentState)
+			},
+		},
+
+		{
+			name:  "update fulfillment status",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"FulfilmentState"}},
+			value: "PickedUp",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "PickedUp", o.FulfilmentState)
+			},
+		},
+		{
+			name:  "update customer comment",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"CommentForCustomer"}},
+			value: "Shipment tracking: mass://tracking/12345678 - on it's way",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "Shipment tracking: mass://tracking/12345678 - on it's way", o.CommentForCustomer)
 			},
 		},
 	}

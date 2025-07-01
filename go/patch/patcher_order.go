@@ -282,6 +282,24 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 			return fmt.Errorf("failed to unmarshal tx details: %w", err)
 		}
 		order.TxDetails = &txDetails
+	case "FulfilmentState":
+		if order.FulfilmentState != "" {
+			return fmt.Errorf("fulfilment status already set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal fulfilment status: %w", err)
+		}
+		order.FulfilmentState = value
+	case "CommentForCustomer":
+		if order.CommentForCustomer != "" {
+			return fmt.Errorf("CommentForCustomer already set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal CommentForCustomer: %w", err)
+		}
+		order.CommentForCustomer = value
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
@@ -435,14 +453,14 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 			return fmt.Errorf("InvoiceAddress not set")
 		}
 
-		switch {
-		case nFields == 1:
+		switch nFields {
+		case 1:
 			var newAddress objects.AddressDetails
 			if err := masscbor.Unmarshal(patch.Value, &newAddress); err != nil {
 				return fmt.Errorf("failed to unmarshal invoice address: %w", err)
 			}
 			order.InvoiceAddress = &newAddress
-		case nFields == 2:
+		case 2:
 			switch patch.Path.Fields[1] {
 			case "Name":
 				var newName string
@@ -471,6 +489,25 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		default:
 			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 		}
+
+	case "FulfilmentState":
+		if order.FulfilmentState == "" {
+			return fmt.Errorf("fulfilment status not set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal fulfilment status: %w", err)
+		}
+		order.FulfilmentState = value
+	case "CommentForCustomer":
+		if order.CommentForCustomer == "" {
+			return fmt.Errorf("CommentForCustomer not set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal CommentForCustomer: %w", err)
+		}
+		order.CommentForCustomer = value
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}

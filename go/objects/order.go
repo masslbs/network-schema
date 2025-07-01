@@ -15,16 +15,18 @@ import (
 
 // Order represents an order placed by a user
 type Order struct {
-	ID              ObjectID          `validate:"required,gt=0"`
-	Items           OrderedItems      `validate:"required"`
-	PaymentState    OrderPaymentState `validate:"required"`
-	InvoiceAddress  *AddressDetails   `cbor:",omitempty"`
-	ShippingAddress *AddressDetails   `cbor:",omitempty"`
-	CanceledAt      *time.Time        `cbor:",omitempty"`
-	ChosenPayee     *Payee            `cbor:",omitempty"`
-	ChosenCurrency  *ChainAddress     `cbor:",omitempty"`
-	PaymentDetails  *PaymentDetails   `cbor:",omitempty"`
-	TxDetails       *OrderPaid        `cbor:",omitempty"`
+	ID                 ObjectID          `validate:"required,gt=0"`
+	Items              OrderedItems      `validate:"required"`
+	PaymentState       OrderPaymentState `validate:"required"`
+	InvoiceAddress     *AddressDetails   `cbor:",omitempty"`
+	ShippingAddress    *AddressDetails   `cbor:",omitempty"`
+	CanceledAt         *time.Time        `cbor:",omitempty"`
+	ChosenPayee        *Payee            `cbor:",omitempty"`
+	ChosenCurrency     *ChainAddress     `cbor:",omitempty"`
+	PaymentDetails     *PaymentDetails   `cbor:",omitempty"`
+	TxDetails          *OrderPaid        `cbor:",omitempty"`
+	FulfilmentState   string            `cbor:",omitempty"`
+	CommentForCustomer string            `cbor:",omitempty"`
 }
 
 // OrderedItems is a list of items in an order

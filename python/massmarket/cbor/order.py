@@ -26,7 +26,7 @@ class OrderPaymentState(IntEnum):
 class OrderedItem:
     listing_id: int
     quantity: int
-    variation_ids: Optional[List[str]] = None
+    variation_ids: Optional[List[int]] = None
 
     def __post_init__(self):
         if self.listing_id <= 0:
@@ -172,6 +172,8 @@ class Order:
     chosen_currency: Optional[ChainAddress] = None
     payment_details: Optional[PaymentDetails] = None
     tx_details: Optional[OrderPaid] = None
+    fulfilment_state: Optional[str] = None
+    comment_for_customer: Optional[str] = None
 
     def __post_init__(self):
         # Validate state-specific requirements
@@ -242,6 +244,8 @@ class Order:
             chosen_currency=chosen_currency,
             payment_details=payment_details,
             tx_details=tx_details,
+            fulfilment_state = d.get("FulfilmentState"),
+            comment_for_customer = d.get("CommentForCustomer")
         )
 
     def to_cbor_dict(self) -> Dict[str, Any]:
@@ -267,6 +271,10 @@ class Order:
             d["PaymentDetails"] = self.payment_details.to_cbor_dict()
         if self.tx_details is not None:
             d["TxDetails"] = self.tx_details.to_cbor_dict()
+        if self.fulfilment_state is not None:
+            d["FulfilmentState"] = self.fulfilment_state
+        if self.comment_for_customer is not None:
+            d["CommentForCustomer"] = self.comment_for_customer
 
         return d
 

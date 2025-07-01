@@ -291,6 +291,17 @@ func TestCreateAllTypes(t *testing.T) {
 		}},
 
 		{Order{
+			ID: math.MaxUint64,
+			Items: []OrderedItem{{
+				ListingID: 1,
+				Quantity:  1,
+			}},
+			PaymentState:       OrderPaymentStateOpen,
+			FulfilmentState:   "Waiting",
+			CommentForCustomer: "Hello, world!",
+		}},
+
+		{Order{
 			ID: math.MaxUint64 - 1,
 			Items: []OrderedItem{{
 				ListingID: 1,
