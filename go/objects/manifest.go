@@ -4,16 +4,21 @@
 
 package objects
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+)
 
 // Manifest defines metadata needed to operate a shop
 type Manifest struct {
 	// shop metadata lives in the NFT
-	ShopID             Uint256 `validate:"required"`
-	Payees             Payees
-	AcceptedCurrencies ChainAddresses
-	PricingCurrency    ChainAddress    // the currency listings are priced in
-	ShippingRegions    ShippingRegions `json:",omitempty"`
+	ShopID              Uint256 `validate:"required"`
+	Payees              Payees
+	AcceptedCurrencies  ChainAddresses
+	PricingCurrency     ChainAddress    // the currency listings are priced in
+	ShippingRegions     ShippingRegions `json:",omitempty"`
+	OrderPaymentTimeout time.Duration   `validate:"required"`
 }
 
 // PayeeMetadata stores additional metadata about a payee

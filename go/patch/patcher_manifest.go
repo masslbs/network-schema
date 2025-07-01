@@ -7,6 +7,7 @@ package patch
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	masscbor "github.com/masslbs/network-schema/go/cbor"
@@ -50,12 +51,6 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 	}
 
 	switch patch.Path.Fields[0] {
-	case "ShopId":
-		var value objects.Uint256
-		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
-			return fmt.Errorf("failed to unmarshal ShopId: %w", err)
-		}
-		p.shop.Manifest.ShopID = value
 
 	case "PricingCurrency":
 		var c objects.ChainAddress
@@ -159,6 +154,12 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 			return fmt.Errorf("invalid acceptedCurrencies path")
 		}
 
+	case "OrderPaymentTimeout":
+		var dur time.Duration
+		if err := masscbor.Unmarshal(patch.Value, &dur); err != nil {
+			return fmt.Errorf("failed to unmarshal duration: %w", err)
+		}
+		p.shop.Manifest.OrderPaymentTimeout = dur
 	default:
 		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
 	}

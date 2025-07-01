@@ -22,6 +22,7 @@ class Manifest:
     payees: Dict[int, Dict[EthereumAddress, PayeeMetadata]]
     accepted_currencies: Dict[int, Set[EthereumAddress]]
     pricing_currency: ChainAddress
+    order_payment_timeout: int
     shipping_regions: Optional[Dict[str, ShippingRegion]] = None
 
     @classmethod
@@ -48,12 +49,16 @@ class Manifest:
                 k: ShippingRegion.from_cbor_dict(v)
                 for k, v in d["ShippingRegions"].items()
             }
+        order_payment_timeout = d.get("OrderPaymentTimeout")
+        if order_payment_timeout is None:
+            raise Exception("OrderPaymentTimeout is required")
         return cls(
             shop_id=d["ShopID"],
             payees=payees,
             accepted_currencies=accepted_currencies,
             pricing_currency=pricing_currency,
             shipping_regions=shipping_regions,
+            order_payment_timeout=order_payment_timeout,
         )
 
     def to_cbor_dict(self) -> dict:
@@ -74,6 +79,7 @@ class Manifest:
                 if hasattr(self.pricing_currency, "to_cbor_dict")
                 else self.pricing_currency
             ),
+            "OrderPaymentTimeout": self.order_payment_timeout,
         }
         if self.shipping_regions is not None:
             d["ShippingRegions"] = {

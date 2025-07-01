@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -31,6 +32,7 @@ type Shop struct {
 // NewShop creates a new shop
 func NewShop(version uint64) Shop {
 	s := Shop{}
+	s.Manifest.OrderPaymentTimeout = time.Hour
 	s.SchemaVersion = version
 	s.Accounts.Trie = hamt.NewTrie[Account]()
 	s.Listings.Trie = hamt.NewTrie[Listing]()

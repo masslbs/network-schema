@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
@@ -50,7 +51,7 @@ func TestMapOrdering(t *testing.T) {
 		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa4, // map(4)
+		0xa5, // map(5)
 		0x66, // text(6);
 		'P', 'a', 'y', 'e', 'e', 's',
 		0xf6, // primitive(22)
@@ -70,6 +71,9 @@ func TestMapOrdering(t *testing.T) {
 		0x72, // text(18)
 		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
 		0xf6, // primitive(22)
+		0x73, // text(19)
+		'O', 'r', 'd', 'e', 'r', 'P', 'a', 'y', 'm', 'e', 'n', 't', 'T', 'i', 'm', 'e', 'o', 'u', 't',
+		0x1b, 0x00, 0x00, 0x03, 0x46, 0x30, 0xb8, 0xa0, 0x00,
 		0x69, // text(8)
 		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -208,6 +212,7 @@ func TestCreateAllTypes(t *testing.T) {
 					},
 				},
 			},
+			OrderPaymentTimeout: time.Hour,
 		}},
 
 		{Account{

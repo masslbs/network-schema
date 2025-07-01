@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	clone "github.com/huandu/go-clone/generic"
@@ -147,6 +148,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			ShippingRegions: objects.ShippingRegions{
 				"other": testOther,
 			},
+			OrderPaymentTimeout: 15 * time.Minute,
 		}
 
 		return s
@@ -728,6 +730,7 @@ func newTestManifest() objects.Shop {
 				Country: "DE",
 			},
 		},
+		OrderPaymentTimeout: 666 * time.Minute,
 	}
 	return s
 }
@@ -768,6 +771,15 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 			value: testCurrency,
 			expected: func(t *testing.T, m objects.Manifest) {
 				assert.Equal(t, testCurrency, m.PricingCurrency)
+			},
+		},
+		{
+			name:  "replace payment timeout",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeManifest, Fields: []any{"OrderPaymentTimeout"}},
+			value: time.Hour * 10,
+			expected: func(t *testing.T, m objects.Manifest) {
+				assert.Equal(t, time.Hour*10, m.OrderPaymentTimeout)
 			},
 		},
 
