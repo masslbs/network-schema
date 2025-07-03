@@ -21,6 +21,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
+from massmarket import base_types_pb2 as base__types__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(

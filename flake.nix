@@ -225,7 +225,6 @@
           cbor-diag
           protoc-gen-go
           buf
-          black
           reuse
           typos-lsp
           protobuf
@@ -249,8 +248,8 @@
                   ignored-words = ["cose"];
                 };
               };
-              black.enable = true;
               ruff.enable = true;
+              ruff-format.enable = true;
               gofmt.enable = true;
               gotest.enable = true;
             };
