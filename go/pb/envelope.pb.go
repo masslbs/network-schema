@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Generated from network-schema/envelope.proto at version v4
+// Generated from network-schema/envelope.proto at version v5
 
 // This file defines the transport protocol between relays and clients.
 // It's main purpose is transfer of events of the higher application levels.
