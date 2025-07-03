@@ -147,10 +147,10 @@ type InMemoryVerifierTree struct {
 var _ VerifierTree = (*InMemoryVerifierTree)(nil)
 
 // NewInMemoryVerifierTree creates a new InMemoryVerifierTree.
-func NewInMemoryVerifierTree(hasher hash.Hash, initalSize uint64) *InMemoryVerifierTree {
+func NewInMemoryVerifierTree(hasher hash.Hash, initialSize uint64) *InMemoryVerifierTree {
 	return &InMemoryVerifierTree{
 		hasher: hasher,
-		nodes:  &InMemoryNodeStore{nodes: make([][]byte, initalSize)},
+		nodes:  &InMemoryNodeStore{nodes: make([][]byte, initialSize)},
 		values: make(map[uint64][]byte),
 	}
 }

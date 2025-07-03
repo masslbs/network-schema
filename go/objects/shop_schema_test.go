@@ -73,7 +73,7 @@ func TestMapOrdering(t *testing.T) {
 		0xf6, // primitive(22)
 		0x73, // text(19)
 		'O', 'r', 'd', 'e', 'r', 'P', 'a', 'y', 'm', 'e', 'n', 't', 'T', 'i', 'm', 'e', 'o', 'u', 't',
-		0x1b, 0x00, 0x00, 0x03, 0x46, 0x30, 0xb8, 0xa0, 0x00,
+		0x1b, 0x00, 0x00, 0x03, 0x46, 0x30, 0xb8, 0xa0, 0x00, // unsigned(3600000000000)
 		0x69, // text(8)
 		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -184,7 +184,7 @@ func TestCreateAllTypes(t *testing.T) {
 
 	vanillaEth := MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
-		typ any
+		testValue any
 	}{
 		{Manifest{
 			ShopID: *bigID,
@@ -286,7 +286,7 @@ func TestCreateAllTypes(t *testing.T) {
 				Quantity:  1,
 			}},
 			PaymentState:       OrderPaymentStateOpen,
-			FulfilmentState:   "Waiting",
+			FulfilmentState:    "Waiting",
 			CommentForCustomer: "Hello, world!",
 		}},
 
@@ -357,18 +357,18 @@ func TestCreateAllTypes(t *testing.T) {
 
 	var buf bytes.Buffer
 	for i, c := range cases {
-		t.Run(fmt.Sprintf("index:%d/type:%T", i, c.typ), func(t *testing.T) {
-			assert.Nil(t, validate.Struct(c.typ))
+		t.Run(fmt.Sprintf("index:%d/type:%T", i, c.testValue), func(t *testing.T) {
+			assert.Nil(t, validate.Struct(c.testValue))
 			buf.Reset()
 			enc := masscbor.DefaultEncoder(&buf)
-			err := enc.Encode(c.typ)
+			err := enc.Encode(c.testValue)
 			assert.Nil(t, err)
 
 			testData := buf.Bytes()
-			t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
+			t.Logf("encoded %T:\n%s", c.testValue, pretty(testData))
 
 			var decoded any
-			switch c.typ.(type) {
+			switch c.testValue.(type) {
 			case Manifest:
 				decoded, err = decode[Manifest](testData)
 			case Listing:
@@ -380,11 +380,11 @@ func TestCreateAllTypes(t *testing.T) {
 			case Order:
 				decoded, err = decode[Order](testData)
 			default:
-				t.Fatalf("unknown type: %T", c.typ)
+				t.Fatalf("unknown type: %T", c.testValue)
 			}
 			assert.Nil(t, err)
 			assert.Nil(t, validate.Struct(decoded))
-			assert.Equal(t, c.typ, decoded, ignoreBigInts)
+			assert.Equal(t, c.testValue, decoded, ignoreBigInts)
 		})
 	}
 }

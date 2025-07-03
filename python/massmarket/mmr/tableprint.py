@@ -2,10 +2,11 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 
+import sys
+
 from massmarket.mmr.algorithms import included_root, inclusion_proof_path
 from massmarket.mmr.algorithms import index_height
 from massmarket.mmr.algorithms import peaks
-from massmarket.mmr.algorithms import peak_depths
 from massmarket.mmr.algorithms import leaf_count
 from massmarket.mmr.algorithms import complete_mmr
 from massmarket.mmr.algorithms import mmr_index
@@ -269,11 +270,10 @@ def print_index_height(mmrsize=39, sep="|"):
 
     heights = table[0]
     leafcounts = table[1]
-    if sep != "|":
-        w = 0
+    w = 4 if sep != "|" else 0
 
     print("|" + sep.join([str(i).ljust(w, " ") for i in range(mmrsize)]) + "|")
-    print("|" + sep.join([("-" * w) for i in range(mmrsize)]) + "|")
+    print("|" + sep.join([("-" * w) for _ in range(mmrsize)]) + "|")
     print("|" + sep.join([str(h).ljust(w, " ") for h in heights]) + "|")
     print("|" + sep.join([str(n).ljust(w, " ") for n in leafcounts]) + "|")
     print(
@@ -284,7 +284,6 @@ def print_index_height(mmrsize=39, sep="|"):
 
 
 def minmax_inclusion_path_table(mmrsize=39):
-
     rows = []
     max_accumulator = [ip + 1 for ip in peaks(mmrsize - 1)]
     for i in range(mmrsize):
@@ -356,7 +355,6 @@ def print_minmax_inclusion_paths(mmrsize=39):
 
 
 def inclusion_paths_table(mmrsize=39):
-
     rows = []
     for i in range(mmrsize):
         ix = complete_mmr(i)
@@ -420,14 +418,13 @@ def print_inclusion_paths(mmrsize=39):
 
     table = inclusion_paths_table(mmrsize=mmrsize)
 
-    for i, e, s, path, ai, accumulator in table:
-
+    for i, _, s, path, ai, accumulator in table:
         spath = "[" + ", ".join([str(p) for p in path]) + "]"
 
         # it is very confusingif we list the accumulator as positions yet have the paths be indices. so lets not do that.
         saccumulator = "[" + ", ".join([str(p) for p in accumulator]) + "]"
 
-        sroot = db.get(accumulator[ai]).hex()
+        # sroot = db.get(accumulator[ai]).hex()
 
         print(
             "|"
@@ -448,7 +445,7 @@ def print_inclusion_paths(mmrsize=39):
 
 def getreleventindices(lastupdateidx, previdx, d):
     """
-    Returns a list of indices of relevent updates, given:
+    Returns a list of indices of relevant updates, given:
         lastupdateidx: the index at which the last witness update occurred
         previdx: the index at which the last accumulator update occurred
         d: the depth of the current witness
@@ -456,7 +453,7 @@ def getreleventindices(lastupdateidx, previdx, d):
 
     NOTICE:
 
-    This is the python implemementation of "GetUpdateTimeSteps" from
+    This is the python implementation of "GetUpdateTimeSteps" from
     "Efficient Asynchronous Accumulators for Distributed PKI"
     -  https://eprint.iacr.org/2015/718.pdf
 
@@ -475,20 +472,17 @@ def getreleventindices(lastupdateidx, previdx, d):
 
 
 def included_root_tables(mmrsize=39):
-
     db = KatDB()
     db.init_canonical39()
 
     tables = []
 
     for iw in range(mmrsize):
-
-        wits = []
+        # wits = []
         ito = complete_mmr(iw + 1)
         table = [[iw, mmrsize - 1]]
 
         while ito < mmrsize:
-
             proof = [db.get(i) for i in inclusion_proof_path(iw, ito)]
             root = included_root(iw, db.get(iw), proof)
             table.append([iw, ito, root])
@@ -500,17 +494,15 @@ def included_root_tables(mmrsize=39):
 
 
 def print_included_roots(mmrsize=39):
-
     mmrsize = int(mmrsize)
 
-    def s(i):
-        return str(i).rjust(2, " ")
+    # def s(i):
+    #     return str(i).rjust(2, " ")
 
-    def j(l):
-        return ", ".join(l)
+    # def j(l):
+    #     return ", ".join(l)
 
     for table in included_root_tables(mmrsize):
-
         ifrom, ito = table[0]
         print(f"// {ifrom} in mmr's {ifrom} - {ito}")
         # print(f"|{ifrom} in mmr's {ifrom} - {ito}|")
@@ -523,28 +515,25 @@ def print_included_roots(mmrsize=39):
         print()
 
 
-def node_witness_update_tables(mmrsize=39):
-
-    rows = []
-    tmax = leaf_count(mmrsize - 1)
-
-    for tw in range(tmax):
-        iw = mmr_index(tw)
-        mmrw = complete_mmr(iw)
-        dw = len(inclusion_proof_path(iw, mmrw))
-        for tx in range(tw + 1, tmax):
-            leaf_indices = getreleventindices(tw, tx, dw)
-            rows.append([iw, tw, tx, "reysop", leaf_indices])
-            ix = mmr_index(tx)
-            leaf_indices_mmriver = leaf_index_updates(tw, tx, dw)
-            rows.append([iw, tw, tx, "mmrive", leaf_indices_mmriver])
-
-    return rows
+# def node_witness_update_tables(mmrsize=39):
+#     rows = []
+#     tmax = leaf_count(mmrsize - 1)
+#     for tw in range(tmax):
+#         iw = mmr_index(tw)
+#         mmrw = complete_mmr(iw)
+#         dw = len(inclusion_proof_path(iw, mmrw))
+#         for tx in range(tw + 1, tmax):
+#             leaf_indices = getreleventindices(tw, tx, dw)
+#             rows.append([iw, tw, tx, "reysop", leaf_indices])
+#             ix = mmr_index(tx)
+#             leaf_indices_mmriver = leaf_index_updates(tw, tx, dw)
+#             rows.append([iw, tw, tx, "mmrive", leaf_indices_mmriver])
+#     return rows
 
 
 def vgetreleventindices(lastupdateidx, previdx, d):
     """
-    Returns a list of indices of relevent updates, given:
+    Returns a list of indices of relevant updates, given:
         lastupdateidx: the index at which the last witness update occurred
         previdx: the index at which the last accumulator update occurred
         d: the depth of the current witness
@@ -552,7 +541,7 @@ def vgetreleventindices(lastupdateidx, previdx, d):
 
     NOTICE:
 
-    This is the python implemementation of "GetUpdateTimeSteps" from
+    This is the python implementation of "GetUpdateTimeSteps" from
     "Efficient Asynchronous Accumulators for Distributed PKI"
     -  https://eprint.iacr.org/2015/718.pdf
 
@@ -568,30 +557,13 @@ def vgetreleventindices(lastupdateidx, previdx, d):
         releventindices.append(releventindex)
         print(f"  releventindices: {releventindices} <- {releventindex}")
         while releventindex % (power * 2) == 0:
-            print(f"    ri={releventindex} pow: {power}->{power *2}")
+            print(f"    ri={releventindex} pow: {power}->{power * 2}")
             power = power * 2
         releventindex += power
     print(f":{releventindices}")
     print(f":{[mmr_index(i) for i in releventindices]}")
 
     return releventindices
-
-
-def print_reysop():
-    return
-    ri_reysop = vgetreleventindices(0, 8, 0)
-    print("--")
-    ri_mmriver = leaf_index_updates(0, 8, 0)
-    print(ri_reysop)
-    print(ri_mmriver)
-
-
-def print_witness_updates(mmrsize=39):
-
-    return
-    rows = node_witness_update_tables(mmrsize=mmrsize)
-    for row in rows:
-        print(row)
 
 
 def print_node_witness_longevity(mmrsize=39):
@@ -605,17 +577,17 @@ def print_node_witness_longevity(mmrsize=39):
     # *any* node.  This is because the accumulator, except in degenerate cases,
     # is populated by interior nodes, and, when showing consistency of an
     # outdated proof with a new mmr, we will typically be working with a node
-    # which was once a peak and  has since been "burried", making it an
-    # interiour.
+    # which was once a peak and  has since been "buried", making it an
+    # interior.
 
     t_max = leaf_count(mmrsize - 1)
-    print("| ta  |{tw:s}".format(tw="|".join(["--" for i in range(t_max)])))
+    print("| ta  |{tw:s}".format(tw="|".join(["--" for _ in range(t_max)])))
     print(
         "|tx:ix|{tw:s}".format(
             tw="|".join([str(i).rjust(2, " ") for i in range(t_max)])
         )
     )
-    print("|-----|{tw:s}".format(tw="|".join(["--" for i in range(t_max)])))
+    print("|-----|{tw:s}".format(tw="|".join(["--" for _ in range(t_max)])))
 
     for ix in range(mmrsize):
         tx = leaf_count(ix)
@@ -633,7 +605,7 @@ def print_node_witness_longevity(mmrsize=39):
             dsw = len(inclusion_proof_path(ix, mmrw))
             # row0.append(tx)
             row0.append(leaf_witness_update_due(ix, dsw))
-            # additions until burried, and also until its witness next needs updating
+            # additions until buried, and also until its witness next needs updating
             row1.append(dsw)
 
             w = inclusion_proof_path(ix, mmrw)
@@ -665,6 +637,9 @@ def print_node_witness_longevity(mmrsize=39):
 
             wits.append(w)
 
+        srow0 = ""
+        srow1 = ""
+        srow2 = ""
         if row0:
             srow0 = ["  " for i in range(t_max - len(row0))]
             srow0.extend([str(t).rjust(2, " ") for t in row0])
@@ -692,7 +667,7 @@ def print_node_witness_longevity(mmrsize=39):
 def print_witlens(mmrsize=39):
     for e in range(21):
         # A proof for leaf 0 in MMR(39) is 4 elements long
-        i = mmr_index(e)
+        # i = mmr_index(e)
         path_lengths = []
         for g in range(5):
             # is i + g a complete mmr ? if so, g is a valid proof length
@@ -729,7 +704,6 @@ def print_proven(mmrsize=39):
         row = []
         rowok = True
         for d in range(len(leaf_peak_witnesses[e])):
-
             expect_is_peak = leaf_peak_witnesses[e][d]
             expect_is_peak = expect_is_peak == 1
             is_peak = proves_peak(e, d)
@@ -752,7 +726,6 @@ def print_indexproven(mmrsize=39):
         row = []
         rowok = True
         for d in range(len(leaf_index_peak_witnesses[e])):
-
             i = mmr_index(e)
             (expect_index, expect_is_peak) = leaf_index_peak_witnesses[e][d]
             (index, is_peak) = proves_index_peak(i, d)
@@ -772,103 +745,7 @@ def basesz(sz):
     return sz.bit_length() - 1
 
 
-import sys
-
 if __name__ == "__main__":
-
-    if False:
-
-        def s(i):
-            return str(i).rjust(2, " ")
-
-        def j(l):
-            return ", ".join(l)
-
-        leaf_mmrindices = [
-            0,
-            1,
-            3,
-            4,
-            7,
-            8,
-            10,
-            11,
-            15,
-            16,
-            18,
-            19,
-            22,
-            23,
-            25,
-            26,
-            31,
-            32,
-            34,
-            35,
-            38,
-        ]
-        leaf_positions = [i + 1 for i in leaf_mmrindices]
-
-        rows = []
-
-        def s(v):
-            return str(v).rjust(2, " ")
-
-        def seqs(seq):
-            return "[" + ", ".join([str(e).rjust(2, " ") for e in seq]) + "]"
-
-        ito = complete_mmr(0)
-        while ito <= 38:
-
-            print(seqs(peaks(ito)))
-            print(seqs(peak_depths(ito)))
-            print(
-                seqs(
-                    list(
-                        reversed(
-                            sorted(
-                                list(
-                                    set(
-                                        [
-                                            len(inclusion_proof_path(ifrom, ito))
-                                            + index_height(ifrom)
-                                            for ifrom in range(ito)
-                                        ]
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-
-            print("{s}".format(s=bin(leaf_count(ito))))
-            print()
-            ito = complete_mmr(ito + 1)
-
-        sys.exit(0)
-
-    # print("\n".join(rows))
-
-    if False:
-        print(j([s(sz - 1) for sz in complete_mmr_sizes]))
-        print(j([s(basesz(sz)) for sz in complete_mmr_sizes]))
-        print(j([s(sz - basesz(sz)) for sz in complete_mmr_sizes]))
-        print(j([s(p - ((1 << basesz(p)) - 1)) for p in complete_mmr_sizes]))
-        print(
-            j(
-                ["  "]
-                + [
-                    s(complete_mmr_sizes[i] + d)
-                    for (i, d) in enumerate(
-                        [p - ((1 << basesz(p)) - 1) for p in complete_mmr_sizes][1:]
-                    )
-                ]
-            )
-        )
-        print(j([s(p - 1) for p in leaf_positions]))
-        print(j([s(depth_inext(p)) for p in leaf_positions]))
-
     if len(sys.argv) > 1:
         try:
             globals()["print_%s" % sys.argv[1]](*sys.argv[2:])

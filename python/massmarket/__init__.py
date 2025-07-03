@@ -19,16 +19,20 @@ from typing import List
 from hashlib import sha256
 from web3 import Web3
 
-w3 = Web3()
-
 from eth_account.messages import encode_defunct
 
 from massmarket.mmr.db import FlatDB
-from massmarket.mmr.algorithms import add_leaf_hash
+from massmarket.mmr.algorithms import (
+    add_leaf_hash,
+    included_root,
+    verify_inclusion_path,
+)
 
 from massmarket.cbor_encoder import cbor_encode
 from massmarket.cbor.patch import Patch
 from massmarket.cbor.patch import SignedPatchSet
+
+w3 = Web3()
 
 
 def get_root_hash_of_patches(patches: List[Patch]):
@@ -74,9 +78,6 @@ def get_signer_of_patchset(ps: SignedPatchSet):
     encoded_header = encode_defunct(header_bytes)
     pub_key = w3.eth.account.recover_message(encoded_header, signature=ps.signature)
     return pub_key
-
-
-from massmarket.mmr.algorithms import included_root, verify_inclusion_path
 
 
 class RootMismatchError(Exception):

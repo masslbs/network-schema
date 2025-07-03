@@ -15,7 +15,7 @@ def test_cbor_account():
     )
     cbor_dict = account.to_cbor_dict()
     assert cbor_dict["KeyCards"] == [pk_data]
-    assert cbor_dict["Guest"] == False
+    assert not cbor_dict["Guest"]
 
     account2 = Account.from_cbor_dict(cbor_dict)
     assert account == account2

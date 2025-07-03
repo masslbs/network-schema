@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from typing import Optional, List, Dict
-from datetime import datetime
+
 from enum import IntEnum
 
 import cbor2

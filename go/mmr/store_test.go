@@ -98,12 +98,12 @@ func TestVerifyPostgresStore(t *testing.T) {
 func testStore(t *testing.T, db mmr.NodeAppender, mmrMaxSize uint64) {
 	hasher := sha256.New()
 
-	numLeafs := mmr.LeafCount(mmrMaxSize)
-	assert.Equal(t, mmrMaxSize/2+1, numLeafs)
+	numLeaves := mmr.LeafCount(mmrMaxSize)
+	assert.Equal(t, mmrMaxSize/2+1, numLeaves)
 
 	// fill the tree with some data
 	var lastIdx uint64
-	for i := 0; i < int(numLeafs); i++ {
+	for i := 0; i < int(numLeaves); i++ {
 		input := []byte(fmt.Sprintf("hello %02d", i))
 		hasher.Reset()
 		hasher.Write(input)
@@ -121,7 +121,7 @@ func testStore(t *testing.T, db mmr.NodeAppender, mmrMaxSize uint64) {
 	t.Logf("root: %x", root)
 	assert.NotEqual(t, nil, root)
 
-	for iLeaf := uint64(0); iLeaf < numLeafs; iLeaf++ {
+	for iLeaf := uint64(0); iLeaf < numLeaves; iLeaf++ {
 		mmrIndex := mmr.MMRIndex(iLeaf)
 		t.Log("================")
 		t.Logf("iLeaf: %d", iLeaf)

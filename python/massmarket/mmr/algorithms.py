@@ -60,13 +60,11 @@ def inclusion_proof_path(i, c):
 
     # Repeat until #termination_condition evaluates true
     while True:
-
         # Set `siblingoffset` to 2^(g+1)
         siblingoffset = 2 << g
 
         # If `index_height(i+1)` is greater than `g`
         if index_height(i + 1) > g:
-
             # Set isibling to `i - siblingoffset + 1`. because i is the right
             # sibling, its witness is the left which is offset behind.
             isibling = i - siblingoffset + 1
@@ -75,7 +73,6 @@ def inclusion_proof_path(i, c):
             # stored immediately after.
             i += 1
         else:
-
             # Set isibling to `i + siblingoffset - 1`. because i is the left
             # sibling, its witness is the right and is offset ahead.
             isibling = i + siblingoffset - 1
@@ -214,7 +211,6 @@ def peaks(i: int) -> List[int]:
     peaks = []
     s = i + 1
     while s != 0:
-
         # find the highest peak size in the current MMR(s)
         highest_size = (1 << log2floor(s + 1)) - 1
         peak = peak + highest_size
@@ -340,7 +336,6 @@ def verify_consistent_roots(
 
     ito = 0
     for root in proven:
-
         if accumulatorto[ito] == root:
             continue
 
@@ -637,11 +632,9 @@ def roots(iw, ix):
     g = index_height(i)
 
     while True:
-
         if index_height(i + 1) > g:
             i += 1
         else:
-
             i += 2 << g
 
             while index_height(i + 1) > g:

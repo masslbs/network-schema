@@ -5,7 +5,7 @@
 import hashlib
 
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Optional, Any, Callable
+from typing import TypeVar, Generic, Optional, Callable
 
 from massmarket.cbor_encoder import cbor_encode
 
@@ -373,7 +373,7 @@ class Trie(Generic[V]):
     def to_cbor_array(self) -> list:
         """
         Marshal the Trie into a CBOR-encoded byte buffer. Follows the Go approach:
-        only the root node is serialized, and size is recomputed when unmarshaling.
+        only the root node is serialized, and size is recomputed when unmarshalling.
         """
         # Convert the root node into its array representation and dump to CBOR
         return self.root.to_array()

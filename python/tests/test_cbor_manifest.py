@@ -234,5 +234,8 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
             or len(manifest_obj.shipping_regions) == 0
         )
 
-    if "OrderPaymentTimeout" in expected and expected["OrderPaymentTimeout"] is not None:
+    if (
+        "OrderPaymentTimeout" in expected
+        and expected["OrderPaymentTimeout"] is not None
+    ):
         assert expected["OrderPaymentTimeout"] == manifest_obj.order_payment_timeout

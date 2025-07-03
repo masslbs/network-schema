@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-from datetime import datetime, timezone
 import json
 import base64
 import cbor2
@@ -211,7 +210,7 @@ def verify_listing(listing_obj: Listing, expected: dict):
         if "Images" in expected["Metadata"] and len(expected["Metadata"]["Images"]) > 0:
             assert listing_obj.metadata.images == expected["Metadata"]["Images"]
         else:
-            assert listing_obj.metadata.images == None
+            assert listing_obj.metadata.images is None
 
     # Check view state
     if "ViewState" in expected:
@@ -257,4 +256,4 @@ def verify_listing(listing_obj: Listing, expected: dict):
                         ):
                             assert variation.sku == expected_var_value["SKU"]
                         else:
-                            assert variation.sku == None
+                            assert variation.sku is None

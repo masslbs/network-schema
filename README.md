@@ -12,7 +12,7 @@ On an abstract level, the _Relays_ build an [Append-Only Log](https://en.wikiped
 
 For a detailed description of each message see comments in the individual `.proto` files and the `CHANGELOG.md`.
 
-For a detailed description of how Events are signed as well as the HTTP Reqeusts acompanying the WebSocket connection, see our [documentation page](https://docs.mass.market).
+For a detailed description of how Events are signed as well as the HTTP Requests acompanying the WebSocket connection, see our [documentation page](https://docs.mass.market).
 
 This repo also contains a `python` folder with the code for the [massmarket-hash-event](https://pypi.org/project/massmarket-hash-event/#description) pip package, used in our test suite.
 

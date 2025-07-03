@@ -8,6 +8,7 @@
 # source: authentication.proto
 # Protobuf Python Version: 6.30.2
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
@@ -20,7 +21,6 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
-from massmarket import base_types_pb2 as base__types__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(

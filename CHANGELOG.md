@@ -27,7 +27,7 @@ SPDX-License-Identifier: MIT
 - Introduces a new patch format for shop updates
    - See `cddl/patch.cddl`
 
-# V3 (2024-11-12) DevCon '24 relase, shipping regions and currency management
+# V3 (2024-11-12) DevCon '24 release, shipping regions and currency management
 
 - Deprecates V2
 - Remove need for manual encoding.txt / introduces envelope.proto
@@ -35,23 +35,23 @@ SPDX-License-Identifier: MIT
 - Authentication is only necessary for clients that want to write events.
 - Introduces base_types.proto to differentiate various `bytes`
 - Rename _item_ to _listing_
-- Tags are only used for categories, introduce seperate view states for listings
+- Tags are only used for categories, introduce separate view states for listings
 - Add variations to listings and orders
 - Added order modifiers for shipping and taxes
 - Remove shop manifest metadata in favour of NFT metadata
 - Replace all price handling with Uint256 values
 
-# V2 (2024-07-17) EthCC '24 relase, guest testing checkout
+# V2 (2024-07-17) EthCC '24 release, guest testing checkout
 
 - Deprecates V1
-- Seperate out event types from the transport.
+- Separate out event types from the transport.
 - Introduce a semantic layering of transport > auth > shop
 - Rename _store_ to _shop_
 - Rename _cart_ to _order_
 - Changes all Tag and Order related messages to follow the Update pattern we are using in Manifest and Item.
 - Replace EIP-712 signatures with EIP-191, since we don't verify events on-chain
 - Define error codes
-- Add multi-chain currency managment (base and accepted currencies, payee)
+- Add multi-chain currency management (base and accepted currencies, payee)
 
 # V1.1 (2024-06-04) Payments V2 integration
 
@@ -64,7 +64,7 @@ SPDX-License-Identifier: MIT
   - The Clerk can chose a different escrow contract during `CommitCartRequest` if necessary
   - How this is done will change in protocol version 2
 
-# V1 (2024-04-24) EthDuba '24 relase, point-of-sales
+# V1 (2024-04-24) EthDuba '24 release, point-of-sales
 
 - _Users_ that are registered with the _Store_ (see `StoreReg` smart contract) can POST to `https://my.relay/v1/enroll_keycard`.
   - The _Relay_ creates a `NewKeyCard` _Event_ to inform other _Users_ about them.
@@ -74,12 +74,12 @@ SPDX-License-Identifier: MIT
   - The `ChallengeSolvedRequest` is used to send that signature back.
 - The server (_Relay_) sends `PingRequests` in fixed intervals which need to be responded to to keep the connection alive.
 - `SyncStatusRequest` is sent by a _Relay_ to inform a client about how many _Events_ are left to sync.
-- _Event_ types to facilitate listing and inventory managment are:
+- _Event_ types to facilitate listing and inventory management are:
   - `CreateItem`, `UpdateItem`, `Create/AddTo/RemoveFrom/DeleteTag` and `ChangeStock`.
 - _Event_ types for shopping are `CreateCart`, `ChangeCart`, `CartFinalized` and `CartAbandoned`.
   - To finish a purchase, the `CartFinalized` event has the needed information for the transaction.
   - The _Relay_ starts watching for deposists to the `purchase_address`.
-  - Once enough money has been transfered, the _Relay_ creates a `ChangeStock` _Event_ which includes a `cart_id` reference.
+  - Once enough money has been transferred, the _Relay_ creates a `ChangeStock` _Event_ which includes a `cart_id` reference.
   - This signals the _User_ that the purchase is complete.
 - Ability to write and receive _Events_ to/from a _Relay_ (`EventWriteReq/Resp`, `EventPushReq/Resp`).
   - `EventPushRequest` needs to be responded to without an error to receive more events.

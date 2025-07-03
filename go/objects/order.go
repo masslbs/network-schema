@@ -25,7 +25,7 @@ type Order struct {
 	ChosenCurrency     *ChainAddress     `cbor:",omitempty"`
 	PaymentDetails     *PaymentDetails   `cbor:",omitempty"`
 	TxDetails          *OrderPaid        `cbor:",omitempty"`
-	FulfilmentState   string            `cbor:",omitempty"`
+	FulfilmentState    string            `cbor:",omitempty"`
 	CommentForCustomer string            `cbor:",omitempty"`
 }
 

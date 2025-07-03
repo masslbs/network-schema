@@ -3,10 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os
 import base64
 import cbor2
-from pprint import pprint
 
 from massmarket.hamt import Trie
 from massmarket.cbor import Shop
