@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	masscbor "github.com/masslbs/network-schema/go/cbor"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
 )
 
 // Order represents an order placed by a user

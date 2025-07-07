@@ -21,8 +21,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/peterldowns/testy/assert"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/internal/testhelper"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
 )
 
 func TestMapOrdering(t *testing.T) {

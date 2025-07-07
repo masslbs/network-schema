@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-module github.com/masslbs/network-schema
+module github.com/masslbs/network-schema/v5
 
 go 1.24
 

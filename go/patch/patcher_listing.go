@@ -9,8 +9,8 @@ import (
 	"math/big"
 	"slices"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 func (p *Patcher) patchListing(patch Patch) error {

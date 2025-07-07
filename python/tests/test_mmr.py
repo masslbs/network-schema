@@ -188,9 +188,9 @@ class SkipTestAddLeafHash:
         db.init_size(39)
 
         for i in range(39):
-            assert (
-                db.store[i] == katdb.store[i]
-            ), f"node {i} != {katdb.store[i]} ({db.store[i]})"
+            assert db.store[i] == katdb.store[i], (
+                f"node {i} != {katdb.store[i]} ({db.store[i]})"
+            )
 
     def test_addleafhash_accumulators(self):
         """Adding the 21 canonical leaf values produces the expected accumulators for each  mmr size"""

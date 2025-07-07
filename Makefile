@@ -18,15 +18,15 @@ vectors/hamt_test.cbor:
 vectors/ShopOkay.cbor:
 	cd go/patch && TEST_DATA_OUT=../../vectors go test
 
+# need to fuzz separately because we need the vectors to be generated first
 go-tests: vectors/hamt_test.cbor
 	cd go && go test ./...
-	# need to run this separately because we need the vectors to be generated first
 	cd go/patch && go test -fuzz=Simple -fuzztime=1m
 
 lint:
 	$(PYTHON) ./check.py
 	buf format -w
-	git ls-files | grep -E '.(py|pyi)$$' | xargs black
+	ruff format
 	protolint lint *.proto
 	reuse lint
 

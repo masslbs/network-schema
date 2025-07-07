@@ -24,8 +24,8 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/peterldowns/testy/assert"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 var (

@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	hamt "github.com/masslbs/network-schema/go/hamt"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	hamt "github.com/masslbs/network-schema/v5/go/hamt"
 )
 
 // Shop represents a shop and all its contents

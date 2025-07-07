@@ -20,9 +20,9 @@ import (
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/peterldowns/testy/assert"
 
-	"github.com/masslbs/network-schema/go/internal/testhelper"
-	massmmr "github.com/masslbs/network-schema/go/mmr"
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 const withVariations = false

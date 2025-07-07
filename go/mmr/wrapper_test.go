@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/peterldowns/testy/assert"
 
-	massmmr "github.com/masslbs/network-schema/go/mmr"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
 )
 
 var hashFn = sha256.New

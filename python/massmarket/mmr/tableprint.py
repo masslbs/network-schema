@@ -618,9 +618,9 @@ def print_node_witness_longevity(mmrsize=39):
 
                 ioldroot_by_parent = len(wits[-1]) and parent(wits[-1][-1]) or ix
                 ioldroot = accumulator_root(ix, complete_mmr(mmr_index(tw - 1)))
-                assert (
-                    ioldroot_by_parent == ioldroot
-                ), f"{ioldroot_by_parent} != {ioldroot}"
+                assert ioldroot_by_parent == ioldroot, (
+                    f"{ioldroot_by_parent} != {ioldroot}"
+                )
 
                 wupdated = wits[-1] + inclusion_proof_path(ioldroot, mmrw)
                 for i in range(len(wupdated)):

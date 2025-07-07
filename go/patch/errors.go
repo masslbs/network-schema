@@ -7,7 +7,7 @@ package patch
 import (
 	"fmt"
 
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 // ObjectNotFoundError is an error that occurs when an object is not found

@@ -13,7 +13,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	clone "github.com/huandu/go-clone/generic"
 
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 // TestVectorType represents the different types of test vector files

@@ -4,15 +4,11 @@
 
 OUT=massmarket/
 
-all: compile format test
+all: compile test
 
 compile:
 	protoc -I=.. --pyi_out=${OUT} --python_out=${OUT} ../*.proto
 	${PYTHON} ./tweak_imports.py
-
-format:
-	black massmarket
-	black tests
 
 test:
 	pytest

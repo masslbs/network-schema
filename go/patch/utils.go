@@ -11,9 +11,9 @@ import (
 	"github.com/datatrails/go-datatrails-merklelog/mmr"
 	"github.com/ethereum/go-ethereum/common"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	massmmr "github.com/masslbs/network-schema/go/mmr"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 // RootHash computes the root hash of a list of patches.
