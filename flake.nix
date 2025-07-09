@@ -59,6 +59,8 @@
             inherit pname version;
             hash = "sha256-z0qHRRoPHLdpEaqX9DL0V54fVkovDITOSIxzpzkBtsE=";
           };
+          pyproject = true;
+          build-system = [pinnedPython.pkgs.setuptools];
           buildInputs = [pinnedPython.pkgs.setuptools];
           # le sigh...
           postUnpack = ''
