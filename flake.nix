@@ -49,7 +49,7 @@
           overlays = [gomod2nix.overlays.default];
         };
 
-        ourPython = pkgs.python312;
+        ourPython = pkgs.python3;
 
         # https://github.com/ethereum/eth-typing/issues/63#issuecomment-2291678106
         pyunormalize = ourPython.pkgs.buildPythonPackage rec {
