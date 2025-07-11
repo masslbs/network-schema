@@ -132,7 +132,7 @@ Account = {
 Order = {
     ID: uint,
     Items: [* OrderedItem],
-    PaymentState: OrderState,
+    PaymentState: OrderPaymentState,
     ? InvoiceAddress: AddressDetails,
     ? ShippingAddress: AddressDetails,
     ? CanceledAt: text,
