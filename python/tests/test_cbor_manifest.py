@@ -22,6 +22,7 @@ from massmarket.cbor.manifest import (
 from massmarket.cbor import Shop
 from utils import get_vector_file
 
+
 def test_cbor_manifest_cbor_keys():
     # Create a simple Manifest instance matching a valid Go schema.
     test_addr = EthereumAddress("0x0102030405060708090a0b0c0d0e0f1011121314")
