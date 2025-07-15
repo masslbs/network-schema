@@ -61,7 +61,7 @@ message SubscriptionPushRequest {
     uint64 shop_seq_no = 1; // sequence number of the patchSet in the shop log
     uint32 patch_leaf_index = 2; // index of the patch in the patch set
 
-    bytes header = 3;    // cbor patchSet header data (see go/cbor/patches.go)
+    bytes header = 3; // cbor patchSet header data (see go/cbor/patches.go)
     bytes signature = 4; // eip191 signature of the above
 
     repeated bytes patches = 5; // array of cbor patch data

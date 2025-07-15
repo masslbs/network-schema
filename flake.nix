@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2024 - 2025 Mass Labs
 #
 # SPDX-License-Identifier: MIT
-
 {
   description = "Mass Market Network Schema";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
     utils.url = "github:numtide/flake-utils";
     gomod2nix = {
       # url = "github:tweag/gomod2nix";
@@ -158,38 +157,36 @@
         '';
       };
 
-
       # Python package derivation for massmarket
       massmarket-python = pinnedPython.pkgs.buildPythonPackage rec {
         pname = "massmarket";
-        version = "0.1.0";
+        version = "0.1.1";
         format = "pyproject";
         src = ./python;
-        
-        nativeBuildInputs = with pkgs; [ protobuf ] ++ (with pinnedPython.pkgs; [ setuptools setuptools-scm ]);
-        propagatedBuildInputs = with pinnedPython.pkgs; [ web3 protobuf cbor2 ];
-        
-        dontPatch = true;
+
+        nativeBuildInputs = with pkgs; [protobuf] ++ (with pinnedPython.pkgs; [setuptools setuptools-scm]);
+        propagatedBuildInputs = with pinnedPython.pkgs; [web3 protobuf cbor2];
+
         SETUPTOOLS_SCM_PRETEND_VERSION = version;
-        
+
         postPatch = ''
-          echo "# Mass Market Network Schema Python Package" > README.md
-          for proto in ../*.proto; do [ -f "$proto" ] && cp "$proto" .; done
-          mkdir -p massmarket
+          echo "updating protobuf code"
+          rm -v massmarket/*_pb2.{py,pyi}
+          cp ${test-vectors}/pb/*.proto .
           protoc --python_out=massmarket --pyi_out=massmarket *.proto
           python tweak_imports.py
-          rm -f *.proto
+          rm -vf *.proto
         '';
-        
-        pythonImportsCheck = [ "massmarket" ];
-        nativeCheckInputs = with pinnedPython.pkgs; [ pytest ];
+
+        pythonImportsCheck = ["massmarket"];
+        nativeCheckInputs = with pinnedPython.pkgs; [pytest];
         checkPhase = ''
           runHook preCheck
           export MASS_TEST_VECTORS_DIR=${test-vectors}/vectors
           pytest tests/
           runHook postCheck
         '';
-        
+
         meta = with pkgs.lib; {
           description = "Mass Market Network Schema Python Package";
           license = licenses.mit;
@@ -246,7 +243,7 @@
         default = test-vectors;
         test-vectors = test-vectors;
         massmarket-python = massmarket-python;
-        mass-python = mass-python;  # Expose the Python environment with its overrides
+        mass-python = mass-python; # Expose the Python environment with its overrides
       };
     });
 }

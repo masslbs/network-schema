@@ -22,6 +22,7 @@ from massmarket.cbor.base_types import (
 
 from utils import get_vector_file
 
+
 def test_patch_path_manifest():
     # Test manifest path (no ID needed)
     path = PatchPath(type=ObjectType.MANIFEST, fields=["pricingCurrency"])
