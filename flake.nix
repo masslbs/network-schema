@@ -4,7 +4,7 @@
 {
   description = "Mass Market Network Schema";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
     systems.url = "github:nix-systems/default";
     flake-parts.url = "github:hercules-ci/flake-parts";
     gomod2nix = {
@@ -187,14 +187,13 @@
           nativeBuildInputs = with pkgs; [protobuf] ++ (with pinnedPython.pkgs; [setuptools setuptools-scm]);
           propagatedBuildInputs = with pinnedPython.pkgs; [web3 protobuf cbor2];
 
-
           postPatch = ''
-          echo "updating protobuf code"
-          rm -v massmarket/*_pb2.{py,pyi}
-          cp ${test-vectors}/pb/*.proto .
-            protoc --python_out=massmarket --pyi_out=massmarket *.proto
-            python tweak_imports.py
-            rm -f *.proto
+            echo "updating protobuf code"
+            rm -v massmarket/*_pb2.{py,pyi}
+            cp ${test-vectors}/pb/*.proto .
+              protoc --python_out=massmarket --pyi_out=massmarket *.proto
+              python tweak_imports.py
+              rm -f *.proto
           '';
 
           pythonImportsCheck = ["massmarket"];

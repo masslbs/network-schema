@@ -20,11 +20,7 @@ class SyncStatusRequest(_message.Message):
     UNPUSHED_PATCHES_FIELD_NUMBER: _ClassVar[int]
     subscription_id: int
     unpushed_patches: int
-    def __init__(
-        self,
-        subscription_id: _Optional[int] = ...,
-        unpushed_patches: _Optional[int] = ...,
-    ) -> None: ...
+    def __init__(self, subscription_id: _Optional[int] = ..., unpushed_patches: _Optional[int] = ...) -> None: ...
 
 class PingRequest(_message.Message):
     __slots__ = ()
