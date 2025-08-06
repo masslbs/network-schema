@@ -140,7 +140,7 @@ Order = {
     ? ChosenCurrency: ChainAddress,
     ? PaymentDetails: PaymentDetails,
     ? TxDetails: OrderPaid,
-    ? FulfilmentStatus: text,
+    ? FulfilmentState: text,
     ? CommentForCustomer: text
 }
 
