@@ -70,7 +70,7 @@ func OrderValidation(sl validator.StructLevel) {
 	// versions of cancel
 	case OrderPaymentStatePaidLate:
 		fallthrough
-	case OrderPaymentStateUpaidExpired:
+	case OrderPaymentStateUnpaidExpired:
 		fallthrough
 	case OrderPaymentStateLocked:
 		if len(order.Items) == 0 {
@@ -89,6 +89,8 @@ func OrderValidation(sl validator.StructLevel) {
 	}
 }
 
+//go:generate stringer -output gen_order_payment_state_string.go -trimprefix OrderPaymentState -type OrderPaymentState .
+
 // OrderPaymentState represents the possible states an order can be in
 type OrderPaymentState uint
 
@@ -105,8 +107,8 @@ const (
 	OrderPaymentStatePaymentChosen
 	// OrderPaymentStateUnpaid means a payment address has been created / the order has not yet been paid for
 	OrderPaymentStateUnpaid
-	// OrderPaymentStateUpaidExpired means the order has not been paid and it's TTL has expired
-	OrderPaymentStateUpaidExpired
+	// OrderPaymentStateUnpaidExpired means the order has not been paid and it's TTL has expired
+	OrderPaymentStateUnpaidExpired
 	// OrderPaymentStatePaid means the order has TxDetails and has been paid for
 	OrderPaymentStatePaid
 	// OrderPaymentStatePaidLate means payment was received after the TTL for it expired

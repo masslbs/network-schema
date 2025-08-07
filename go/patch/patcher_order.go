@@ -152,7 +152,7 @@ func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	return nil
 }
 
-var errCannotModdifyCommittedOrder = fmt.Errorf("cannot modify committed order")
+var errCannotModifyLockedOrder = fmt.Errorf("cannot modify items of an locked order")
 
 func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
@@ -170,8 +170,8 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateLocked {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 
 		if len(patch.Path.Fields) < 2 {
@@ -323,8 +323,8 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) appendOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateLocked {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 		var items []objects.OrderedItem
 		if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
@@ -382,14 +382,23 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.CanceledAt = &canceledAt
 
 	case "PaymentState":
-		// TODO: check newState transitions
 		var newState objects.OrderPaymentState
 		if err := masscbor.Unmarshal(patch.Value, &newState); err != nil {
 			return fmt.Errorf("failed to unmarshal order state: %w", err)
 		}
 
-		// TODO: check state transitions
+		// Validate state transition
+		if err := objects.ValidateOrderStateTransitions(order.PaymentState, newState); err != nil {
+			return fmt.Errorf("invalid state transition: %w", err)
+		}
+
+		// Update state first, then validate requirements
 		order.PaymentState = newState
+
+		// Validate that the order meets requirements for the new state
+		if err := objects.ValidateOrderStateRequirements(order, newState); err != nil {
+			return fmt.Errorf("order does not meet requirements for state %s: %w", newState.String(), err)
+		}
 
 	case "ChosenPayee":
 		var payee objects.Payee
@@ -440,8 +449,8 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &details
 
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateLocked {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 		switch {
 		case nFields == 1:
@@ -555,8 +564,8 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateLocked {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
 			return fmt.Errorf("invalid items path")
@@ -590,8 +599,8 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 }
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
-	if order.PaymentState >= objects.OrderPaymentStateLocked {
-		return errCannotModdifyCommittedOrder
+	if !objects.OrderCanModifyItems(order.PaymentState) {
+		return errCannotModifyLockedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)
 	if err != nil {

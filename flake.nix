@@ -249,6 +249,7 @@
           revive
           errcheck
           godef
+          gotools
           clang
           cddl # can be used to generate json from cddl files
           cbor-diag
