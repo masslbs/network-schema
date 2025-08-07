@@ -26,6 +26,7 @@ func TestOrderStateMachine_ValidateStateTransition(t *testing.T) {
 		{"Locked to Canceled", OrderPaymentStateLocked, OrderPaymentStateCanceled, false},
 		{"PaymentChosen to Unpaid", OrderPaymentStatePaymentChosen, OrderPaymentStateUnpaid, false},
 		{"PaymentChosen to Canceled", OrderPaymentStatePaymentChosen, OrderPaymentStateCanceled, false},
+		{"Unpaid to PaymentChosen", OrderPaymentStateUnpaid, OrderPaymentStatePaymentChosen, false},
 		{"Unpaid to Paid", OrderPaymentStateUnpaid, OrderPaymentStatePaid, false},
 		{"Unpaid to Canceled", OrderPaymentStateUnpaid, OrderPaymentStateCanceled, false},
 		{"Unpaid to UnpaidExpired", OrderPaymentStateUnpaid, OrderPaymentStateUnpaidExpired, false},

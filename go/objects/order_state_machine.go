@@ -9,8 +9,8 @@ import (
 	"slices"
 )
 
-// ValidTransitions defines the allowed state transitions based on the state machine diagram
-var ValidTransitions = map[OrderPaymentState][]OrderPaymentState{
+// validOrderStateTransitions defines the allowed state transitions based on the state machine diagram
+var validOrderStateTransitions = map[OrderPaymentState][]OrderPaymentState{
 	OrderPaymentStateOpen: {
 		OrderPaymentStateLocked,   // freezing items
 		OrderPaymentStateCanceled, // timer expired from LOCKED state
@@ -25,6 +25,7 @@ var ValidTransitions = map[OrderPaymentState][]OrderPaymentState{
 		OrderPaymentStateUnpaid,   // payment details generated
 	},
 	OrderPaymentStateUnpaid: {
+		OrderPaymentStatePaymentChosen, // changed payment method
 		OrderPaymentStatePaid,          // payment detected and confirmed
 		OrderPaymentStateCanceled,      // navigate away
 		OrderPaymentStateUnpaidExpired, // timeout expired
@@ -50,7 +51,7 @@ func ValidateOrderStateTransitions(currentState, newState OrderPaymentState) err
 		return nil // Same state is always valid
 	}
 
-	allowedStates, exists := ValidTransitions[currentState]
+	allowedStates, exists := validOrderStateTransitions[currentState]
 	if !exists {
 		return fmt.Errorf("invalid current state: %s", currentState.String())
 	}
