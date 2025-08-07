@@ -1712,7 +1712,7 @@ func newTestOrder() (objects.Shop, objects.Order) {
 
 	o2 := clone.Clone(o)
 	o2.ID = 667
-	o2.PaymentState = objects.OrderPaymentStateCommitted
+	o2.PaymentState = objects.OrderPaymentStateLocked
 	o2.Items[0].Quantity = 55
 	o2.Items[1] = objects.OrderedItem{
 		ListingID: 5557,
@@ -2016,13 +2016,13 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			name:  "replace payment state",
 			op:    ReplaceOp,
 			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"PaymentState"}},
-			value: objects.OrderPaymentStateCommitted,
+			value: objects.OrderPaymentStateLocked,
 			expected: func(t *testing.T, o objects.Order) {
-				assert.Equal(t, objects.OrderPaymentStateCommitted, o.PaymentState)
+				assert.Equal(t, objects.OrderPaymentStateLocked, o.PaymentState)
 				// ensure other order is not affected
 				otherOrder, ok := shop.Orders.Get(667)
 				assert.True(t, ok)
-				assert.Equal(t, objects.OrderPaymentStateCommitted, otherOrder.PaymentState)
+				assert.Equal(t, objects.OrderPaymentStateLocked, otherOrder.PaymentState)
 			},
 		},
 

@@ -43,6 +43,8 @@ type OrderedItem struct {
 func OrderValidation(sl validator.StructLevel) {
 	order := sl.Current().Interface().(Order)
 	switch order.PaymentState {
+
+	// happy path for an order
 	case OrderPaymentStatePaid:
 		if order.TxDetails == nil {
 			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
@@ -64,8 +66,13 @@ func OrderValidation(sl validator.StructLevel) {
 			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
 		}
+
+	// versions of cancel
+	case OrderPaymentStatePaidLate:
 		fallthrough
-	case OrderPaymentStateCommitted:
+	case OrderPaymentStateUpaidExpired:
+		fallthrough
+	case OrderPaymentStateLocked:
 		if len(order.Items) == 0 {
 			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
@@ -73,8 +80,10 @@ func OrderValidation(sl validator.StructLevel) {
 		if order.CanceledAt == nil {
 			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
 		}
+
 	case OrderPaymentStateOpen:
-		// noop
+	// noop
+
 	default:
 		sl.ReportError(order.PaymentState, "PaymentState", "PaymentState", fmt.Sprintf("invalid order state: %d", order.PaymentState), "")
 	}
@@ -84,20 +93,24 @@ func OrderValidation(sl validator.StructLevel) {
 type OrderPaymentState uint
 
 const (
-	// OrderPaymentStateUnspecified is the default and invalid state of an order
+	// OrderPaymentStateUnspecified is an invalid state of an order
 	OrderPaymentStateUnspecified OrderPaymentState = iota
-	// OrderPaymentStateOpen is the state of an order which is open to being changed
-	OrderPaymentStateOpen
-	// OrderPaymentStateCanceled is the state of an order which has been canceled
+	// OrderPaymentStateCanceled might be the result of a manual action for what ever reason, like abandoning an order after a payment may be in flight
 	OrderPaymentStateCanceled
-	// OrderPaymentStateCommitted is the state of an order which items have been frozen
-	OrderPaymentStateCommitted
-	// OrderPaymentStatePaymentChosen is the state of an order which has chosen a payment channel
+	// OrderPaymentStateOpen means items can be changed
+	OrderPaymentStateOpen
+	// OrderPaymentStateLocked means items have been frozen & timer is running, only invoice/shipping addresses and payment channel can be set
+	OrderPaymentStateLocked
+	// OrderPaymentStatePaymentChosen means a payment channel has been chosen
 	OrderPaymentStatePaymentChosen
-	// OrderPaymentStateUnpaid is the state of an order which has not been paid for
+	// OrderPaymentStateUnpaid means a payment address has been created / the order has not yet been paid for
 	OrderPaymentStateUnpaid
-	// OrderPaymentStatePaid is the state of an order which has been paid for
+	// OrderPaymentStateUpaidExpired means the order has not been paid and it's TTL has expired
+	OrderPaymentStateUpaidExpired
+	// OrderPaymentStatePaid means the order has TxDetails and has been paid for
 	OrderPaymentStatePaid
+	// OrderPaymentStatePaidLate means payment was received after the TTL for it expired
+	OrderPaymentStatePaidLate
 
 	maxOrderPaymentState
 )

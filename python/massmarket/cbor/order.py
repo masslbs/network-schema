@@ -14,12 +14,14 @@ from massmarket.cbor.base_types import Uint256, ChainAddress, Payee
 
 class OrderPaymentState(IntEnum):
     UNSPECIFIED = 0
-    OPEN = 1
-    CANCELED = 2
-    COMMITTED = 3
+    CANCELED = 1
+    OPEN = 2
+    LOCKED = 3
     PAYMENT_CHOSEN = 4
     UNPAID = 5
-    PAID = 6
+    UNPAID_EXPIRED = 6
+    PAID = 7
+    PAID_LATE = 8
 
 
 @dataclass
@@ -188,21 +190,23 @@ class Order:
                 )
 
         if self.payment_state in (
-            OrderPaymentState.PAID,
+            OrderPaymentState.LOCKED,
             OrderPaymentState.UNPAID,
-            OrderPaymentState.COMMITTED,
+            OrderPaymentState.UNPAID_EXPIRED,
+            OrderPaymentState.PAID,
+            OrderPaymentState.PAID_LATE,
         ):
             if self.chosen_payee is None:
                 raise ValueError(
-                    "ChosenPayee is required when state is COMMITTED, UNPAID, or PAID"
+                    "ChosenPayee is required once state is LOCKED and above"
                 )
             if self.chosen_currency is None:
                 raise ValueError(
-                    "ChosenCurrency is required when state is COMMITTED, UNPAID, or PAID"
+                    "ChosenCurrency is required once state is LOCKED and above"
                 )
             if self.invoice_address is None and self.shipping_address is None:
                 raise ValueError(
-                    "Either InvoiceAddress or ShippingAddress is required for COMMITTED, UNPAID, or PAID states"
+                    "Either InvoiceAddress or ShippingAddress is required for LOCKED and above states"
                 )
 
         if self.payment_state == OrderPaymentState.CANCELED:

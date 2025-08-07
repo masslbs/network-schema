@@ -87,7 +87,32 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				},
 			}),
 		},
-
+		{
+			name: "AddListing2",
+			patch: createPatch(t, AddOp, Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(102)}, objects.Listing{
+				ID:        102,
+				Price:     *big.NewInt(3975), // $3975
+				ViewState: objects.ListingViewStatePublished,
+				Metadata: objects.ListingMetadata{
+					Title:       "Shoe",
+					Description: "A thing for your feet",
+					Images:      []string{"https://example.com/shoe.jpg"},
+				},
+			}),
+		},
+		{
+			name: "AddListing3",
+			patch: createPatch(t, AddOp, Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(103)}, objects.Listing{
+				ID:        103,
+				Price:     *big.NewInt(599), // $5.99
+				ViewState: objects.ListingViewStatePublished,
+				Metadata: objects.ListingMetadata{
+					Title:       "Stickers",
+					Description: "a big pack of stickers",
+					Images:      []string{"https://example.com/sticker.jpg"},
+				},
+			}),
+		},
 		// Step 3: Update inventory
 		{
 			name: "SetInventory",
@@ -148,16 +173,52 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			},
 		},
 
-		// Step 6: Order gets committed with payment details
+		// unlock again before payment chosen
 		{
-			name: "CommitOrder",
+			name: "FirstCommitOrder",
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 				Fields:   []any{"PaymentState"},
-			}, objects.OrderPaymentStateCommitted),
+			}, objects.OrderPaymentStateLocked),
+		},
+		{
+			name: "UnlockOrderAgain",
+			patch: createPatch(t, ReplaceOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateOpen),
 		},
 
+		{
+			name: "AddSomeMoreItems",
+			patch: createPatch(t, AppendOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"Items"},
+			}, []objects.OrderedItem{
+				{
+					ListingID: 102,
+					Quantity:  2,
+				},
+				{
+					ListingID: 103,
+					Quantity:  3,
+				},
+			}),
+		},
+
+		{
+			name: "FinalCommitOrder",
+			patch: createPatch(t, ReplaceOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateLocked),
+		},
+
+		// Step 6: Order gets committed with payment details
 		{
 			name: "ChoosePaymentChannel1",
 			patch: createPatch(t, AddOp, Path{
@@ -429,7 +490,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 				Fields:   []any{"PaymentState"},
-			}, objects.OrderPaymentStateCommitted),
+			}, objects.OrderPaymentStateLocked),
 		},
 
 		{
@@ -508,7 +569,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 		// 		Type:     ObjectTypeOrder,
 		// 		ObjectID: testhelper.Uint64ptr(5001),
 		// 		Fields:   []any{"PaymentState"},
-		// 	}, objects.OrderPaymentStateCommitted),
+		// 	}, objects.OrderPaymentStateLocked),
 		// },
 
 		// // Step 10: Add tracking information

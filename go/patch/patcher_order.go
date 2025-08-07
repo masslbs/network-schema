@@ -170,32 +170,40 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateLocked {
 			return errCannotModdifyCommittedOrder
 		}
 
 		if len(patch.Path.Fields) < 2 {
-			var item objects.OrderedItem
-			if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
-				return fmt.Errorf("failed to unmarshal order item: %w", err)
+			var items []objects.OrderedItem
+			if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
+				var item objects.OrderedItem
+				if err2 := masscbor.Unmarshal(patch.Value, &item); err2 != nil {
+					fmt.Printf("Data: %x\n", patch.Value)
+					fmt.Printf("failed array unamrshal: err=%s\n", err)
+					return fmt.Errorf("failed to unmarshal order item: %w", err2)
+				}
+				items = []objects.OrderedItem{item}
 			}
-			listing, exists := p.shop.Listings.Get(item.ListingID)
-			if !exists {
-				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
-			}
-			for _, varID := range item.VariationIDs {
-				found := false
-				for _, opt := range listing.Options {
-					if _, exists := opt.Variations[varID]; exists {
-						found = true
-						break
+			for _, item := range items {
+				listing, exists := p.shop.Listings.Get(item.ListingID)
+				if !exists {
+					return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
+				}
+				for _, varID := range item.VariationIDs {
+					found := false
+					for _, opt := range listing.Options {
+						if _, exists := opt.Variations[varID]; exists {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
 					}
 				}
-				if !found {
-					return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
-				}
 			}
-			order.Items = append(order.Items, item)
+			order.Items = append(order.Items, items...)
 			return nil
 		}
 
@@ -315,14 +323,38 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) appendOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateLocked {
 			return errCannotModdifyCommittedOrder
 		}
-		var item objects.OrderedItem
-		if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
-			return fmt.Errorf("failed to unmarshal order item: %w", err)
+		var items []objects.OrderedItem
+		if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
+			var item objects.OrderedItem
+			if err2 := masscbor.Unmarshal(patch.Value, &item); err2 != nil {
+				fmt.Printf("Data: %x\n", patch.Value)
+				fmt.Printf("failed array unamrshal: err=%s\n", err)
+				return fmt.Errorf("failed to unmarshal order item: %w", err2)
+			}
+			items = []objects.OrderedItem{item}
 		}
-		order.Items = append(order.Items, item)
+		for _, item := range items {
+			listing, exists := p.shop.Listings.Get(item.ListingID)
+			if !exists {
+				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
+			}
+			for _, varID := range item.VariationIDs {
+				found := false
+				for _, opt := range listing.Options {
+					if _, exists := opt.Variations[varID]; exists {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
+				}
+			}
+		}
+		order.Items = append(order.Items, items...)
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
@@ -408,7 +440,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &details
 
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateLocked {
 			return errCannotModdifyCommittedOrder
 		}
 		switch {
@@ -523,7 +555,7 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.PaymentState >= objects.OrderPaymentStateCommitted {
+		if order.PaymentState >= objects.OrderPaymentStateLocked {
 			return errCannotModdifyCommittedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
@@ -558,7 +590,7 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 }
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
-	if order.PaymentState >= objects.OrderPaymentStateCommitted {
+	if order.PaymentState >= objects.OrderPaymentStateLocked {
 		return errCannotModdifyCommittedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)

@@ -148,7 +148,7 @@ def test_full_order_roundtrip():
                 variation_ids=["red"],
             )
         ],
-        payment_state=OrderPaymentState.COMMITTED,
+        payment_state=OrderPaymentState.LOCKED,
         invoice_address=address,
         chosen_payee=payee,
         chosen_currency=currency,
@@ -170,14 +170,14 @@ def test_full_order_roundtrip():
 
 
 def test_order_validation():
-    # Test missing chosen_payee for COMMITTED state
+    # Test missing chosen_payee for LOCKED state
     with pytest.raises(
-        ValueError, match="ChosenPayee is required when state is COMMITTED"
+        ValueError, match="ChosenPayee is required once state is LOCKED and above"
     ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            payment_state=OrderPaymentState.COMMITTED,
+            payment_state=OrderPaymentState.LOCKED,
             chosen_currency=ChainAddress(chain_id=1337, address=b"\x00" * 20),
             invoice_address=AddressDetails(
                 name="John",
@@ -188,14 +188,14 @@ def test_order_validation():
             ),
         )
 
-    # Test missing invoice_address or shipping_address for COMMITTED state
+    # Test missing invoice_address or shipping_address for LOCKED state
     with pytest.raises(
         ValueError, match="Either InvoiceAddress or ShippingAddress is required"
     ):
         Order(
             id=1,
             items=[OrderedItem(listing_id=5555, quantity=1)],
-            payment_state=OrderPaymentState.COMMITTED,
+            payment_state=OrderPaymentState.LOCKED,
             chosen_payee=Payee(
                 address=ChainAddress(chain_id=1337, address=b"\x00" * 20),
                 call_as_contract=False,
@@ -261,16 +261,6 @@ def test_order_validation():
                 shop_signature=b"\x04" * 65,
             ),
         )
-
-
-def test_order_state():
-    assert OrderPaymentState.UNSPECIFIED.value == 0
-    assert OrderPaymentState.OPEN.value == 1
-    assert OrderPaymentState.CANCELED.value == 2
-    assert OrderPaymentState.COMMITTED.value == 3
-    assert OrderPaymentState.PAYMENT_CHOSEN.value == 4
-    assert OrderPaymentState.UNPAID.value == 5
-    assert OrderPaymentState.PAID.value == 6
 
 
 # this does not test the patching logic, just the roundtrip from the _after_ state
