@@ -24,6 +24,7 @@ class ErrorCodes(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     ERROR_CODES_OUT_OF_STOCK: _ClassVar[ErrorCodes]
     ERROR_CODES_SIMULATED: _ClassVar[ErrorCodes]
     ERROR_CODES_CLOSE_SUBSCRIPTION: _ClassVar[ErrorCodes]
+
 ERROR_CODES_UNSPECIFIED: ErrorCodes
 ERROR_CODES_NOT_FOUND: ErrorCodes
 ERROR_CODES_INVALID: ErrorCodes
@@ -44,10 +45,16 @@ class Error(_message.Message):
         OBJECT_ID_FIELD_NUMBER: _ClassVar[int]
         object_id: int
         def __init__(self, object_id: _Optional[int] = ...) -> None: ...
+
     CODE_FIELD_NUMBER: _ClassVar[int]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
     ADDITIONAL_INFO_FIELD_NUMBER: _ClassVar[int]
     code: ErrorCodes
     message: str
     additional_info: Error.AdditionalInfo
-    def __init__(self, code: _Optional[_Union[ErrorCodes, str]] = ..., message: _Optional[str] = ..., additional_info: _Optional[_Union[Error.AdditionalInfo, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        code: _Optional[_Union[ErrorCodes, str]] = ...,
+        message: _Optional[str] = ...,
+        additional_info: _Optional[_Union[Error.AdditionalInfo, _Mapping]] = ...,
+    ) -> None: ...
