@@ -192,23 +192,27 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 		},
 
 		{
-			name: "AddSomeMoreItems",
+			name: "AddSomeMoreItems1",
 			patch: createPatch(t, AppendOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 				Fields:   []any{"Items"},
-			}, []objects.OrderedItem{
-				{
-					ListingID: 102,
-					Quantity:  2,
-				},
-				{
-					ListingID: 103,
-					Quantity:  3,
-				},
+			}, objects.OrderedItem{
+				ListingID: 102,
+				Quantity:  2,
 			}),
 		},
-
+		{
+			name: "AddSomeMoreItems2",
+			patch: createPatch(t, AppendOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"Items"},
+			}, objects.OrderedItem{
+				ListingID: 103,
+				Quantity:  3,
+			}),
+		},
 		{
 			name: "FinalCommitOrder",
 			patch: createPatch(t, ReplaceOp, Path{
