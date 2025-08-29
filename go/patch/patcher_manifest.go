@@ -7,7 +7,6 @@ package patch
 import (
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
@@ -155,11 +154,11 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 		}
 
 	case "OrderPaymentTimeout":
-		var dur time.Duration
+		var dur uint
 		if err := masscbor.Unmarshal(patch.Value, &dur); err != nil {
-			return fmt.Errorf("failed to unmarshal duration: %w", err)
+			return fmt.Errorf("failed to unmarshal timeout duration: %w", err)
 		}
-		p.shop.Manifest.OrderPaymentTimeout = dur
+		p.shop.Manifest.OrderPaymentTimeout = objects.OrderPaymentTimeoutUnit(dur)
 	default:
 		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
 	}

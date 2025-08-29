@@ -73,7 +73,7 @@ func TestMapOrdering(t *testing.T) {
 		0xf6, // primitive(22)
 		0x73, // text(19)
 		'O', 'r', 'd', 'e', 'r', 'P', 'a', 'y', 'm', 'e', 'n', 't', 'T', 'i', 'm', 'e', 'o', 'u', 't',
-		0x1b, 0x00, 0x00, 0x03, 0x46, 0x30, 0xb8, 0xa0, 0x00, // unsigned(3600000000000)
+		0x19, 0x0e, 0x10, // unsigned(3600)
 		0x69, // text(8)
 		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -212,7 +212,7 @@ func TestCreateAllTypes(t *testing.T) {
 					},
 				},
 			},
-			OrderPaymentTimeout: time.Hour,
+			OrderPaymentTimeout: OrderPaymentTimeoutUnit(time.Hour.Seconds()),
 		}},
 
 		{Account{

@@ -5,9 +5,9 @@
 package objects
 
 import (
-	"testing"
-
 	"github.com/peterldowns/testy/assert"
+	"testing"
+	"time"
 )
 
 func TestCombinedID(t *testing.T) {
@@ -24,4 +24,10 @@ func TestCombinedID(t *testing.T) {
 	id, variations = bytesToCombinedID(buf)
 	assert.Equal(t, id, ObjectID(2))
 	assert.Equal(t, variations, []string{"a", "b", "c"})
+}
+
+func TestTimeoutToDuration(t *testing.T) {
+	var out = OrderPaymentTimeoutUnit(23)
+	assert.Equal(t, time.Second*23, out.Duration())
+
 }

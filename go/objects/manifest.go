@@ -10,15 +10,22 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// OrderPaymentTimeoutUnit is defined in seconds
+type OrderPaymentTimeoutUnit uint
+
+func (t OrderPaymentTimeoutUnit) Duration() time.Duration {
+	return time.Duration(t) * time.Second
+}
+
 // Manifest defines metadata needed to operate a shop
 type Manifest struct {
 	// shop metadata lives in the NFT
 	ShopID              Uint256 `validate:"required"`
 	Payees              Payees
 	AcceptedCurrencies  ChainAddresses
-	PricingCurrency     ChainAddress    // the currency listings are priced in
-	ShippingRegions     ShippingRegions `json:",omitempty"`
-	OrderPaymentTimeout time.Duration   `validate:"required"`
+	PricingCurrency     ChainAddress            // the currency listings are priced in
+	ShippingRegions     ShippingRegions         `json:",omitempty"`
+	OrderPaymentTimeout OrderPaymentTimeoutUnit `validate:"required"`
 }
 
 // PayeeMetadata stores additional metadata about a payee

@@ -69,7 +69,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				ShippingRegions: objects.ShippingRegions{
 					"Default": {Country: "DE"},
 				},
-				OrderPaymentTimeout: time.Hour,
+				OrderPaymentTimeout: durationToTimeoutUnit(time.Hour),
 			}),
 		},
 
@@ -386,7 +386,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 				ShippingRegions: objects.ShippingRegions{
 					"US": {Country: "United States"},
 				},
-				OrderPaymentTimeout: 2 * time.Hour,
+				OrderPaymentTimeout: durationToTimeoutUnit(2 * time.Hour),
 			}),
 			validate: func(t *testing.T, s objects.Shop) {
 				assert.Equal(t, 1, len(s.Manifest.ShippingRegions))

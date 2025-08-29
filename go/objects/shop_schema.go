@@ -32,7 +32,7 @@ type Shop struct {
 // NewShop creates a new shop
 func NewShop(version uint64) Shop {
 	s := Shop{}
-	s.Manifest.OrderPaymentTimeout = time.Hour
+	s.Manifest.OrderPaymentTimeout = OrderPaymentTimeoutUnit(time.Hour.Seconds())
 	s.SchemaVersion = version
 	s.Accounts.Trie = hamt.NewTrie[Account]()
 	s.Listings.Trie = hamt.NewTrie[Listing]()
