@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 func (p *Patcher) patchOrder(patch Patch) error {
@@ -152,7 +152,7 @@ func (p *Patcher) validateOrderReferences(order *objects.Order) error {
 	return nil
 }
 
-var errCannotModdifyCommittedOrder = fmt.Errorf("cannot modify committed order")
+var errCannotModifyLockedOrder = fmt.Errorf("cannot modify items of an locked order")
 
 func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 	if len(patch.Path.Fields) == 0 {
@@ -170,32 +170,40 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 
 		if len(patch.Path.Fields) < 2 {
-			var item objects.OrderedItem
-			if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
-				return fmt.Errorf("failed to unmarshal order item: %w", err)
+			var items []objects.OrderedItem
+			if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
+				var item objects.OrderedItem
+				if err2 := masscbor.Unmarshal(patch.Value, &item); err2 != nil {
+					fmt.Printf("Data: %x\n", patch.Value)
+					fmt.Printf("failed array unamrshal: err=%s\n", err)
+					return fmt.Errorf("failed to unmarshal order item: %w", err2)
+				}
+				items = []objects.OrderedItem{item}
 			}
-			listing, exists := p.shop.Listings.Get(item.ListingID)
-			if !exists {
-				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
-			}
-			for _, varID := range item.VariationIDs {
-				found := false
-				for _, opt := range listing.Options {
-					if _, exists := opt.Variations[varID]; exists {
-						found = true
-						break
+			for _, item := range items {
+				listing, exists := p.shop.Listings.Get(item.ListingID)
+				if !exists {
+					return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
+				}
+				for _, varID := range item.VariationIDs {
+					found := false
+					for _, opt := range listing.Options {
+						if _, exists := opt.Variations[varID]; exists {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
 					}
 				}
-				if !found {
-					return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
-				}
 			}
-			order.Items = append(order.Items, item)
+			order.Items = append(order.Items, items...)
 			return nil
 		}
 
@@ -282,6 +290,24 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 			return fmt.Errorf("failed to unmarshal tx details: %w", err)
 		}
 		order.TxDetails = &txDetails
+	case "FulfilmentState":
+		if order.FulfilmentState != "" {
+			return fmt.Errorf("fulfilment status already set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal fulfilment status: %w", err)
+		}
+		order.FulfilmentState = value
+	case "CommentForCustomer":
+		if order.CommentForCustomer != "" {
+			return fmt.Errorf("CommentForCustomer already set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal CommentForCustomer: %w", err)
+		}
+		order.CommentForCustomer = value
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
@@ -297,14 +323,38 @@ func (p *Patcher) addOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) appendOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
-		var item objects.OrderedItem
-		if err := masscbor.Unmarshal(patch.Value, &item); err != nil {
-			return fmt.Errorf("failed to unmarshal order item: %w", err)
+		var items []objects.OrderedItem
+		if err := masscbor.Unmarshal(patch.Value, &items); err != nil {
+			var item objects.OrderedItem
+			if err2 := masscbor.Unmarshal(patch.Value, &item); err2 != nil {
+				fmt.Printf("Data: %x\n", patch.Value)
+				fmt.Printf("failed array unamrshal: err=%s\n", err)
+				return fmt.Errorf("failed to unmarshal order item: %w", err2)
+			}
+			items = []objects.OrderedItem{item}
 		}
-		order.Items = append(order.Items, item)
+		for _, item := range items {
+			listing, exists := p.shop.Listings.Get(item.ListingID)
+			if !exists {
+				return ObjectNotFoundError{ObjectType: ObjectTypeListing, Path: Path{ObjectID: &item.ListingID}}
+			}
+			for _, varID := range item.VariationIDs {
+				found := false
+				for _, opt := range listing.Options {
+					if _, exists := opt.Variations[varID]; exists {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("variation %s not found in listing %d", varID, item.ListingID)
+				}
+			}
+		}
+		order.Items = append(order.Items, items...)
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
@@ -331,15 +381,24 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		}
 		order.CanceledAt = &canceledAt
 
-	case "State":
-		// TODO: check newState transitions
-		var newState objects.OrderState
+	case "PaymentState":
+		var newState objects.OrderPaymentState
 		if err := masscbor.Unmarshal(patch.Value, &newState); err != nil {
 			return fmt.Errorf("failed to unmarshal order state: %w", err)
 		}
 
-		// TODO: check state transitions
-		order.State = newState
+		// Validate state transition
+		if err := objects.ValidateOrderStateTransitions(order.PaymentState, newState); err != nil {
+			return fmt.Errorf("invalid state transition: %w", err)
+		}
+
+		// Update state first, then validate requirements
+		order.PaymentState = newState
+
+		// Validate that the order meets requirements for the new state
+		if err := objects.ValidateOrderStateRequirements(order, newState); err != nil {
+			return fmt.Errorf("order does not meet requirements for state %s: %w", newState.String(), err)
+		}
 
 	case "ChosenPayee":
 		var payee objects.Payee
@@ -390,8 +449,8 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		order.TxDetails = &details
 
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 		switch {
 		case nFields == 1:
@@ -435,14 +494,14 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 			return fmt.Errorf("InvoiceAddress not set")
 		}
 
-		switch {
-		case nFields == 1:
+		switch nFields {
+		case 1:
 			var newAddress objects.AddressDetails
 			if err := masscbor.Unmarshal(patch.Value, &newAddress); err != nil {
 				return fmt.Errorf("failed to unmarshal invoice address: %w", err)
 			}
 			order.InvoiceAddress = &newAddress
-		case nFields == 2:
+		case 2:
 			switch patch.Path.Fields[1] {
 			case "Name":
 				var newName string
@@ -471,6 +530,25 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 		default:
 			return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 		}
+
+	case "FulfilmentState":
+		if order.FulfilmentState == "" {
+			return fmt.Errorf("fulfilment status not set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal fulfilment status: %w", err)
+		}
+		order.FulfilmentState = value
+	case "CommentForCustomer":
+		if order.CommentForCustomer == "" {
+			return fmt.Errorf("CommentForCustomer not set")
+		}
+		var value string
+		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
+			return fmt.Errorf("failed to unmarshal CommentForCustomer: %w", err)
+		}
+		order.CommentForCustomer = value
 	default:
 		return ObjectNotFoundError{ObjectType: ObjectTypeOrder, Path: patch.Path}
 	}
@@ -486,8 +564,8 @@ func (p *Patcher) replaceOrderField(order *objects.Order, patch Patch) error {
 func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 	switch patch.Path.Fields[0] {
 	case "Items":
-		if order.State >= objects.OrderStateCommitted {
-			return errCannotModdifyCommittedOrder
+		if !objects.OrderCanModifyItems(order.PaymentState) {
+			return errCannotModifyLockedOrder
 		}
 		if len(patch.Path.Fields) != 2 {
 			return fmt.Errorf("invalid items path")
@@ -521,8 +599,8 @@ func (p *Patcher) removeOrderField(order *objects.Order, patch Patch) error {
 }
 
 func (p *Patcher) modifyOrderQuantity(order *objects.Order, patch Patch) error {
-	if order.State >= objects.OrderStateCommitted {
-		return errCannotModdifyCommittedOrder
+	if !objects.OrderCanModifyItems(order.PaymentState) {
+		return errCannotModifyLockedOrder
 	}
 	index, err := checkPathAndIndex(order, patch.Path.Fields)
 	if err != nil {

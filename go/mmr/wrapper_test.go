@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/peterldowns/testy/assert"
 
-	massmmr "github.com/masslbs/network-schema/go/mmr"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
 )
 
 var hashFn = sha256.New
@@ -57,12 +57,12 @@ func testWrapper(t *testing.T, tree massmmr.VerifierTree) {
 		idx uint64
 		val []byte
 	}
-	numLeafs := mmr.LeafCount(mmrSize)
-	testValues := make([]testValue, numLeafs)
+	numLeaves := mmr.LeafCount(mmrSize)
+	testValues := make([]testValue, numLeaves)
 
 	// roll some random values and save their indices
 	var val []byte
-	for i := uint64(0); i < numLeafs; i++ {
+	for i := uint64(0); i < numLeaves; i++ {
 		val = make([]byte, 32)
 		rand.Read(val)
 		idx, err := tree.Add(val)

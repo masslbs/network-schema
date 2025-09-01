@@ -12,21 +12,23 @@ import cbor2
 from massmarket.cbor.base_types import Uint256, ChainAddress, Payee
 
 
-class OrderState(IntEnum):
+class OrderPaymentState(IntEnum):
     UNSPECIFIED = 0
-    OPEN = 1
-    CANCELED = 2
-    COMMITTED = 3
+    CANCELED = 1
+    OPEN = 2
+    LOCKED = 3
     PAYMENT_CHOSEN = 4
     UNPAID = 5
-    PAID = 6
+    UNPAID_EXPIRED = 6
+    PAID = 7
+    PAID_LATE = 8
 
 
 @dataclass
 class OrderedItem:
     listing_id: int
     quantity: int
-    variation_ids: Optional[List[str]] = None
+    variation_ids: Optional[List[int]] = None
 
     def __post_init__(self):
         if self.listing_id <= 0:
@@ -164,7 +166,7 @@ class OrderPaid:
 class Order:
     id: int
     items: List[OrderedItem]
-    state: OrderState
+    payment_state: OrderPaymentState
     invoice_address: Optional[AddressDetails] = None
     shipping_address: Optional[AddressDetails] = None
     canceled_at: Optional[datetime] = None
@@ -172,34 +174,42 @@ class Order:
     chosen_currency: Optional[ChainAddress] = None
     payment_details: Optional[PaymentDetails] = None
     tx_details: Optional[OrderPaid] = None
+    fulfilment_state: Optional[str] = None
+    comment_for_customer: Optional[str] = None
 
     def __post_init__(self):
         # Validate state-specific requirements
-        if self.state == OrderState.PAID:
+        if self.payment_state == OrderPaymentState.PAID:
             if self.tx_details is None:
                 raise ValueError("TxDetails is required when state is PAID")
 
-        if self.state in (OrderState.PAID, OrderState.UNPAID):
+        if self.payment_state in (OrderPaymentState.PAID, OrderPaymentState.UNPAID):
             if self.payment_details is None:
                 raise ValueError(
                     "PaymentDetails is required when state is UNPAID or PAID"
                 )
 
-        if self.state in (OrderState.PAID, OrderState.UNPAID, OrderState.COMMITTED):
+        if self.payment_state in (
+            OrderPaymentState.LOCKED,
+            OrderPaymentState.UNPAID,
+            OrderPaymentState.UNPAID_EXPIRED,
+            OrderPaymentState.PAID,
+            OrderPaymentState.PAID_LATE,
+        ):
             if self.chosen_payee is None:
                 raise ValueError(
-                    "ChosenPayee is required when state is COMMITTED, UNPAID, or PAID"
+                    "ChosenPayee is required once state is LOCKED and above"
                 )
             if self.chosen_currency is None:
                 raise ValueError(
-                    "ChosenCurrency is required when state is COMMITTED, UNPAID, or PAID"
+                    "ChosenCurrency is required once state is LOCKED and above"
                 )
             if self.invoice_address is None and self.shipping_address is None:
                 raise ValueError(
-                    "Either InvoiceAddress or ShippingAddress is required for COMMITTED, UNPAID, or PAID states"
+                    "Either InvoiceAddress or ShippingAddress is required for LOCKED and above states"
                 )
 
-        if self.state == OrderState.CANCELED:
+        if self.payment_state == OrderPaymentState.CANCELED:
             if self.canceled_at is None:
                 raise ValueError("CanceledAt is required when state is CANCELED")
 
@@ -234,7 +244,7 @@ class Order:
         return cls(
             id=d["ID"],
             items=items,
-            state=OrderState(d["State"]),
+            payment_state=OrderPaymentState(d["PaymentState"]),
             invoice_address=invoice_address,
             shipping_address=shipping_address,
             canceled_at=d.get("CanceledAt"),
@@ -242,15 +252,18 @@ class Order:
             chosen_currency=chosen_currency,
             payment_details=payment_details,
             tx_details=tx_details,
+            fulfilment_state=d.get("FulfilmentState"),
+            comment_for_customer=d.get("CommentForCustomer"),
         )
 
     def to_cbor_dict(self) -> Dict[str, Any]:
         d = {
             "ID": self.id,
             "Items": [item.to_cbor_dict() for item in self.items],
-            # TODO: why isnt this tested..?
-            "State": (
-                self.state.value if isinstance(self.state, OrderState) else self.state
+            "PaymentState": (
+                self.payment_state.value
+                if isinstance(self.payment_state, OrderPaymentState)
+                else self.payment_state
             ),
         }
 
@@ -268,6 +281,10 @@ class Order:
             d["PaymentDetails"] = self.payment_details.to_cbor_dict()
         if self.tx_details is not None:
             d["TxDetails"] = self.tx_details.to_cbor_dict()
+        if self.fulfilment_state is not None:
+            d["FulfilmentState"] = self.fulfilment_state
+        if self.comment_for_customer is not None:
+            d["CommentForCustomer"] = self.comment_for_customer
 
         return d
 

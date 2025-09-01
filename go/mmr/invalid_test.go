@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"testing"
 
-	massmmr "github.com/masslbs/network-schema/go/mmr"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
 )
 
 func TestInvalidProofs(t *testing.T) {

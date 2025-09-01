@@ -3,10 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os
 import base64
 import cbor2
-from pprint import pprint
 
 from massmarket.hamt import Trie
 from massmarket.cbor import Shop
@@ -30,9 +28,9 @@ def test_hamt_standalone_vectors():
                 trie.delete(bytes.fromhex(op["key"]))
 
             actual_hash = trie.hash().hex()
-            assert (
-                actual_hash == expected_hashes[j]
-            ), f"Test vector {i}, operation {j}: hash mismatch"
+            assert actual_hash == expected_hashes[j], (
+                f"Test vector {i}, operation {j}: hash mismatch"
+            )
 
 
 def test_hamt_shop_vectors():

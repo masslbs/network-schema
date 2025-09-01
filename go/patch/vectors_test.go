@@ -20,9 +20,9 @@ import (
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/peterldowns/testy/assert"
 
-	"github.com/masslbs/network-schema/go/internal/testhelper"
-	massmmr "github.com/masslbs/network-schema/go/mmr"
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
+	massmmr "github.com/masslbs/network-schema/v5/go/mmr"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 const withVariations = false
@@ -148,6 +148,7 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			ShippingRegions: objects.ShippingRegions{
 				"other": testOther,
 			},
+			OrderPaymentTimeout: durationToTimeoutUnit(15 * time.Minute),
 		}
 
 		return s
@@ -361,8 +362,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64 - 1)},
 			Value: mustEncode(t, objects.Order{
-				ID:    math.MaxUint64 - 1,
-				State: objects.OrderStateOpen,
+				ID:           math.MaxUint64 - 1,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: objects.ObjectID(23), Quantity: 1},
 				},
@@ -373,8 +374,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64 - 2)},
 			Value: mustEncode(t, objects.Order{
-				ID:    math.MaxUint64 - 2,
-				State: objects.OrderStateOpen,
+				ID:           math.MaxUint64 - 2,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: objects.ObjectID(42), Quantity: 1},
 				},
@@ -390,8 +391,8 @@ func TestGenerateVectorsShopOkay(t *testing.T) {
 			Op:   AddOp,
 			Path: Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(math.MaxUint64)},
 			Value: mustEncode(t, objects.Order{
-				ID:    biggestObjectID,
-				State: objects.OrderStateOpen,
+				ID:           biggestObjectID,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{ListingID: biggestObjectID, Quantity: 789},
 				},
@@ -729,6 +730,7 @@ func newTestManifest() objects.Shop {
 				Country: "DE",
 			},
 		},
+		OrderPaymentTimeout: durationToTimeoutUnit(666 * time.Minute),
 	}
 	return s
 }
@@ -769,6 +771,15 @@ func TestGenerateVectorsManifestOkay(t *testing.T) {
 			value: testCurrency,
 			expected: func(t *testing.T, m objects.Manifest) {
 				assert.Equal(t, testCurrency, m.PricingCurrency)
+			},
+		},
+		{
+			name:  "replace payment timeout",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeManifest, Fields: []any{"OrderPaymentTimeout"}},
+			value: durationToTimeoutUnit(time.Hour * 10),
+			expected: func(t *testing.T, m objects.Manifest) {
+				assert.Equal(t, 36000, m.OrderPaymentTimeout)
 			},
 		},
 
@@ -1034,12 +1045,6 @@ func newTestListing() (objects.Shop, objects.Listing) {
 			},
 		},
 	}
-	lis.StockStatuses = []objects.ListingStockStatus{
-		{
-			VariationIDs: []string{"r"},
-			InStock:      testhelper.Boolptr(true),
-		},
-	}
 	s := newTestManifest()
 	err := s.Listings.Insert(lis.ID, lis)
 	if err != nil {
@@ -1084,7 +1089,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			},
 		},
 	}
-	testTimeFuture := time.Unix(10000000000, 0).UTC()
 
 	shop, testListing := newTestListing()
 
@@ -1186,80 +1190,6 @@ func TestGenerateVectorsListingOkay(t *testing.T) {
 			value: objects.ListingViewStatePublished,
 			expected: func(t *testing.T, l objects.Listing) {
 				assert.Equal(t, objects.ListingViewStatePublished, l.ViewState)
-			},
-		},
-
-		{
-			name: "append a stock status",
-			op:   AppendOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses"}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(true),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 2, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[1]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.True(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name: "prepend a stock status",
-			op:   AddOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(true),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 2, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[0]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.True(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name: "replace stock status",
-			op:   ReplaceOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			value: objects.ListingStockStatus{
-				VariationIDs: []string{"m"},
-				InStock:      testhelper.Boolptr(false),
-			},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 1, len(l.StockStatuses))
-				stockStatus := l.StockStatuses[0]
-				assert.Equal(t, []string{"m"}, stockStatus.VariationIDs)
-				assert.False(t, *stockStatus.InStock)
-			},
-		},
-		{
-			name:  "replace expectedInStockBy",
-			op:    ReplaceOp,
-			path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0, "ExpectedInStockBy"}},
-			value: testTimeFuture,
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, nil, l.StockStatuses[0].InStock)
-				assert.Equal(t, testTimeFuture, *l.StockStatuses[0].ExpectedInStockBy)
-			},
-		},
-		{
-			name:  "replace inStock",
-			op:    ReplaceOp,
-			path:  Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0, "InStock"}},
-			value: true,
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.True(t, *l.StockStatuses[0].InStock)
-				assert.Equal(t, nil, l.StockStatuses[0].ExpectedInStockBy)
-			},
-		},
-		{
-			name: "remove stock status",
-			op:   RemoveOp,
-			path: Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 0}},
-			expected: func(t *testing.T, l objects.Listing) {
-				assert.Equal(t, 0, len(l.StockStatuses))
 			},
 		},
 
@@ -1412,19 +1342,6 @@ func TestGenerateVectorsListingError(t *testing.T) {
 			op:       RemoveOp,
 			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"Metadata", "Nonexistent"}},
 			errMatch: "fields=[Metadata Nonexistent] not found",
-		},
-		{
-			name:     "invalid array index",
-			op:       ReplaceOp,
-			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 999}},
-			value:    objects.ListingStockStatus{},
-			errMatch: "fields=[StockStatuses 999] not found",
-		},
-		{
-			name:     "remove non-existent stock status",
-			op:       RemoveOp,
-			path:     Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(1), Fields: []any{"StockStatuses", 999}},
-			errMatch: "fields=[StockStatuses 999] not found",
 		},
 		{
 			name:     "invalid value type for price",
@@ -1766,10 +1683,11 @@ func newTestOrder() (objects.Shop, objects.Order) {
 		ViewState: objects.ListingViewStatePublished,
 	}
 	err = s.Listings.Insert(listing5557.ID, listing5557)
+	check(err)
 
 	o := objects.Order{
-		ID:    666,
-		State: objects.OrderStateOpen,
+		ID:           666,
+		PaymentState: objects.OrderPaymentStateOpen,
 		Items: []objects.OrderedItem{
 			{
 				ListingID: 5555,
@@ -1794,13 +1712,15 @@ func newTestOrder() (objects.Shop, objects.Order) {
 
 	o2 := clone.Clone(o)
 	o2.ID = 667
-	o2.State = objects.OrderStateCommitted
+	o2.PaymentState = objects.OrderPaymentStateLocked
 	o2.Items[0].Quantity = 55
 	o2.Items[1] = objects.OrderedItem{
 		ListingID: 5557,
 		Quantity:  100,
 	}
 	o2.InvoiceAddress.Name = "Jane Doe"
+	o2.FulfilmentState = "Waiting"
+	o2.CommentForCustomer = "Replace me..."
 	err = s.Orders.Insert(o2.ID, o2)
 	check(err)
 
@@ -2004,6 +1924,24 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 				assert.Equal(t, &objects.Hash{0x01, 0x02, 0x03}, o.TxDetails.TxHash)
 			},
 		},
+		{
+			name:  "set-fulfillment-status",
+			op:    AddOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"FulfilmentState"}},
+			value: "WaitingForPickup",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "WaitingForPickup", o.FulfilmentState)
+			},
+		},
+		{
+			name:  "set-customer-comment",
+			op:    AddOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"CommentForCustomer"}},
+			value: "Shipment tracking: mass://tracking/12345678",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "Shipment tracking: mass://tracking/12345678", o.CommentForCustomer)
+			},
+		},
 
 		// replace ops
 		// ===========
@@ -2072,6 +2010,38 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.TxDetails)
 				assert.Equal(t, &objects.Hash{0x04, 0x05, 0x06}, o.TxDetails.TxHash)
+			},
+		},
+		{
+			name:  "replace payment state",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(666), Fields: []any{"PaymentState"}},
+			value: objects.OrderPaymentStateLocked,
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, objects.OrderPaymentStateLocked, o.PaymentState)
+				// ensure other order is not affected
+				otherOrder, ok := shop.Orders.Get(667)
+				assert.True(t, ok)
+				assert.Equal(t, objects.OrderPaymentStateLocked, otherOrder.PaymentState)
+			},
+		},
+
+		{
+			name:  "update fulfillment status",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"FulfilmentState"}},
+			value: "PickedUp",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "PickedUp", o.FulfilmentState)
+			},
+		},
+		{
+			name:  "update customer comment",
+			op:    ReplaceOp,
+			path:  Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"CommentForCustomer"}},
+			value: "Shipment tracking: mass://tracking/12345678 - on it's way",
+			expected: func(t *testing.T, o objects.Order) {
+				assert.Equal(t, "Shipment tracking: mass://tracking/12345678 - on it's way", o.CommentForCustomer)
 			},
 		},
 	}
@@ -2170,34 +2140,34 @@ func TestGenerateVectorsOrderError(t *testing.T) {
 			op:       AddOp,
 			path:     Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"Items"}},
 			value:    objects.OrderedItem{ListingID: 5555, Quantity: 1},
-			errMatch: errCannotModdifyCommittedOrder.Error(),
+			errMatch: errCannotModifyLockedOrder.Error(),
 		},
 		{
 			name:     "replace item after commit",
 			op:       ReplaceOp,
 			path:     Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"Items", 0}},
 			value:    objects.OrderedItem{ListingID: 5555, Quantity: 2},
-			errMatch: errCannotModdifyCommittedOrder.Error(),
+			errMatch: errCannotModifyLockedOrder.Error(),
 		},
 		{
 			name:     "increment quantity after commit",
 			op:       IncrementOp,
 			path:     Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"Items", 0, "Quantity"}},
 			value:    1,
-			errMatch: errCannotModdifyCommittedOrder.Error(),
+			errMatch: errCannotModifyLockedOrder.Error(),
 		},
 		{
 			name:     "decrement quantity after commit",
 			op:       DecrementOp,
 			path:     Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"Items", 0, "Quantity"}},
 			value:    1,
-			errMatch: errCannotModdifyCommittedOrder.Error(),
+			errMatch: errCannotModifyLockedOrder.Error(),
 		},
 		{
 			name:     "remove item after commit",
 			op:       RemoveOp,
 			path:     Path{Type: ObjectTypeOrder, ObjectID: testhelper.Uint64ptr(667), Fields: []any{"Items", 0}},
-			errMatch: errCannotModdifyCommittedOrder.Error(),
+			errMatch: errCannotModifyLockedOrder.Error(),
 		},
 	}
 
@@ -2250,9 +2220,7 @@ func (patch Path) MarshalJSON() ([]byte, error) {
 	if !either && patch.Type != ObjectTypeManifest {
 		return nil, fmt.Errorf("either ObjectID, TagName or AccountID must be set")
 	}
-	for _, field := range patch.Fields {
-		path = append(path, field)
-	}
+	path = append(path, patch.Fields...)
 	return json.Marshal(path)
 }
 
@@ -2413,4 +2381,8 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func durationToTimeoutUnit(d time.Duration) objects.OrderPaymentTimeoutUnit {
+	return objects.OrderPaymentTimeoutUnit(d.Seconds())
 }

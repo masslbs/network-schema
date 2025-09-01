@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import cbor2
-from pprint import pprint
 from web3 import Web3
 
 from massmarket import (
@@ -48,7 +46,7 @@ def check_vector(vector):
 
     # 2. verify the signature
     their_addr = Web3.to_checksum_address(extracted_signer)
-    assert their_addr == signer, f"invalid signer on event"
+    assert their_addr == signer, "invalid signer on event"
 
 
 if __name__ == "__main__":

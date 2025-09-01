@@ -29,7 +29,6 @@ class Envelope(_message.Message):
         "auth_request",
         "challenge_solution_request",
     )
-
     class GenericResponse(_message.Message):
         __slots__ = ("error", "payload")
         ERROR_FIELD_NUMBER: _ClassVar[int]

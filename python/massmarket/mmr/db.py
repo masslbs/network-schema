@@ -24,7 +24,7 @@ def hash_num64(v: int) -> bytes:
 
 
 class FlatDB:
-    """An implementation that satisfies the required interafce of addleafhash"""
+    """An implementation that satisfies the required interface of addleafhash"""
 
     def __init__(self):
         self.store = []
@@ -88,7 +88,6 @@ class KatDB:
         return self.store[i]
 
     def init_canonical39(self):
-
         self.store = {}
 
         # height 0 (the leaves)

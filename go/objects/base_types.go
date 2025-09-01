@@ -14,7 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	masscbor "github.com/masslbs/network-schema/go/cbor"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
 )
 
 // ObjectID is the unique identifier for an object

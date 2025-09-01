@@ -21,8 +21,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/peterldowns/testy/assert"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/internal/testhelper"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
 )
 
 func TestMapOrdering(t *testing.T) {
@@ -51,7 +51,7 @@ func TestMapOrdering(t *testing.T) {
 		0x82, 0x00, 0xf6, // empty hamt
 		0x68, // text(8)
 		'M', 'a', 'n', 'i', 'f', 'e', 's', 't',
-		0xa4, // map(4)
+		0xa5, // map(5)
 		0x66, // text(6);
 		'P', 'a', 'y', 'e', 'e', 's',
 		0xf6, // primitive(22)
@@ -71,6 +71,9 @@ func TestMapOrdering(t *testing.T) {
 		0x72, // text(18)
 		'A', 'c', 'c', 'e', 'p', 't', 'e', 'd', 'C', 'u', 'r', 'r', 'e', 'n', 'c', 'i', 'e', 's',
 		0xf6, // primitive(22)
+		0x73, // text(19)
+		'O', 'r', 'd', 'e', 'r', 'P', 'a', 'y', 'm', 'e', 'n', 't', 'T', 'i', 'm', 'e', 'o', 'u', 't',
+		0x19, 0x0e, 0x10, // unsigned(3600)
 		0x69, // text(8)
 		'I', 'n', 'v', 'e', 'n', 't', 'o', 'r', 'y',
 		0x82, 0x00, 0xf6, // empty hamt
@@ -178,11 +181,10 @@ func TestCreateAllTypes(t *testing.T) {
 		EmailAddress: "test@foo.bar",
 		PhoneNumber:  testhelper.Strptr("+21911223344"),
 	}
-	expectedInStockBy := time.Unix(9999999999, 0).UTC()
 
 	vanillaEth := MustAddrFromHex(1, "0x0000000000000000000000000000000000000000")
 	cases := []struct {
-		typ any
+		testValue any
 	}{
 		{Manifest{
 			ShopID: *bigID,
@@ -210,6 +212,7 @@ func TestCreateAllTypes(t *testing.T) {
 					},
 				},
 			},
+			OrderPaymentTimeout: OrderPaymentTimeoutUnit(time.Hour.Seconds()),
 		}},
 
 		{Account{
@@ -260,20 +263,6 @@ func TestCreateAllTypes(t *testing.T) {
 					},
 				},
 			},
-			StockStatuses: []ListingStockStatus{
-				{
-					VariationIDs: []string{"r"},
-					InStock:      testhelper.Boolptr(true),
-				},
-				{
-					VariationIDs: []string{"m"},
-					InStock:      testhelper.Boolptr(false),
-				},
-				{
-					VariationIDs:      []string{"b"},
-					ExpectedInStockBy: &expectedInStockBy,
-				},
-			},
 		}},
 
 		{Tag{
@@ -287,7 +276,18 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateOpen,
+			PaymentState: OrderPaymentStateOpen,
+		}},
+
+		{Order{
+			ID: math.MaxUint64,
+			Items: []OrderedItem{{
+				ListingID: 1,
+				Quantity:  1,
+			}},
+			PaymentState:       OrderPaymentStateOpen,
+			FulfilmentState:    "Waiting",
+			CommentForCustomer: "Hello, world!",
 		}},
 
 		{Order{
@@ -296,7 +296,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateCommitted,
+			PaymentState: OrderPaymentStateLocked,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
@@ -311,7 +311,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStateUnpaid,
+			PaymentState: OrderPaymentStateUnpaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
@@ -334,7 +334,7 @@ func TestCreateAllTypes(t *testing.T) {
 				ListingID: 1,
 				Quantity:  1,
 			}},
-			State: OrderStatePaid,
+			PaymentState: OrderPaymentStatePaid,
 			ChosenPayee: &Payee{
 				CallAsContract: true,
 				Address:        MustAddrFromHex(1, "0x1234567890123456789012345678901234567890"),
@@ -357,18 +357,18 @@ func TestCreateAllTypes(t *testing.T) {
 
 	var buf bytes.Buffer
 	for i, c := range cases {
-		t.Run(fmt.Sprintf("index:%d/type:%T", i, c.typ), func(t *testing.T) {
-			assert.Nil(t, validate.Struct(c.typ))
+		t.Run(fmt.Sprintf("index:%d/type:%T", i, c.testValue), func(t *testing.T) {
+			assert.Nil(t, validate.Struct(c.testValue))
 			buf.Reset()
 			enc := masscbor.DefaultEncoder(&buf)
-			err := enc.Encode(c.typ)
+			err := enc.Encode(c.testValue)
 			assert.Nil(t, err)
 
 			testData := buf.Bytes()
-			t.Logf("encoded %T:\n%s", c.typ, pretty(testData))
+			t.Logf("encoded %T:\n%s", c.testValue, pretty(testData))
 
 			var decoded any
-			switch c.typ.(type) {
+			switch c.testValue.(type) {
 			case Manifest:
 				decoded, err = decode[Manifest](testData)
 			case Listing:
@@ -380,11 +380,11 @@ func TestCreateAllTypes(t *testing.T) {
 			case Order:
 				decoded, err = decode[Order](testData)
 			default:
-				t.Fatalf("unknown type: %T", c.typ)
+				t.Fatalf("unknown type: %T", c.testValue)
 			}
 			assert.Nil(t, err)
 			assert.Nil(t, validate.Struct(decoded))
-			assert.Equal(t, c.typ, decoded, ignoreBigInts)
+			assert.Equal(t, c.testValue, decoded, ignoreBigInts)
 		})
 	}
 }

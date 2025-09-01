@@ -10,21 +10,23 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	masscbor "github.com/masslbs/network-schema/go/cbor"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
 )
 
 // Order represents an order placed by a user
 type Order struct {
-	ID              ObjectID        `validate:"required,gt=0"`
-	Items           OrderedItems    `validate:"required"`
-	State           OrderState      `validate:"required"`
-	InvoiceAddress  *AddressDetails `cbor:",omitempty"`
-	ShippingAddress *AddressDetails `cbor:",omitempty"`
-	CanceledAt      *time.Time      `cbor:",omitempty"`
-	ChosenPayee     *Payee          `cbor:",omitempty"`
-	ChosenCurrency  *ChainAddress   `cbor:",omitempty"`
-	PaymentDetails  *PaymentDetails `cbor:",omitempty"`
-	TxDetails       *OrderPaid      `cbor:",omitempty"`
+	ID                 ObjectID          `validate:"required,gt=0"`
+	Items              OrderedItems      `validate:"required"`
+	PaymentState       OrderPaymentState `validate:"required"`
+	InvoiceAddress     *AddressDetails   `cbor:",omitempty"`
+	ShippingAddress    *AddressDetails   `cbor:",omitempty"`
+	CanceledAt         *time.Time        `cbor:",omitempty"`
+	ChosenPayee        *Payee            `cbor:",omitempty"`
+	ChosenCurrency     *ChainAddress     `cbor:",omitempty"`
+	PaymentDetails     *PaymentDetails   `cbor:",omitempty"`
+	TxDetails          *OrderPaid        `cbor:",omitempty"`
+	FulfilmentState    string            `cbor:",omitempty"`
+	CommentForCustomer string            `cbor:",omitempty"`
 }
 
 // OrderedItems is a list of items in an order
@@ -40,18 +42,20 @@ type OrderedItem struct {
 // OrderValidation validates the state-dependent fields of an order
 func OrderValidation(sl validator.StructLevel) {
 	order := sl.Current().Interface().(Order)
-	switch order.State {
-	case OrderStatePaid:
+	switch order.PaymentState {
+
+	// happy path for an order
+	case OrderPaymentStatePaid:
 		if order.TxDetails == nil {
 			sl.ReportError(order.TxDetails, "TxDetails", "TxDetails", "required", "")
 		}
 		fallthrough
-	case OrderStateUnpaid:
+	case OrderPaymentStateUnpaid:
 		if order.PaymentDetails == nil {
 			sl.ReportError(order.PaymentDetails, "PaymentDetails", "PaymentDetails", "required", "")
 		}
 		fallthrough
-	case OrderStatePaymentChosen:
+	case OrderPaymentStatePaymentChosen:
 		if order.ChosenPayee == nil {
 			sl.ReportError(order.ChosenPayee, "ChosenPayee", "ChosenPayee", "required", "")
 		}
@@ -62,56 +66,69 @@ func OrderValidation(sl validator.StructLevel) {
 			sl.ReportError(order.InvoiceAddress, "InvoiceAddress", "InvoiceAddress", "either_or", "")
 			sl.ReportError(order.ShippingAddress, "ShippingAddress", "ShippingAddress", "either_or", "")
 		}
+
+	// versions of cancel
+	case OrderPaymentStatePaidLate:
 		fallthrough
-	case OrderStateCommitted:
+	case OrderPaymentStateUnpaidExpired:
+		fallthrough
+	case OrderPaymentStateLocked:
 		if len(order.Items) == 0 {
 			sl.ReportError(order.Items, "Items", "Items", "required", "")
 		}
-	case OrderStateCanceled:
+	case OrderPaymentStateCanceled:
 		if order.CanceledAt == nil {
 			sl.ReportError(order.CanceledAt, "CanceledAt", "CanceledAt", "required", "")
 		}
-	case OrderStateOpen:
-		// noop
+
+	case OrderPaymentStateOpen:
+	// noop
+
 	default:
-		sl.ReportError(order.State, "State", "State", fmt.Sprintf("invalid order state: %d", order.State), "")
+		sl.ReportError(order.PaymentState, "PaymentState", "PaymentState", fmt.Sprintf("invalid order state: %d", order.PaymentState), "")
 	}
 }
 
-// OrderState represents the possible states an order can be in
-type OrderState uint
+//go:generate stringer -output gen_order_payment_state_string.go -trimprefix OrderPaymentState -type OrderPaymentState .
+
+// OrderPaymentState represents the possible states an order can be in
+type OrderPaymentState uint
 
 const (
-	// OrderStateUnspecified is the default and invalid state of an order
-	OrderStateUnspecified OrderState = iota
-	// OrderStateOpen is the state of an order which is open to being changed
-	OrderStateOpen
-	// OrderStateCanceled is the state of an order which has been canceled
-	OrderStateCanceled
-	// OrderStateCommitted is the state of an order which items have been frozen
-	OrderStateCommitted
-	// OrderStatePaymentChosen is the state of an order which has chosen a payment channel
-	OrderStatePaymentChosen
-	// OrderStateUnpaid is the state of an order which has not been paid for
-	OrderStateUnpaid
-	// OrderStatePaid is the state of an order which has been paid for
-	OrderStatePaid
+	// OrderPaymentStateUnspecified is an invalid state of an order
+	OrderPaymentStateUnspecified OrderPaymentState = iota
+	// OrderPaymentStateCanceled might be the result of a manual action for what ever reason, like abandoning an order after a payment may be in flight
+	OrderPaymentStateCanceled
+	// OrderPaymentStateOpen means items can be changed
+	OrderPaymentStateOpen
+	// OrderPaymentStateLocked means items have been frozen & timer is running, only invoice/shipping addresses and payment channel can be set
+	OrderPaymentStateLocked
+	// OrderPaymentStatePaymentChosen means a payment channel has been chosen
+	OrderPaymentStatePaymentChosen
+	// OrderPaymentStateUnpaid means a payment address has been created / the order has not yet been paid for
+	OrderPaymentStateUnpaid
+	// OrderPaymentStateUnpaidExpired means the order has not been paid and it's TTL has expired
+	OrderPaymentStateUnpaidExpired
+	// OrderPaymentStatePaid means the order has TxDetails and has been paid for
+	OrderPaymentStatePaid
+	// OrderPaymentStatePaidLate means payment was received after the TTL for it expired
+	OrderPaymentStatePaidLate
 
-	maxOrderState
+	maxOrderPaymentState
 )
 
 // UnmarshalCBOR implements the cbor.Unmarshaler interface
-func (s *OrderState) UnmarshalCBOR(data []byte) error {
+func (s *OrderPaymentState) UnmarshalCBOR(data []byte) error {
 	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
 	var i uint
 	err := dec.Decode(&i)
 	if err != nil {
 		return err
 	}
-	if i == uint(OrderStateUnspecified) || i >= uint(maxOrderState) {
+	if i == uint(OrderPaymentStateUnspecified) || i >= uint(maxOrderPaymentState) {
 		return fmt.Errorf("invalid order state: %d", i)
 	}
-	*s = OrderState(i)
+	*s = OrderPaymentState(i)
 	return nil
 }
 

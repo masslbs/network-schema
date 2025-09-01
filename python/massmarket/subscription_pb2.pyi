@@ -32,7 +32,6 @@ OBJECT_TYPE_INVENTORY: ObjectType
 
 class SubscriptionRequest(_message.Message):
     __slots__ = ("start_shop_seq_no", "shop_id", "filters")
-
     class Filter(_message.Message):
         __slots__ = ("object_type", "object_id")
         OBJECT_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -62,7 +61,6 @@ class SubscriptionRequest(_message.Message):
 
 class SubscriptionPushRequest(_message.Message):
     __slots__ = ("subscription_id", "sets")
-
     class SequencedPartialPatchSet(_message.Message):
         __slots__ = (
             "shop_seq_no",

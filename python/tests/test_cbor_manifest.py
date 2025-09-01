@@ -54,6 +54,7 @@ def test_cbor_manifest_cbor_keys():
                 },
             )
         },
+        order_payment_timeout=666,
     )
 
     # When we convert to a CBOR dict, check that we use CamelCase keys.
@@ -109,6 +110,7 @@ def test_cbor_manifest_roundtrip():
                 },
             )
         },
+        order_payment_timeout=666,
     )
     cbor_bytes = cbor2.dumps(original.to_cbor_dict())
     decoded = Manifest.from_cbor(cbor_bytes)
@@ -231,3 +233,9 @@ def verify_manifest(manifest_obj: Manifest, expected: dict):
             manifest_obj.shipping_regions is None
             or len(manifest_obj.shipping_regions) == 0
         )
+
+    if (
+        "OrderPaymentTimeout" in expected
+        and expected["OrderPaymentTimeout"] is not None
+    ):
+        assert expected["OrderPaymentTimeout"] == manifest_obj.order_payment_timeout

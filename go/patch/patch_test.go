@@ -13,9 +13,9 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/internal/testhelper"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
+	"github.com/masslbs/network-schema/v5/go/objects"
 	"github.com/peterldowns/testy/assert"
 )
 

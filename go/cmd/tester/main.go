@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
 )
 
 func main() {

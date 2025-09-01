@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-from datetime import datetime, timezone
 import json
 import base64
 import cbor2
@@ -23,7 +22,6 @@ from massmarket.cbor.listing import (
     ListingMetadata,
     ListingOption,
     ListingVariation,
-    ListingStockStatus,
     ListingViewState,
 )
 
@@ -102,29 +100,6 @@ def test_listing_option_roundtrip():
     assert decoded.variations["red"].sku == option.variations["red"].sku
 
 
-def test_listing_stock_status_roundtrip():
-    # Test with in_stock
-    status1 = ListingStockStatus(
-        variation_ids=["red", "large"],
-        in_stock=True,
-    )
-
-    # Test with expected_in_stock_by
-    future_date = datetime(2024, 12, 31, tzinfo=timezone.utc)
-    status2 = ListingStockStatus(
-        variation_ids=["blue", "small"],
-        expected_in_stock_by=future_date,
-    )
-
-    for status in [status1, status2]:
-        encoded = cbor_encode(status.to_cbor_dict())
-        decoded = ListingStockStatus.from_cbor_dict(cbor2.loads(encoded))
-
-        assert decoded.variation_ids == status.variation_ids
-        assert decoded.in_stock == status.in_stock
-        assert decoded.expected_in_stock_by == status.expected_in_stock_by
-
-
 def test_full_listing_roundtrip():
     listing = Listing(
         id=1,
@@ -149,12 +124,6 @@ def test_full_listing_roundtrip():
                 },
             ),
         },
-        stock_statuses=[
-            ListingStockStatus(
-                variation_ids=["red"],
-                in_stock=True,
-            ),
-        ],
     )
 
     encoded = cbor_encode(listing.to_cbor_dict())
@@ -165,7 +134,6 @@ def test_full_listing_roundtrip():
     assert decoded.metadata.title == listing.metadata.title
     assert decoded.view_state == listing.view_state
     assert len(decoded.options) == len(listing.options)
-    assert len(decoded.stock_statuses) == len(listing.stock_statuses)
 
 
 def test_listing_validation():
@@ -180,14 +148,6 @@ def test_listing_validation():
             ),
             view_state=ListingViewState.PUBLISHED,
             options={},
-        )
-
-    # Test ListingStockStatus validation
-    with pytest.raises(
-        ValueError, match="One of in_stock or expected_in_stock_by must be set"
-    ):
-        ListingStockStatus(
-            variation_ids=["red"],
         )
 
 
@@ -250,7 +210,7 @@ def verify_listing(listing_obj: Listing, expected: dict):
         if "Images" in expected["Metadata"] and len(expected["Metadata"]["Images"]) > 0:
             assert listing_obj.metadata.images == expected["Metadata"]["Images"]
         else:
-            assert listing_obj.metadata.images == None
+            assert listing_obj.metadata.images is None
 
     # Check view state
     if "ViewState" in expected:
@@ -296,25 +256,4 @@ def verify_listing(listing_obj: Listing, expected: dict):
                         ):
                             assert variation.sku == expected_var_value["SKU"]
                         else:
-                            assert variation.sku == None
-
-    # Check stock statuses
-    if "StockStatuses" in expected:
-        # TODO: JSON idiosyncrasies
-        if len(expected["StockStatuses"]) == 0:
-            assert listing_obj.stock_statuses is None
-        else:
-            assert len(listing_obj.stock_statuses) == len(expected["StockStatuses"])
-            for actual, expected_status in zip(
-                listing_obj.stock_statuses, expected["StockStatuses"]
-            ):
-                assert actual.variation_ids == expected_status["VariationIDs"]
-                if "InStock" in expected_status:
-                    assert actual.in_stock == expected_status["InStock"]
-                if (
-                    "ExpectedInStockBy" in expected_status
-                    and expected_status["ExpectedInStockBy"]
-                ):
-                    assert actual.expected_in_stock_by is not None
-                else:
-                    assert actual.expected_in_stock_by is None
+                            assert variation.sku is None

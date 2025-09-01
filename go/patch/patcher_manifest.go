@@ -9,8 +9,8 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	"github.com/masslbs/network-schema/go/objects"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 func (p *Patcher) patchManifest(patch Patch) error {
@@ -50,12 +50,6 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 	}
 
 	switch patch.Path.Fields[0] {
-	case "ShopId":
-		var value objects.Uint256
-		if err := masscbor.Unmarshal(patch.Value, &value); err != nil {
-			return fmt.Errorf("failed to unmarshal ShopId: %w", err)
-		}
-		p.shop.Manifest.ShopID = value
 
 	case "PricingCurrency":
 		var c objects.ChainAddress
@@ -159,6 +153,12 @@ func (p *Patcher) replaceManifestField(patch Patch) error {
 			return fmt.Errorf("invalid acceptedCurrencies path")
 		}
 
+	case "OrderPaymentTimeout":
+		var dur uint
+		if err := masscbor.Unmarshal(patch.Value, &dur); err != nil {
+			return fmt.Errorf("failed to unmarshal timeout duration: %w", err)
+		}
+		p.shop.Manifest.OrderPaymentTimeout = objects.OrderPaymentTimeoutUnit(dur)
 	default:
 		return fmt.Errorf("unsupported field: %s", patch.Path.Fields[0])
 	}

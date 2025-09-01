@@ -7,12 +7,13 @@ package patch
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	clone "github.com/huandu/go-clone/generic"
 	"github.com/peterldowns/testy/assert"
 
-	"github.com/masslbs/network-schema/go/internal/testhelper"
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/internal/testhelper"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 // TestUserFlowVectors creates test vectors that simulate complete interactions
@@ -68,6 +69,7 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				ShippingRegions: objects.ShippingRegions{
 					"Default": {Country: "DE"},
 				},
+				OrderPaymentTimeout: durationToTimeoutUnit(time.Hour),
 			}),
 		},
 
@@ -85,7 +87,32 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				},
 			}),
 		},
-
+		{
+			name: "AddListing2",
+			patch: createPatch(t, AddOp, Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(102)}, objects.Listing{
+				ID:        102,
+				Price:     *big.NewInt(3975), // $3975
+				ViewState: objects.ListingViewStatePublished,
+				Metadata: objects.ListingMetadata{
+					Title:       "Shoe",
+					Description: "A thing for your feet",
+					Images:      []string{"https://example.com/shoe.jpg"},
+				},
+			}),
+		},
+		{
+			name: "AddListing3",
+			patch: createPatch(t, AddOp, Path{Type: ObjectTypeListing, ObjectID: testhelper.Uint64ptr(103)}, objects.Listing{
+				ID:        103,
+				Price:     *big.NewInt(599), // $5.99
+				ViewState: objects.ListingViewStatePublished,
+				Metadata: objects.ListingMetadata{
+					Title:       "Stickers",
+					Description: "a big pack of stickers",
+					Images:      []string{"https://example.com/sticker.jpg"},
+				},
+			}),
+		},
 		// Step 3: Update inventory
 		{
 			name: "SetInventory",
@@ -114,8 +141,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 			}, objects.Order{
-				ID:    5001,
-				State: objects.OrderStateOpen,
+				ID:           5001,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{
 						ListingID: 101,
@@ -142,20 +169,60 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			validate: func(t *testing.T, s objects.Shop) {
 				order, found := s.Orders.Get(5001)
 				assert.True(t, found)
-				assert.Equal(t, objects.OrderStateOpen, order.State)
+				assert.Equal(t, objects.OrderPaymentStateOpen, order.PaymentState)
 			},
 		},
 
-		// Step 6: Order gets committed with payment details
+		// unlock again before payment chosen
 		{
-			name: "CommitOrder",
+			name: "FirstCommitOrder",
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateCommitted),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateLocked),
+		},
+		{
+			name: "UnlockOrderAgain",
+			patch: createPatch(t, ReplaceOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateOpen),
 		},
 
+		{
+			name: "AddSomeMoreItems1",
+			patch: createPatch(t, AppendOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"Items"},
+			}, objects.OrderedItem{
+				ListingID: 102,
+				Quantity:  2,
+			}),
+		},
+		{
+			name: "AddSomeMoreItems2",
+			patch: createPatch(t, AppendOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"Items"},
+			}, objects.OrderedItem{
+				ListingID: 103,
+				Quantity:  3,
+			}),
+		},
+		{
+			name: "FinalCommitOrder",
+			patch: createPatch(t, ReplaceOp, Path{
+				Type:     ObjectTypeOrder,
+				ObjectID: testhelper.Uint64ptr(5001),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateLocked),
+		},
+
+		// Step 6: Order gets committed with payment details
 		{
 			name: "ChoosePaymentChannel1",
 			patch: createPatch(t, AddOp, Path{
@@ -180,8 +247,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaymentChosen),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaymentChosen),
 		},
 
 		// Step 7: Add payment details
@@ -205,8 +272,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateUnpaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateUnpaid),
 		},
 
 		// Step 8: relay found payment hash and updates order state
@@ -226,8 +293,8 @@ func simpleShoppingTripStory(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaid),
 		},
 
 		// Step 9: decrement inventory
@@ -319,6 +386,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 				ShippingRegions: objects.ShippingRegions{
 					"US": {Country: "United States"},
 				},
+				OrderPaymentTimeout: durationToTimeoutUnit(2 * time.Hour),
 			}),
 			validate: func(t *testing.T, s objects.Shop) {
 				assert.Equal(t, 1, len(s.Manifest.ShippingRegions))
@@ -386,8 +454,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
 			}, objects.Order{
-				ID:    5001,
-				State: objects.OrderStateOpen,
+				ID:           5001,
+				PaymentState: objects.OrderPaymentStateOpen,
 				Items: []objects.OrderedItem{
 					{
 						ListingID:    101,
@@ -415,7 +483,7 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			validate: func(t *testing.T, s objects.Shop) {
 				order, found := s.Orders.Get(5001)
 				assert.True(t, found)
-				assert.Equal(t, objects.OrderStateOpen, order.State)
+				assert.Equal(t, objects.OrderPaymentStateOpen, order.PaymentState)
 			},
 		},
 
@@ -425,8 +493,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateCommitted),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateLocked),
 		},
 
 		{
@@ -453,8 +521,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStatePaymentChosen),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStatePaymentChosen),
 		},
 
 		// Step 7: Add payment details
@@ -479,8 +547,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 			patch: createPatch(t, ReplaceOp, Path{
 				Type:     ObjectTypeOrder,
 				ObjectID: testhelper.Uint64ptr(5001),
-				Fields:   []any{"State"},
-			}, objects.OrderStateUnpaid),
+				Fields:   []any{"PaymentState"},
+			}, objects.OrderPaymentStateUnpaid),
 		},
 
 		// Step 8: Update inventory after order
@@ -504,8 +572,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 		// 	patch: createPatch(t, ReplaceOp, Path{
 		// 		Type:     ObjectTypeOrder,
 		// 		ObjectID: testhelper.Uint64ptr(5001),
-		// 		Fields:   []any{"State"},
-		// 	}, objects.OrderStateCommitted),
+		// 		Fields:   []any{"PaymentState"},
+		// 	}, objects.OrderPaymentStateLocked),
 		// },
 
 		// // Step 10: Add tracking information
@@ -528,8 +596,8 @@ func shoppingTripStoryWithVariations(t *testing.T, vectors *vectorFileOkay) {
 		// 	patch: createPatch(t, ReplaceOp, Path{
 		// 		Type:     ObjectTypeOrder,
 		// 		ObjectID: testhelper.Uint64ptr(5001),
-		// 		Fields:   []any{"State"},
-		// 	}, objects.OrderStateReceived),
+		// 		Fields:   []any{"PaymentState"},
+		// 	}, objects.OrderPaymentStateReceived),
 		// },
 	}
 

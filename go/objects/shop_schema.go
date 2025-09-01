@@ -9,11 +9,12 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
-	hamt "github.com/masslbs/network-schema/go/hamt"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
+	hamt "github.com/masslbs/network-schema/v5/go/hamt"
 )
 
 // Shop represents a shop and all its contents
@@ -31,6 +32,7 @@ type Shop struct {
 // NewShop creates a new shop
 func NewShop(version uint64) Shop {
 	s := Shop{}
+	s.Manifest.OrderPaymentTimeout = OrderPaymentTimeoutUnit(time.Hour.Seconds())
 	s.SchemaVersion = version
 	s.Accounts.Trie = hamt.NewTrie[Account]()
 	s.Listings.Trie = hamt.NewTrie[Listing]()

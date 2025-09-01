@@ -40,7 +40,6 @@ ERROR_CODES_CLOSE_SUBSCRIPTION: ErrorCodes
 
 class Error(_message.Message):
     __slots__ = ("code", "message", "additional_info")
-
     class AdditionalInfo(_message.Message):
         __slots__ = ("object_id",)
         OBJECT_ID_FIELD_NUMBER: _ClassVar[int]

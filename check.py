@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import re
-import os
 
 lineFormatRe = re.compile(r"^(\w+)\s+(\d+)$")
 

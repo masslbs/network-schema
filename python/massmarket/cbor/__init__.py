@@ -3,11 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from io import BytesIO
 
 import cbor2
 import hashlib
-from pprint import pprint
 
 from massmarket.hamt import Trie
 from massmarket.cbor.base_types import Tag, Account

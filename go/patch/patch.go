@@ -14,7 +14,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 
-	"github.com/masslbs/network-schema/go/objects"
+	"github.com/masslbs/network-schema/v5/go/objects"
 )
 
 // SignedPatchSet is a signed set of patches

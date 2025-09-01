@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from typing import Optional, List, Dict
-from datetime import datetime
+
 from enum import IntEnum
 
 import cbor2
@@ -92,33 +92,6 @@ class ListingOption:
         return d
 
 
-@dataclass
-class ListingStockStatus:
-    variation_ids: List[str]
-    in_stock: Optional[bool] = None
-    expected_in_stock_by: Optional[datetime] = None
-
-    def __post_init__(self):
-        if self.in_stock is None and self.expected_in_stock_by is None:
-            raise ValueError("One of in_stock or expected_in_stock_by must be set")
-
-    @classmethod
-    def from_cbor_dict(cls, d: dict) -> "ListingStockStatus":
-        return cls(
-            variation_ids=d["VariationIDs"],
-            in_stock=d.get("InStock"),
-            expected_in_stock_by=d.get("ExpectedInStockBy"),
-        )
-
-    def to_cbor_dict(self) -> dict:
-        d = {"VariationIDs": self.variation_ids}
-        if self.in_stock is not None:
-            d["InStock"] = self.in_stock
-        if self.expected_in_stock_by is not None:
-            d["ExpectedInStockBy"] = self.expected_in_stock_by
-        return d
-
-
 class ListingViewState(IntEnum):
     UNSPECIFIED = 0
     PUBLISHED = 1
@@ -132,7 +105,6 @@ class Listing:
     metadata: ListingMetadata
     view_state: ListingViewState = ListingViewState.UNSPECIFIED
     options: Optional[Dict[str, ListingOption]] = None
-    stock_statuses: Optional[List[ListingStockStatus]] = None
 
     def __post_init__(self):
         if self.options is not None and not self.options:
@@ -144,19 +116,12 @@ class Listing:
         if options is not None:
             options = {k: ListingOption.from_cbor_dict(v) for k, v in options.items()}
 
-        stock_statuses = d.get("StockStatuses")
-        if stock_statuses is not None:
-            stock_statuses = [
-                ListingStockStatus.from_cbor_dict(s) for s in stock_statuses
-            ]
-
         return cls(
             id=d["ID"],
             price=Uint256(d["Price"]),
             metadata=ListingMetadata.from_cbor_dict(d["Metadata"]),
             view_state=ListingViewState(d["ViewState"]),
             options=options,
-            stock_statuses=stock_statuses,
         )
 
     def to_cbor_dict(self) -> dict:
@@ -168,8 +133,6 @@ class Listing:
         }
         if self.options is not None:
             d["Options"] = {k: v.to_cbor_dict() for k, v in self.options.items()}
-        if self.stock_statuses is not None:
-            d["StockStatuses"] = [s.to_cbor_dict() for s in self.stock_statuses]
         return d
 
     @classmethod

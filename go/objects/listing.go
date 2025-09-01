@@ -7,9 +7,8 @@ package objects
 import (
 	"bytes"
 	"fmt"
-	"time"
 
-	masscbor "github.com/masslbs/network-schema/go/cbor"
+	masscbor "github.com/masslbs/network-schema/v5/go/cbor"
 )
 
 // Listing represents a listed item in a shop
@@ -19,40 +18,10 @@ type Listing struct {
 	Metadata  ListingMetadata `validate:"required"`
 	ViewState ListingViewState
 	Options   ListingOptions `cbor:",omitempty" validate:"nonEmptyMapKeys" json:",omitempty"`
-
-	// one for each combination of variations
-	StockStatuses []ListingStockStatus `cbor:",omitempty" json:",omitempty"`
 }
 
 // ListingOptions maps from a variation title to a listing option
 type ListingOptions map[string]ListingOption
-
-// ListingStockStatus represents the stock status of a listing
-type ListingStockStatus listingStockStatusHack
-
-type listingStockStatusHack struct {
-	VariationIDs []string // list of variation map keys
-
-	// one of the following needs to be set
-	InStock           *bool      `cbor:",omitempty" json:",omitempty"`
-	ExpectedInStockBy *time.Time `cbor:",omitempty"`
-}
-
-// UnmarshalCBOR implements the cbor.Unmarshaler interface
-func (ls *ListingStockStatus) UnmarshalCBOR(data []byte) error {
-	var ls2 listingStockStatusHack
-	dec := masscbor.DefaultDecoder(bytes.NewReader(data))
-	err := dec.Decode(&ls2)
-	if err != nil {
-		return err
-	}
-	// TODO: maybe add validate:"either_or=InStock,ExpectedInStockBy"`
-	if ls2.InStock == nil && ls2.ExpectedInStockBy == nil {
-		return fmt.Errorf("one of InStock or ExpectedInStockBy must be set")
-	}
-	*ls = ListingStockStatus(ls2)
-	return nil
-}
 
 // ListingMetadata represents information about a listing
 type ListingMetadata struct {
