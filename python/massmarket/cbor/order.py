@@ -97,41 +97,24 @@ class AddressDetails:
 
 @dataclass
 class PaymentDetails:
-    payment_id: bytes  # Hash
     total: Uint256
-    listing_hashes: List[bytes]
-    ttl: int
-    shop_signature: bytes  # Signature
+    payment_address: ChainAddress
 
     def __post_init__(self):
-        if not self.listing_hashes:
-            raise ValueError("ListingHashes must not be empty")
-        if self.ttl <= 0:
-            raise ValueError("TTL must be greater than 0")
-        if len(self.payment_id) != 32:  # HashSize in Go code
-            raise ValueError(f"PaymentID must be 32 bytes, got {len(self.payment_id)}")
-        if len(self.shop_signature) != 65:  # SignatureSize in Go code
-            raise ValueError(
-                f"ShopSignature must be 65 bytes, got {len(self.shop_signature)}"
-            )
+        if self.payment_address.chain_id == 0:
+            raise ValueError("Expected valid chain_id, got 0")
 
     @classmethod
     def from_cbor_dict(cls, d: Dict[str, Any]) -> "PaymentDetails":
         return cls(
-            payment_id=d["PaymentID"],
             total=Uint256(d["Total"]),
-            listing_hashes=d["ListingHashes"],
-            ttl=d["TTL"],
-            shop_signature=d["ShopSignature"],
+            payment_address=ChainAddress.from_cbor_dict(d["PaymentAddress"]),
         )
 
     def to_cbor_dict(self) -> Dict[str, Any]:
         return {
-            "PaymentID": self.payment_id,
             "Total": self.total.to_cbor_dict(),
-            "ListingHashes": self.listing_hashes,
-            "TTL": self.ttl,
-            "ShopSignature": self.shop_signature,
+            "PaymentAddress": self.payment_address.to_cbor_dict(),
         }
 
 

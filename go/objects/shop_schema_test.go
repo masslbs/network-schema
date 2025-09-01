@@ -171,6 +171,15 @@ func TestMissingFields(t *testing.T) {
 
 func TestCreateAllTypes(t *testing.T) {
 	bigID := big.NewInt(12345)
+	var testTotal Uint256
+	testTotal.SetInt64(12345)
+	testPaymentDetails := &PaymentDetails{
+		Total: testTotal,
+		PaymentAddress: ChainAddress{
+			ChainID:         789,
+			EthereumAddress: EthereumAddress{},
+		},
+	}
 
 	testAddress := &AddressDetails{
 		Name:         "test",
@@ -318,14 +327,7 @@ func TestCreateAllTypes(t *testing.T) {
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
-			PaymentDetails: &PaymentDetails{
-				TTL:       1000,
-				PaymentID: Hash{},
-				ListingHashes: [][]byte{
-					testhelper.TestHash(0),
-					testhelper.TestHash(1),
-				},
-			},
+			PaymentDetails: testPaymentDetails,
 		}},
 
 		{Order{
@@ -341,14 +343,7 @@ func TestCreateAllTypes(t *testing.T) {
 			},
 			ChosenCurrency: &vanillaEth,
 			InvoiceAddress: testAddress,
-			PaymentDetails: &PaymentDetails{
-				TTL:       1000,
-				PaymentID: Hash{},
-				ListingHashes: [][]byte{
-					testhelper.TestHash(0),
-					testhelper.TestHash(1),
-				},
-			},
+			PaymentDetails: testPaymentDetails,
 			TxDetails: &OrderPaid{
 				TxHash: &Hash{},
 			},

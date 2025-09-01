@@ -59,6 +59,15 @@ func TestOrderStateMachine_ValidateStateTransition(t *testing.T) {
 }
 
 func TestOrderStateMachine_ValidateStateRequirements(t *testing.T) {
+	var testTotal Uint256
+	testTotal.SetInt64(12345)
+	testPaymentDetails := &PaymentDetails{
+		Total: testTotal,
+		PaymentAddress: ChainAddress{
+			ChainID:         789,
+			EthereumAddress: EthereumAddress{},
+		},
+	}
 
 	tests := []struct {
 		name        string
@@ -158,11 +167,7 @@ func TestOrderStateMachine_ValidateStateRequirements(t *testing.T) {
 					Name: "Test", Address1: "123 Main St", City: "City",
 					PostalCode: "12345", Country: "US", EmailAddress: "test@example.com",
 				},
-				PaymentDetails: &PaymentDetails{
-					PaymentID:     Hash{1, 2, 3},
-					TTL:           3600,
-					ListingHashes: [][]byte{{1, 2, 3}},
-				},
+				PaymentDetails: testPaymentDetails,
 			},
 			targetState: OrderPaymentStateUnpaid,
 			expectError: false,
@@ -179,11 +184,7 @@ func TestOrderStateMachine_ValidateStateRequirements(t *testing.T) {
 					Name: "Test", Address1: "123 Main St", City: "City",
 					PostalCode: "12345", Country: "US", EmailAddress: "test@example.com",
 				},
-				PaymentDetails: &PaymentDetails{
-					PaymentID:     Hash{1, 2, 3},
-					TTL:           3600,
-					ListingHashes: [][]byte{{1, 2, 3}},
-				},
+				PaymentDetails: testPaymentDetails,
 				TxDetails: &OrderPaid{
 					BlockHash: Hash{4, 5, 6},
 				},

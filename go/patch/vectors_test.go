@@ -1730,15 +1730,10 @@ func newTestOrder() (objects.Shop, objects.Order) {
 func TestGenerateVectorsOrderOkay(t *testing.T) {
 
 	testPaymentDetails := objects.PaymentDetails{
-		PaymentID: objects.Hash{0x01, 0x02, 0x03},
-		Total:     *big.NewInt(1234567890),
-		ListingHashes: [][]byte{
-			testhelper.TestHash(5),
-			testhelper.TestHash(6),
-			testhelper.TestHash(7),
+		Total: *big.NewInt(1234567890),
+		PaymentAddress: objects.ChainAddress{
+			ChainID: 5555,
 		},
-		TTL:           100,
-		ShopSignature: objects.Signature{0xff},
 	}
 
 	var vectors vectorFileOkay
@@ -1905,11 +1900,7 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: testPaymentDetails,
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.PaymentDetails)
-				assert.Equal(t, testPaymentDetails.PaymentID, o.PaymentDetails.PaymentID)
 				assert.Equal(t, testPaymentDetails.Total, o.PaymentDetails.Total, ignoreBigInts)
-				assert.Equal(t, testPaymentDetails.ListingHashes, o.PaymentDetails.ListingHashes)
-				assert.Equal(t, testPaymentDetails.TTL, o.PaymentDetails.TTL)
-				assert.Equal(t, testPaymentDetails.ShopSignature, o.PaymentDetails.ShopSignature)
 			},
 		},
 		{
@@ -1996,7 +1987,6 @@ func TestGenerateVectorsOrderOkay(t *testing.T) {
 			value: testPaymentDetails,
 			expected: func(t *testing.T, o objects.Order) {
 				assert.NotEqual(t, nil, o.PaymentDetails)
-				assert.Equal(t, testPaymentDetails.PaymentID, o.PaymentDetails.PaymentID)
 			},
 		},
 

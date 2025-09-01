@@ -146,11 +146,8 @@ type AddressDetails struct {
 
 // PaymentDetails represents the details needed to pay for an order
 type PaymentDetails struct {
-	PaymentID     Hash
-	Total         Uint256
-	ListingHashes [][]byte `validate:"required,gt=0"`
-	TTL           uint64   `validate:"required,gt=0"` // The time to live in block
-	ShopSignature Signature
+	Total          Uint256
+	PaymentAddress ChainAddress
 }
 
 // OrderPaid represents the details of a payment for an order

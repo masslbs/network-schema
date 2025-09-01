@@ -72,21 +72,14 @@ def test_address_details_roundtrip():
 
 def test_payment_details_roundtrip():
     payment_details = PaymentDetails(
-        payment_id=b"\x01" * 32,
         total=Uint256(12345),
-        listing_hashes=[b"\x02" * 32, b"\x03" * 32],
-        ttl=3600,
-        shop_signature=b"\x04" * 65,
+        payment_address=ChainAddress(23, bytes(20)),
     )
 
     encoded = cbor_encode(payment_details.to_cbor_dict())
     decoded = PaymentDetails.from_cbor_dict(cbor2.loads(encoded))
 
-    assert decoded.payment_id == payment_details.payment_id
     assert decoded.total == payment_details.total
-    assert decoded.listing_hashes == payment_details.listing_hashes
-    assert decoded.ttl == payment_details.ttl
-    assert decoded.shop_signature == payment_details.shop_signature
 
 
 def test_order_paid_roundtrip():
@@ -132,11 +125,8 @@ def test_full_order_roundtrip():
     currency = ChainAddress(chain_id=1337, address=b"\x00" * 20)
 
     payment_details = PaymentDetails(
-        payment_id=b"\x01" * 32,
         total=Uint256(12345),
-        listing_hashes=[b"\x02" * 32],
-        ttl=3600,
-        shop_signature=b"\x04" * 65,
+        payment_address=ChainAddress(1, bytes(20)),
     )
 
     order = Order(
@@ -254,11 +244,8 @@ def test_order_validation():
                 email_address="john@example.com",
             ),
             payment_details=PaymentDetails(
-                payment_id=b"\x01" * 32,
-                total=Uint256(100),
-                listing_hashes=[b"\x02" * 32],
-                ttl=3600,
-                shop_signature=b"\x04" * 65,
+                total=Uint256(12345),
+                payment_address=ChainAddress(1, bytes(20)),
             ),
         )
 
